@@ -1,13 +1,16 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 
 	"github.com/cloudfoundry-incubator/cf-lager"
+	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/pivotal-golang/lager"
 
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/config"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
 )
 
 func main() {
@@ -24,6 +27,17 @@ func main() {
 
 	token := getToken(config, logger)
 	println(token)
+
+	consumer := consumer.New(config.TrafficControllerURL, &tls.Config{
+		InsecureSkipVerify: config.InsecureSkipVerify,
+	}, nil)
+	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
+
+	forwarder := nozzle.NewSplunkForwarder(events, errors)
+	err = forwarder.Forward()
+	if err != nil {
+		logger.Fatal("Error forwarding", err)
+	}
 }
 
 func getToken(config *config.Config, logger lager.Logger) string {
