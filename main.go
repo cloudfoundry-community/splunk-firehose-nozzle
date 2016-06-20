@@ -34,7 +34,7 @@ func main() {
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
 
 	forwarder := nozzle.NewSplunkForwarder(events, errors)
-	err = forwarder.Forward()
+	err = forwarder.Run()
 	if err != nil {
 		logger.Fatal("Error forwarding", err)
 	}

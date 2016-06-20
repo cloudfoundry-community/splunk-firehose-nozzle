@@ -14,6 +14,9 @@ type Config struct {
 	TrafficControllerURL   string
 	FirehoseSubscriptionID string
 	InsecureSkipVerify     bool
+
+	SplunkToken string
+	SplunkHost  string
 }
 
 func Parse() (*Config, error) {
@@ -25,6 +28,8 @@ func Parse() (*Config, error) {
 		"NOZZLE_PASSWORD":                 &config.Password,
 		"NOZZLE_TRAFFIC_CONTROLLER_URL":   &config.TrafficControllerURL,
 		"NOZZLE_FIREHOSE_SUBSCRIPTION_ID": &config.FirehoseSubscriptionID,
+		"NOZZLE_SPLUNK_TOKEN":             &config.SplunkToken,
+		"NOZZLE_SPLUNK_HOST":              &config.SplunkHost,
 	}
 
 	for name, dest := range envVars {

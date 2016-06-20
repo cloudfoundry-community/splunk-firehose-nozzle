@@ -27,7 +27,7 @@ var _ = Describe("Nozzle", func() {
 		go func() {
 			errorChannel <- errors.New("Fail")
 		}()
-		err := nozzle.Forward()
+		err := nozzle.Run()
 
 		Expect(err).To(Equal(errors.New("Fail")))
 	})

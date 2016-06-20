@@ -24,8 +24,9 @@ properties:
 
 ### Development
 
-Copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply expected values.
-
+For development against
+[bosh-lite](https://github.com/cloudfoundry/bosh-lite),
+copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing values.
 
 ### Notes/todo
 

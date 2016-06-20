@@ -6,8 +6,8 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-type Forwarder interface {
-	Forward() error
+type Nozzle interface {
+	Run() error
 }
 
 type SplunkNozzle struct {
@@ -15,20 +15,30 @@ type SplunkNozzle struct {
 	errors <-chan error
 }
 
-func NewSplunkForwarder(events <-chan *events.Envelope, errors <-chan error) Forwarder {
+func NewSplunkForwarder(events <-chan *events.Envelope, errors <-chan error) Nozzle {
 	return &SplunkNozzle{
 		events: events,
 		errors: errors,
 	}
 }
 
-func (s *SplunkNozzle) Forward() error {
+func (s *SplunkNozzle) Run() error {
 	for {
 		select {
 		case err := <-s.errors:
 			return err
 		case event := <-s.events:
-			fmt.Printf("%+v\n", *event)
+			s.handleEvent(event)
 		}
+	}
+}
+
+func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
+	//todo: exploratory work, delete & tdd actual solution
+	eventType := event.EventType
+	if *eventType == events.Envelope_LogMessage {
+		logMessage := event.LogMessage
+		message := string(logMessage.Message)
+		fmt.Printf("%s", message)
 	}
 }
