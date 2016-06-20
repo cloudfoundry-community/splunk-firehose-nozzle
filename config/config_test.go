@@ -25,6 +25,7 @@ var _ = Describe("config", func() {
 		os.Setenv("NOZZLE_PASSWORD", passwordValue)
 		os.Setenv("NOZZLE_TRAFFIC_CONTROLLER_URL", trafficControllerURLValue)
 		os.Setenv("NOZZLE_FIREHOSE_SUBSCRIPTION_ID", firehoseSubscriptionIDValue)
+		os.Setenv("NOZZLE_INSECURE_SKIP_VERIFY", "true")
 	})
 
 	It("returns config when all values present", func() {
@@ -33,7 +34,7 @@ var _ = Describe("config", func() {
 		Expect(err).To(BeNil())
 	})
 
-	DescribeTable("error on missing values", func(envName string) {
+	DescribeTable("error on missing required values", func(envName string) {
 		os.Setenv(envName, "")
 
 		_, err := Parse()
@@ -45,7 +46,7 @@ var _ = Describe("config", func() {
 		Entry("username", "NOZZLE_USERNAME"),
 		Entry("password", "NOZZLE_PASSWORD"),
 		Entry("trafficControllerUrl", "NOZZLE_TRAFFIC_CONTROLLER_URL"),
-		Entry("FirehoseSubscriptionID", "NOZZLE_FIREHOSE_SUBSCRIPTION_ID"),
+		Entry("firehoseSubscriptionID", "NOZZLE_FIREHOSE_SUBSCRIPTION_ID"),
 	)
 
 	It("pulls uaaUrl from env", func() {
@@ -81,5 +82,20 @@ var _ = Describe("config", func() {
 
 		Expect(err).To(BeNil())
 		Expect(config.FirehoseSubscriptionID).To(Equal(firehoseSubscriptionIDValue))
+	})
+
+	It("pulls insecureSkipVerify fron env", func() {
+		config, err := Parse()
+
+		Expect(err).To(BeNil())
+		Expect(config.InsecureSkipVerify).To(BeTrue())
+	})
+
+	It("defaults insecureSkipVerify to false", func() {
+		os.Setenv("NOZZLE_INSECURE_SKIP_VERIFY", "")
+		config, err := Parse()
+
+		Expect(err).To(BeNil())
+		Expect(config.InsecureSkipVerify).To(BeFalse())
 	})
 })

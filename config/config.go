@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -12,6 +13,7 @@ type Config struct {
 	Password               string
 	TrafficControllerURL   string
 	FirehoseSubscriptionID string
+	InsecureSkipVerify     bool
 }
 
 func Parse() (*Config, error) {
@@ -26,21 +28,41 @@ func Parse() (*Config, error) {
 	}
 
 	for name, dest := range envVars {
-		err := getRequiredEnvUrl(name, dest)
+		err := getRequiredStringEnv(name, dest)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	err := getBoolEnv("NOZZLE_INSECURE_SKIP_VERIFY", &config.InsecureSkipVerify)
+	if err != nil {
+		return nil, err
+	}
+
 	return config, nil
 }
 
-func getRequiredEnvUrl(name string, value *string) error {
+func getRequiredStringEnv(name string, value *string) error {
 	envValue := os.Getenv(name)
 	if envValue == "" {
 		return errors.New(fmt.Sprintf("[%s] is required", name))
-	} else {
-		*value = envValue
+	}
+
+	*value = envValue
+	return nil
+}
+
+func getBoolEnv(name string, value *bool) error {
+	envValue := os.Getenv(name)
+	if envValue == "" {
 		return nil
 	}
+
+	parsedEnvValue, err := strconv.ParseBool(envValue)
+	if err != nil {
+		return err
+	}
+
+	*value = parsedEnvValue
+	return nil
 }
