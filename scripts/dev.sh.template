@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+export NOZZLE_UAA_URL=https://uaa.bosh-lite.com
+export NOZZLE_USERNAME=<username>
+export NOZZLE_PASSWORD=<password>
+export NOZZLE_TRAFFIC_CONTROLLER_URL=wss://doppler.bosh-lite.com:4443
+export NOZZLE_FIREHOSE_SUBSCRIPTION_ID=<some-id>
+
+go run main.go
