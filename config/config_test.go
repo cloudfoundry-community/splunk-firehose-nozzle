@@ -10,12 +10,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Config", func() {
+var _ = Describe("config", func() {
 	var (
-		uaaUrlValue   = "http://uaa.example.com"
-		usernameValue = "user"
-		passwordValue = "password"
-		trafficControllerURLValue = "wss://doppler.example.com"
+		uaaUrlValue                 = "http://uaa.example.com"
+		usernameValue               = "user"
+		passwordValue               = "password"
+		trafficControllerURLValue   = "wss://doppler.example.com"
 		firehoseSubscriptionIDValue = "splunk-nozzle-subscription"
 	)
 

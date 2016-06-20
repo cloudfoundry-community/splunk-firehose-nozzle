@@ -1,9 +1,9 @@
 package config
 
 import (
-	"os"
 	"errors"
 	"fmt"
+	"os"
 )
 
 type Config struct {
@@ -17,11 +17,11 @@ type Config struct {
 func Parse() (*Config, error) {
 	config := &Config{}
 
-	envVars := map[string]*string {
-		"NOZZLE_UAA_URL": &config.UAAURL,
-		"NOZZLE_USERNAME": &config.Username,
-		"NOZZLE_PASSWORD": &config.Password,
-		"NOZZLE_TRAFFIC_CONTROLLER_URL": &config.TrafficControllerURL,
+	envVars := map[string]*string{
+		"NOZZLE_UAA_URL":                  &config.UAAURL,
+		"NOZZLE_USERNAME":                 &config.Username,
+		"NOZZLE_PASSWORD":                 &config.Password,
+		"NOZZLE_TRAFFIC_CONTROLLER_URL":   &config.TrafficControllerURL,
 		"NOZZLE_FIREHOSE_SUBSCRIPTION_ID": &config.FirehoseSubscriptionID,
 	}
 
@@ -35,7 +35,7 @@ func Parse() (*Config, error) {
 	return config, nil
 }
 
-func getRequiredEnvUrl(name string, value *string) (error) {
+func getRequiredEnvUrl(name string, value *string) error {
 	envValue := os.Getenv(name)
 	if envValue == "" {
 		return errors.New(fmt.Sprintf("[%s] is required", name))
