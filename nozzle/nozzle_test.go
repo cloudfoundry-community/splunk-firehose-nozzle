@@ -23,7 +23,7 @@ var _ = Describe("Nozzle", func() {
 	})
 
 	It("returns error on error channel", func() {
-		nozzle := NewSplunkForwarder(nil, errorChannel)
+		nozzle := NewSplunkForwarder(&MockSplunkClient{}, nil, errorChannel)
 		go func() {
 			errorChannel <- errors.New("Fail")
 		}()
@@ -32,3 +32,10 @@ var _ = Describe("Nozzle", func() {
 		Expect(err).To(Equal(errors.New("Fail")))
 	})
 })
+
+type MockSplunkClient struct {
+}
+
+func (s *MockSplunkClient) Post(event *SplunkEvent) error {
+	return nil
+}

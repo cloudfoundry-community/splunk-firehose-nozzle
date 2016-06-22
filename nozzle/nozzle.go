@@ -11,14 +11,16 @@ type Nozzle interface {
 }
 
 type SplunkNozzle struct {
-	events <-chan *events.Envelope
-	errors <-chan error
+	splunkClient SplunkClient
+	events       <-chan *events.Envelope
+	errors       <-chan error
 }
 
-func NewSplunkForwarder(events <-chan *events.Envelope, errors <-chan error) Nozzle {
+func NewSplunkForwarder(splunkClient SplunkClient, events <-chan *events.Envelope, errors <-chan error) Nozzle {
 	return &SplunkNozzle{
-		events: events,
-		errors: errors,
+		splunkClient: splunkClient,
+		events:       events,
+		errors:       errors,
 	}
 }
 
@@ -39,6 +41,13 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	if *eventType == events.Envelope_LogMessage {
 		logMessage := event.LogMessage
 		message := string(logMessage.Message)
-		fmt.Printf("%s", message)
+		fmt.Printf("Posting %s", message)
+
+		err := s.splunkClient.Post(&SplunkEvent{
+			Event: message,
+		})
+		if err != nil {
+			println(fmt.Sprintf("Error posting to splunk: %s", err.Error()))
+		}
 	}
 }

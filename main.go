@@ -26,14 +26,14 @@ func main() {
 	}
 
 	token := getToken(config, logger)
-	println(token)
 
 	consumer := consumer.New(config.TrafficControllerURL, &tls.Config{
 		InsecureSkipVerify: config.InsecureSkipVerify,
 	}, nil)
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
 
-	forwarder := nozzle.NewSplunkForwarder(events, errors)
+	splunkClient := nozzle.NewSplunkClient(config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify)
+	forwarder := nozzle.NewSplunkForwarder(splunkClient, events, errors)
 	err = forwarder.Run()
 	if err != nil {
 		logger.Fatal("Error forwarding", err)
