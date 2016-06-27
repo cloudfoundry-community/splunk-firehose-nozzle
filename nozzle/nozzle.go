@@ -2,6 +2,7 @@ package nozzle
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -25,29 +26,56 @@ func NewSplunkForwarder(splunkClient SplunkClient, events <-chan *events.Envelop
 }
 
 func (s *SplunkNozzle) Run() error {
-	for {
-		select {
-		case err := <-s.errors:
-			return err
-		case event := <-s.events:
+	go func() {
+		for event := range s.events {
 			s.handleEvent(event)
 		}
-	}
+	}()
+
+	return <-s.errors
 }
 
 func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
-	//todo: exploratory work, delete & tdd actual solution
-	eventType := event.EventType
-	if *eventType == events.Envelope_LogMessage {
-		logMessage := event.LogMessage
-		message := string(logMessage.Message)
-		fmt.Printf("Posting %s", message)
+	eventType := *event.EventType
 
-		err := s.splunkClient.Post(&SplunkEvent{
-			Event: message,
-		})
-		if err != nil {
-			println(fmt.Sprintf("Error posting to splunk: %s", err.Error()))
-		}
+	switch eventType {
+	case events.Envelope_HttpStart:
+	case events.Envelope_HttpStop:
+	case events.Envelope_HttpStartStop:
+	case events.Envelope_LogMessage:
+	case events.Envelope_ValueMetric:
+		metric := EventValueMetric(event)
+		s.splunkClient.Post(metric)
+	case events.Envelope_CounterEvent:
+	case events.Envelope_Error:
+	case events.Envelope_ContainerMetric:
 	}
+}
+
+type SplunkValueMetric struct {
+	Name  string  `json:"name"`
+	Value float64 `json:"value"`
+	Unit  string  `json:"unit"`
+}
+
+func EventValueMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	valueMetric := nozzleEvent.ValueMetric
+	splunkValueMetric := SplunkValueMetric{
+		Name:  *valueMetric.Name,
+		Value: *valueMetric.Value,
+		Unit:  *valueMetric.Unit,
+	}
+
+	splunkEvent := &SplunkEvent{
+		Time:   nanoSecondsToSeconds(nozzleEvent.Timestamp),
+		Host:   *nozzleEvent.Ip,
+		Source: *nozzleEvent.Job, //todo: consider app vs cf once understand full metric set
+		Event:  splunkValueMetric,
+	}
+	return splunkEvent
+}
+
+func nanoSecondsToSeconds(nanoseconds *int64) string {
+	seconds := float64(*nanoseconds) * math.Pow(1000, -3)
+	return fmt.Sprintf("%.3f", seconds)
 }

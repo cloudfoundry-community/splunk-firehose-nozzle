@@ -30,6 +30,8 @@ copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing v
 
 ### Notes/todo
 
+* https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events
+
 * https://github.com/cloudfoundry-incubator/cf-lager
 * https://github.com/pivotal-golang/lager
 

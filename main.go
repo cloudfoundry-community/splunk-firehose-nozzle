@@ -31,6 +31,7 @@ func main() {
 		InsecureSkipVerify: config.InsecureSkipVerify,
 	}, nil)
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
+	//todo: do something more useful with error channel
 
 	splunkClient := nozzle.NewSplunkClient(config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify)
 	forwarder := nozzle.NewSplunkForwarder(splunkClient, events, errors)

@@ -13,11 +13,11 @@ import (
 )
 
 type SplunkEvent struct {
-	Time       float64 `json:"time,omitempty"`
-	Host       string  `json:"host,omitempty"`
-	Source     string  `json:"source,omitempty"`
-	SourceType string  `json:"sourcetype,omitempty"`
-	Index      string  `json:"index,omitempty"`
+	Time       string `json:"time,omitempty"`
+	Host       string `json:"host,omitempty"`
+	Source     string `json:"source,omitempty"`
+	SourceType string `json:"sourcetype,omitempty"`
+	Index      string `json:"index,omitempty"`
 
 	Event interface{} `json:"event"`
 }
