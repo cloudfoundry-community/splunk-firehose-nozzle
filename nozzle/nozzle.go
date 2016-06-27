@@ -36,20 +36,47 @@ func (s *SplunkNozzle) Run() error {
 }
 
 func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
-	eventType := *event.EventType
+	var splunkEvent *SplunkEvent = nil
 
-	switch eventType {
+	switch *event.EventType {
 	case events.Envelope_HttpStart:
 	case events.Envelope_HttpStop:
 	case events.Envelope_HttpStartStop:
 	case events.Envelope_LogMessage:
 	case events.Envelope_ValueMetric:
-		metric := EventValueMetric(event)
-		s.splunkClient.Post(metric)
+		splunkEvent = BuildValueMetric(event)
 	case events.Envelope_CounterEvent:
 	case events.Envelope_Error:
+		splunkEvent = BuildErrorMetric(event)
 	case events.Envelope_ContainerMetric:
 	}
+
+	if splunkEvent != nil {
+		s.splunkClient.Post(splunkEvent)
+	}
+}
+
+type SplunkErrorMetric struct {
+	Source  string `json:"source"`
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
+}
+
+func BuildErrorMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	errorMetric := nozzleEvent.Error
+	splunkErrorMetric := SplunkErrorMetric{
+		Source:  errorMetric.GetSource(),
+		Code:    errorMetric.GetCode(),
+		Message: errorMetric.GetMessage(),
+	}
+
+	splunkEvent := &SplunkEvent{
+		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
+		Host:   nozzleEvent.GetIp(),
+		Source: nozzleEvent.GetJob(),
+		Event:  splunkErrorMetric,
+	}
+	return splunkEvent
 }
 
 type SplunkValueMetric struct {
@@ -58,24 +85,24 @@ type SplunkValueMetric struct {
 	Unit  string  `json:"unit"`
 }
 
-func EventValueMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+func BuildValueMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 	valueMetric := nozzleEvent.ValueMetric
 	splunkValueMetric := SplunkValueMetric{
-		Name:  *valueMetric.Name,
-		Value: *valueMetric.Value,
-		Unit:  *valueMetric.Unit,
+		Name:  valueMetric.GetName(),
+		Value: valueMetric.GetValue(),
+		Unit:  valueMetric.GetUnit(),
 	}
 
 	splunkEvent := &SplunkEvent{
-		Time:   nanoSecondsToSeconds(nozzleEvent.Timestamp),
-		Host:   *nozzleEvent.Ip,
-		Source: *nozzleEvent.Job, //todo: consider app vs cf once understand full metric set
+		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
+		Host:   nozzleEvent.GetIp(),
+		Source: nozzleEvent.GetJob(), //todo: consider app vs cf once understand full metric set
 		Event:  splunkValueMetric,
 	}
 	return splunkEvent
 }
 
-func nanoSecondsToSeconds(nanoseconds *int64) string {
-	seconds := float64(*nanoseconds) * math.Pow(1000, -3)
+func nanoSecondsToSeconds(nanoseconds int64) string {
+	seconds := float64(nanoseconds) * math.Pow(1000, -3)
 	return fmt.Sprintf("%.3f", seconds)
 }

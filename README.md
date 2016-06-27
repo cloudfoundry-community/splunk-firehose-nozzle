@@ -28,7 +28,12 @@ For development against
 [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing values.
 
-### Notes/todo
+### Reminder/Todo
+
+* Never able to generate `events.Envelope_Error` in real cf deploy
+* Switch to batching events
+
+### Notes Todo
 
 * https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events
 
