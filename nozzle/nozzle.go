@@ -43,6 +43,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	case events.Envelope_HttpStop:
 	case events.Envelope_HttpStartStop:
 	case events.Envelope_LogMessage:
+		splunkEvent = BuildLogMessageMetric(event)
 	case events.Envelope_ValueMetric:
 		splunkEvent = BuildValueMetric(event)
 	case events.Envelope_CounterEvent:
@@ -56,30 +57,53 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	}
 }
 
-type SplunkErrorMetric struct {
-	Source  string `json:"source"`
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
+type CommonMetricFields struct {
+	Deployment string `json:"deployment"`
+	Index      string `json:"index"`
+	EventType  string `json:"eventType"`
 }
 
-func BuildErrorMetric(nozzleEvent *events.Envelope) *SplunkEvent {
-	errorMetric := nozzleEvent.Error
-	splunkErrorMetric := SplunkErrorMetric{
-		Source:  errorMetric.GetSource(),
-		Code:    errorMetric.GetCode(),
-		Message: errorMetric.GetMessage(),
-	}
+func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields) *SplunkEvent {
+	shared.Deployment = nozzleEvent.GetDeployment()
+	shared.Index = nozzleEvent.GetIndex()
+	shared.EventType = nozzleEvent.GetEventType().String()
 
 	splunkEvent := &SplunkEvent{
 		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
 		Host:   nozzleEvent.GetIp(),
-		Source: nozzleEvent.GetJob(),
-		Event:  splunkErrorMetric,
+		Source: nozzleEvent.GetJob(), //todo: consider app vs cf once understand full metric set
 	}
 	return splunkEvent
 }
 
+type SplunkLogMessageMetric struct {
+	CommonMetricFields
+	Message        string
+	MessageType    string
+	Timestamp      string
+	AppId          string
+	SourceType     string
+	SourceInstance string
+}
+
+func BuildLogMessageMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	logMessageMetric := nozzleEvent.LogMessage
+	splunkLogMessageMetric := SplunkLogMessageMetric{
+		Message:        string(logMessageMetric.GetMessage()),
+		MessageType:    logMessageMetric.GetMessageType().String(),
+		Timestamp:      nanoSecondsToSeconds(logMessageMetric.GetTimestamp()),
+		AppId:          logMessageMetric.GetAppId(),
+		SourceType:     logMessageMetric.GetSourceType(),
+		SourceInstance: logMessageMetric.GetSourceInstance(),
+	}
+
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkLogMessageMetric.CommonMetricFields)
+	splunkEvent.Event = splunkLogMessageMetric
+	return splunkEvent
+}
+
 type SplunkValueMetric struct {
+	CommonMetricFields
 	Name  string  `json:"name"`
 	Value float64 `json:"value"`
 	Unit  string  `json:"unit"`
@@ -93,12 +117,28 @@ func BuildValueMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 		Unit:  valueMetric.GetUnit(),
 	}
 
-	splunkEvent := &SplunkEvent{
-		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
-		Host:   nozzleEvent.GetIp(),
-		Source: nozzleEvent.GetJob(), //todo: consider app vs cf once understand full metric set
-		Event:  splunkValueMetric,
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkValueMetric.CommonMetricFields)
+	splunkEvent.Event = splunkValueMetric
+	return splunkEvent
+}
+
+type SplunkErrorMetric struct {
+	CommonMetricFields
+	Source  string `json:"source"`
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
+}
+
+func BuildErrorMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	errorMetric := nozzleEvent.Error
+	splunkErrorMetric := SplunkErrorMetric{
+		Source:  errorMetric.GetSource(),
+		Code:    errorMetric.GetCode(),
+		Message: errorMetric.GetMessage(),
 	}
+
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkErrorMetric.CommonMetricFields)
+	splunkEvent.Event = splunkErrorMetric
 	return splunkEvent
 }
 

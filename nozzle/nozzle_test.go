@@ -18,6 +18,15 @@ var _ = Describe("Nozzle", func() {
 		eventChannel        chan *events.Envelope
 		errorChannel        chan error
 		capturedSplunkEvent *SplunkEvent
+
+		origin        string
+		deployment    string
+		job           string
+		index         string
+		ip            string
+		timestampNano int64
+		envelope      *events.Envelope
+		eventType     events.Envelope_EventType
 	)
 
 	BeforeEach(func() {
@@ -31,6 +40,20 @@ var _ = Describe("Nozzle", func() {
 				return nil
 			},
 		}, eventChannel, errorChannel)
+
+		timestampNano = 1467040874046121775
+		deployment = "cf-warden"
+		index = "0"
+		ip = "10.244.0.22"
+		envelope = &events.Envelope{
+			Origin:     &origin,
+			EventType:  &eventType,
+			Timestamp:  &timestampNano,
+			Deployment: &deployment,
+			Job:        &job,
+			Index:      &index,
+			Ip:         &ip,
+		}
 	})
 
 	It("returns error on error channel", func() {
@@ -42,15 +65,86 @@ var _ = Describe("Nozzle", func() {
 		Expect(err).To(Equal(errors.New("Fail")))
 	})
 
-	Context("Envelope ValueMetric", func() {
-		var origin, deployment, job, index, ip string
-		var timestampNano int64
-		var envelopeValueMetric *events.ValueMetric
-		var eventType = events.Envelope_ValueMetric
+	Context("Envelope LogMessage", func() {
+		var message []byte
+		var messageType events.LogMessage_MessageType
+		var timestamp int64
+		var appId, sourceType, sourceInstance string
+		var envelopeLogMessage *events.LogMessage
 
+		BeforeEach(func() {
+			message = []byte("App debug log message")
+			messageType = events.LogMessage_OUT
+			timestamp = 1467128185055072010
+			appId = "8463ec45-543c-4492-9ec6-f52707f7dd2b"
+			sourceType = "App"
+			sourceInstance = "0"
+			envelopeLogMessage = &events.LogMessage{
+				Message:        message,
+				MessageType:    &messageType,
+				Timestamp:      &timestamp,
+				AppId:          &appId,
+				SourceType:     &sourceType,
+				SourceInstance: &sourceInstance,
+			}
+
+			job = "runner_z1"
+			origin = "dea_logging_agent"
+			eventType = events.Envelope_LogMessage
+			envelope.LogMessage = envelopeLogMessage
+		})
+
+		It("posts envelope", func() {
+			go func() { nozzle.Run() }()
+
+			eventChannel <- envelope
+
+			Eventually(func() *SplunkEvent {
+				return capturedSplunkEvent
+			}).ShouldNot(BeNil())
+			Expect(
+				capturedSplunkEvent.Event.(SplunkLogMessageMetric).EventType,
+			).To(Equal("LogMessage"))
+		})
+
+		Context("translates", func() {
+			var metric *SplunkEvent
+			BeforeEach(func() {
+				metric = BuildLogMessageMetric(envelope)
+			})
+
+			It("metadata", func() {
+				eventTimeSeconds := "1467040874.046"
+				Expect(metric.Time).To(Equal(eventTimeSeconds))
+				Expect(metric.Host).To(Equal(ip))
+				Expect(metric.Source).To(Equal(job))
+			})
+
+			It("common components", func() {
+				event := metric.Event.(SplunkLogMessageMetric)
+
+				Expect(event.Deployment).To(Equal("cf-warden"))
+				Expect(event.Index).To(Equal("0"))
+				Expect(event.EventType).To(Equal("LogMessage"))
+			})
+
+			It("log message specific data", func() {
+				event := metric.Event.(SplunkLogMessageMetric)
+
+				Expect(event.Message).To(Equal(string(message)))
+				Expect(event.MessageType).To(Equal("OUT"))
+				Expect(event.Timestamp).To(Equal("1467128185.055"))
+				Expect(event.AppId).To(Equal(appId))
+				Expect(event.SourceType).To(Equal(sourceType))
+				Expect(event.SourceInstance).To(Equal(sourceInstance))
+			})
+		})
+	})
+
+	Context("Envelope ValueMetric", func() {
 		var name, unit string
 		var value float64
-		var envelope *events.Envelope
+		var envelopeValueMetric *events.ValueMetric
 
 		BeforeEach(func() {
 			name = "ms_since_last_registry_update"
@@ -62,23 +156,10 @@ var _ = Describe("Nozzle", func() {
 				Unit:  &unit,
 			}
 
+			job = "router_z1"
 			origin = "MetronAgent"
 			eventType = events.Envelope_ValueMetric
-			timestampNano = 1467040874046121775
-			deployment = "cf-warden"
-			job = "router_z1"
-			index = "0"
-			ip = "10.244.0.22"
-			envelope = &events.Envelope{
-				Origin:      &origin,
-				EventType:   &eventType,
-				Timestamp:   &timestampNano,
-				Deployment:  &deployment,
-				Job:         &job,
-				Index:       &index,
-				Ip:          &ip,
-				ValueMetric: envelopeValueMetric,
-			}
+			envelope.ValueMetric = envelopeValueMetric
 		})
 
 		It("posts envelope", func() {
@@ -86,37 +167,49 @@ var _ = Describe("Nozzle", func() {
 
 			eventChannel <- envelope
 
-			Expect(capturedSplunkEvent).NotTo(BeNil())
+			Eventually(func() *SplunkEvent {
+				return capturedSplunkEvent
+			}).ShouldNot(BeNil())
+			Expect(
+				capturedSplunkEvent.Event.(SplunkValueMetric).EventType,
+			).To(Equal("ValueMetric"))
 		})
 
-		It("correctly translates splunk metadata", func() {
-			metric := BuildValueMetric(envelope)
+		Context("translates", func() {
+			var metric *SplunkEvent
+			BeforeEach(func() {
+				metric = BuildValueMetric(envelope)
+			})
 
-			eventTimeSeconds := "1467040874.046"
-			Expect(metric.Time).To(Equal(eventTimeSeconds))
-			Expect(metric.Host).To(Equal(ip))
-			Expect(metric.Source).To(Equal(job))
-		})
+			It("metadata", func() {
+				eventTimeSeconds := "1467040874.046"
+				Expect(metric.Time).To(Equal(eventTimeSeconds))
+				Expect(metric.Host).To(Equal(ip))
+				Expect(metric.Source).To(Equal(job))
+			})
 
-		It("correctly translates to splunk", func() {
-			metric := BuildValueMetric(envelope)
-			event := metric.Event.(SplunkValueMetric)
+			It("common components", func() {
+				event := metric.Event.(SplunkValueMetric)
 
-			Expect(event.Name).To(Equal(name))
-			Expect(event.Value).To(Equal(value))
-			Expect(event.Unit).To(Equal(unit))
+				Expect(event.Deployment).To(Equal("cf-warden"))
+				Expect(event.Index).To(Equal("0"))
+				Expect(event.EventType).To(Equal("ValueMetric"))
+			})
+
+			It("metric specific data", func() {
+				event := metric.Event.(SplunkValueMetric)
+
+				Expect(event.Name).To(Equal(name))
+				Expect(event.Value).To(Equal(value))
+				Expect(event.Unit).To(Equal(unit))
+			})
 		})
 	})
 
 	Context("Envelope Error", func() {
-		var origin, deployment, job, index, ip string
-		var timestampNano int64
-		var envelopeError *events.Error
-		var eventType = events.Envelope_ValueMetric
-
 		var source, message string
 		var code int32
-		var envelope *events.Envelope
+		var envelopeError *events.Error
 
 		BeforeEach(func() {
 			source = "some_source"
@@ -128,23 +221,10 @@ var _ = Describe("Nozzle", func() {
 				Message: &message,
 			}
 
+			job = "router_z1"
 			origin = "Unknown"
 			eventType = events.Envelope_Error
-			timestampNano = 1467040874046121775
-			deployment = "cf-warden"
-			job = "router_z1"
-			index = "0"
-			ip = "10.244.0.22"
-			envelope = &events.Envelope{
-				Origin:     &origin,
-				EventType:  &eventType,
-				Timestamp:  &timestampNano,
-				Deployment: &deployment,
-				Job:        &job,
-				Index:      &index,
-				Ip:         &ip,
-				Error:      envelopeError,
-			}
+			envelope.Error = envelopeError
 		})
 
 		It("posts envelope", func() {
@@ -152,25 +232,42 @@ var _ = Describe("Nozzle", func() {
 
 			eventChannel <- envelope
 
-			Expect(capturedSplunkEvent).NotTo(BeNil())
+			Eventually(func() *SplunkEvent {
+				return capturedSplunkEvent
+			}).ShouldNot(BeNil())
+			Expect(
+				capturedSplunkEvent.Event.(SplunkErrorMetric).EventType,
+			).To(Equal("Error"))
 		})
 
-		It("correctly translates splunk metadata", func() {
-			metric := BuildErrorMetric(envelope)
+		Context("translates", func() {
+			var metric *SplunkEvent
+			BeforeEach(func() {
+				metric = BuildErrorMetric(envelope)
+			})
 
-			eventTimeSeconds := "1467040874.046"
-			Expect(metric.Time).To(Equal(eventTimeSeconds))
-			Expect(metric.Host).To(Equal(ip))
-			Expect(metric.Source).To(Equal(job))
-		})
+			It("metadata", func() {
+				eventTimeSeconds := "1467040874.046"
+				Expect(metric.Time).To(Equal(eventTimeSeconds))
+				Expect(metric.Host).To(Equal(ip))
+				Expect(metric.Source).To(Equal(job))
+			})
 
-		It("correctly translates to splunk", func() {
-			metric := BuildErrorMetric(envelope)
-			event := metric.Event.(SplunkErrorMetric)
+			It("common components", func() {
+				event := metric.Event.(SplunkErrorMetric)
 
-			Expect(event.Source).To(Equal(source))
-			Expect(event.Code).To(Equal(code))
-			Expect(event.Message).To(Equal(message))
+				Expect(event.Deployment).To(Equal("cf-warden"))
+				Expect(event.Index).To(Equal("0"))
+				Expect(event.EventType).To(Equal("Error"))
+			})
+
+			It("metric specific data", func() {
+				event := metric.Event.(SplunkErrorMetric)
+
+				Expect(event.Source).To(Equal(source))
+				Expect(event.Code).To(Equal(code))
+				Expect(event.Message).To(Equal(message))
+			})
 		})
 	})
 })
