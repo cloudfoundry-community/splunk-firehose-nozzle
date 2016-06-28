@@ -206,6 +206,71 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
+	Context("Envelope CounterEvent", func() {
+		var name string
+		var delta, total uint64
+		var counterEvent *events.CounterEvent
+
+		BeforeEach(func() {
+			name = "registry_message.uaa"
+			delta = 1
+			total = 8196
+			counterEvent = &events.CounterEvent{
+				Name:  &name,
+				Delta: &delta,
+				Total: &total,
+			}
+
+			job = "router_z1"
+			origin = "gorouter"
+			eventType = events.Envelope_CounterEvent
+			envelope.CounterEvent = counterEvent
+		})
+
+		It("posts envelope", func() {
+			go func() { nozzle.Run() }()
+
+			eventChannel <- envelope
+
+			Eventually(func() *SplunkEvent {
+				return capturedSplunkEvent
+			}).ShouldNot(BeNil())
+			Expect(
+				capturedSplunkEvent.Event.(SplunkCounterEventMetric).EventType,
+			).To(Equal("CounterEvent"))
+		})
+
+		Context("translates", func() {
+			var metric *SplunkEvent
+			BeforeEach(func() {
+				metric = BuildCounterEventMetric(envelope)
+			})
+
+			It("metadata", func() {
+				eventTimeSeconds := "1467040874.046"
+				Expect(metric.Time).To(Equal(eventTimeSeconds))
+				Expect(metric.Host).To(Equal(ip))
+				Expect(metric.Source).To(Equal(job))
+			})
+
+			It("common components", func() {
+				event := metric.Event.(SplunkCounterEventMetric)
+
+				Expect(event.Deployment).To(Equal("cf-warden"))
+				Expect(event.Index).To(Equal("0"))
+				Expect(event.EventType).To(Equal("CounterEvent"))
+			})
+
+			It("metric specific data", func() {
+				event := metric.Event.(SplunkCounterEventMetric)
+
+				Expect(event.Name).To(Equal(name))
+				Expect(event.Delta).To(Equal(delta))
+				Expect(event.Total).To(Equal(total))
+			})
+		})
+	})
+
 	Context("Envelope Error", func() {
 		var source, message string
 		var code int32

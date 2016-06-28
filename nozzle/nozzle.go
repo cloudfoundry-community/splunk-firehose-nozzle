@@ -47,6 +47,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	case events.Envelope_ValueMetric:
 		splunkEvent = BuildValueMetric(event)
 	case events.Envelope_CounterEvent:
+		splunkEvent = BuildCounterEventMetric(event)
 	case events.Envelope_Error:
 		splunkEvent = BuildErrorMetric(event)
 	case events.Envelope_ContainerMetric:
@@ -78,12 +79,12 @@ func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields)
 
 type SplunkLogMessageMetric struct {
 	CommonMetricFields
-	Message        string
-	MessageType    string
-	Timestamp      string
-	AppId          string
-	SourceType     string
-	SourceInstance string
+	Message        string `json:"logMessage"`
+	MessageType    string `json:"MessageType"`
+	Timestamp      string `json:"timestampe"`
+	AppId          string `json:"appId"`
+	SourceType     string `json:"sourceType"`
+	SourceInstance string `json:"sourceInstance"`
 }
 
 func BuildLogMessageMetric(nozzleEvent *events.Envelope) *SplunkEvent {
@@ -119,6 +120,26 @@ func BuildValueMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 
 	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkValueMetric.CommonMetricFields)
 	splunkEvent.Event = splunkValueMetric
+	return splunkEvent
+}
+
+type SplunkCounterEventMetric struct {
+	CommonMetricFields
+	Name  string `json:"name"`
+	Delta uint64 `json:"delta"`
+	Total uint64 `json:"total"`
+}
+
+func BuildCounterEventMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	counterEvent := nozzleEvent.GetCounterEvent()
+	splunkCounterEventMetric := SplunkCounterEventMetric{
+		Name:  counterEvent.GetName(),
+		Delta: counterEvent.GetDelta(),
+		Total: counterEvent.GetTotal(),
+	}
+
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkCounterEventMetric.CommonMetricFields)
+	splunkEvent.Event = splunkCounterEventMetric
 	return splunkEvent
 }
 
