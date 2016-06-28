@@ -1,6 +1,9 @@
 package nozzle
 
 import (
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math"
 
@@ -42,6 +45,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	case events.Envelope_HttpStart:
 	case events.Envelope_HttpStop:
 	case events.Envelope_HttpStartStop:
+		splunkEvent = BuildHttpStartStopMetric(event)
 	case events.Envelope_LogMessage:
 		splunkEvent = BuildLogMessageMetric(event)
 	case events.Envelope_ValueMetric:
@@ -78,11 +82,52 @@ func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields)
 	return splunkEvent
 }
 
+type SplunkHttpStartStopMetric struct {
+	CommonMetricFields
+	StartTimestamp int64    `json:"startTimestamp"`
+	StopTimestamp  int64    `json:"stopTimestamp"`
+	RequestId      string   `json:"requestId"`
+	PeerType       string   `json:"peerType"`
+	Method         string   `json:"method"`
+	Uri            string   `json:"uri"`
+	RemoteAddress  string   `json:"remoteAddress"`
+	UserAgent      string   `json:"userAgent"`
+	StatusCode     int32    `json:"statusCode"`
+	ContentLength  int64    `json:"contentLength"`
+	ApplicationId  string   `json:"applicationId"`
+	InstanceIndex  int32    `json:"instanceIndex"`
+	Forwarded      []string `json:"forwarded"`
+}
+
+func BuildHttpStartStopMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	startStop := nozzleEvent.HttpStartStop
+
+	splunkHttpStartStopMetric := SplunkHttpStartStopMetric{
+		StartTimestamp: startStop.GetStartTimestamp(),
+		StopTimestamp:  startStop.GetStopTimestamp(),
+		RequestId:      uuidToHex(startStop.GetRequestId()),
+		PeerType:       startStop.GetPeerType().String(),
+		Method:         startStop.GetMethod().String(),
+		Uri:            startStop.GetUri(),
+		RemoteAddress:  startStop.GetRemoteAddress(),
+		UserAgent:      startStop.GetUserAgent(),
+		StatusCode:     startStop.GetStatusCode(),
+		ContentLength:  startStop.GetContentLength(),
+		ApplicationId:  uuidToHex(startStop.GetApplicationId()),
+		InstanceIndex:  startStop.GetInstanceIndex(),
+		Forwarded:      startStop.GetForwarded(),
+	}
+
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkHttpStartStopMetric.CommonMetricFields)
+	splunkEvent.Event = splunkHttpStartStopMetric
+	return splunkEvent
+}
+
 type SplunkLogMessageMetric struct {
 	CommonMetricFields
 	Message        string `json:"logMessage"`
 	MessageType    string `json:"MessageType"`
-	Timestamp      string `json:"timestampe"`
+	Timestamp      int64  `json:"timestamp"`
 	AppId          string `json:"appId"`
 	SourceType     string `json:"sourceType"`
 	SourceInstance string `json:"sourceInstance"`
@@ -93,7 +138,7 @@ func BuildLogMessageMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 	splunkLogMessageMetric := SplunkLogMessageMetric{
 		Message:        string(logMessageMetric.GetMessage()),
 		MessageType:    logMessageMetric.GetMessageType().String(),
-		Timestamp:      nanoSecondsToSeconds(logMessageMetric.GetTimestamp()),
+		Timestamp:      logMessageMetric.GetTimestamp(),
 		AppId:          logMessageMetric.GetAppId(),
 		SourceType:     logMessageMetric.GetSourceType(),
 		SourceInstance: logMessageMetric.GetSourceInstance(),
@@ -191,4 +236,30 @@ func BuildContainerMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 func nanoSecondsToSeconds(nanoseconds int64) string {
 	seconds := float64(nanoseconds) * math.Pow(1000, -3)
 	return fmt.Sprintf("%.3f", seconds)
+}
+
+const dashByte byte = '-'
+
+func uuidToHex(uuid *events.UUID) string {
+	if uuid == nil {
+		return ""
+	}
+
+	buffer := bytes.NewBuffer(make([]byte, 0, 16))
+	binary.Write(buffer, binary.LittleEndian, uuid.Low)
+	binary.Write(buffer, binary.LittleEndian, uuid.High)
+	bufferBytes := buffer.Bytes()
+
+	hexBuffer := make([]byte, 36)
+	hex.Encode(hexBuffer[0:8], bufferBytes[0:4])
+	hexBuffer[8] = dashByte
+	hex.Encode(hexBuffer[9:13], bufferBytes[4:6])
+	hexBuffer[13] = dashByte
+	hex.Encode(hexBuffer[14:18], bufferBytes[6:8])
+	hexBuffer[18] = dashByte
+	hex.Encode(hexBuffer[19:23], bufferBytes[8:10])
+	hexBuffer[23] = dashByte
+	hex.Encode(hexBuffer[24:], bufferBytes[10:])
+
+	return string(hexBuffer)
 }

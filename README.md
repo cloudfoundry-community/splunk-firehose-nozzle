@@ -33,6 +33,7 @@ copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing v
 * Never able to generate `events.Envelope_Error` in real cf deploy
 * Switch to batching events
 * Make event types configurable?
+* omitempty on all the splunk json?
 
 For release repo, add errand to setup uaa client, see:
 https://github.com/cloudfoundry-community/admin-ui-boshrelease/tree/master/jobs/register_admin_ui
