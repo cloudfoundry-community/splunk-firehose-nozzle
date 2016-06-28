@@ -51,6 +51,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	case events.Envelope_Error:
 		splunkEvent = BuildErrorMetric(event)
 	case events.Envelope_ContainerMetric:
+		splunkEvent = BuildContainerMetric(event)
 	}
 
 	if splunkEvent != nil {
@@ -160,6 +161,30 @@ func BuildErrorMetric(nozzleEvent *events.Envelope) *SplunkEvent {
 
 	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkErrorMetric.CommonMetricFields)
 	splunkEvent.Event = splunkErrorMetric
+	return splunkEvent
+}
+
+type SplunkContainerMetric struct {
+	CommonMetricFields
+	ApplicationId string  `json:"applicationId"`
+	InstanceIndex int32   `json:"instanceIndex"`
+	CpuPercentage float64 `json:"cpuPercentage"`
+	MemoryBytes   uint64  `json:"memoryBytes"`
+	DiskBytes     uint64  `json:"diskBytes"`
+}
+
+func BuildContainerMetric(nozzleEvent *events.Envelope) *SplunkEvent {
+	containerMetric := nozzleEvent.GetContainerMetric()
+	splunkContainerMetric := SplunkContainerMetric{
+		ApplicationId: containerMetric.GetApplicationId(),
+		InstanceIndex: containerMetric.GetInstanceIndex(),
+		CpuPercentage: containerMetric.GetCpuPercentage(),
+		MemoryBytes:   containerMetric.GetMemoryBytes(),
+		DiskBytes:     containerMetric.GetDiskBytes(),
+	}
+
+	splunkEvent := buildSplunkMetric(nozzleEvent, &splunkContainerMetric.CommonMetricFields)
+	splunkEvent.Event = splunkContainerMetric
 	return splunkEvent
 }
 

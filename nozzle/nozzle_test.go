@@ -335,6 +335,79 @@ var _ = Describe("Nozzle", func() {
 			})
 		})
 	})
+
+	Context("Envelope ContainerMetric", func() {
+		var applicationId string
+		var instanceIndex int32
+		var cpuPercentage float64
+		var memoryBytes, diskBytes uint64
+		var containerMetric *events.ContainerMetric
+
+		BeforeEach(func() {
+			applicationId = "8463ec45-543c-4492-9ec6-f52707f7dd2b"
+			instanceIndex = 1
+			cpuPercentage = 1.0916583859477904
+			memoryBytes = 30011392
+			diskBytes = 15005696
+			containerMetric = &events.ContainerMetric{
+				ApplicationId: &applicationId,
+				InstanceIndex: &instanceIndex,
+				CpuPercentage: &cpuPercentage,
+				MemoryBytes:   &memoryBytes,
+				DiskBytes:     &diskBytes,
+			}
+
+			job = "runner_z1"
+			origin = "DEA"
+			eventType = events.Envelope_ContainerMetric
+			envelope.ContainerMetric = containerMetric
+		})
+
+		It("posts envelope", func() {
+			go func() { nozzle.Run() }()
+
+			eventChannel <- envelope
+
+			Eventually(func() *SplunkEvent {
+				return capturedSplunkEvent
+			}).ShouldNot(BeNil())
+			Expect(
+				capturedSplunkEvent.Event.(SplunkContainerMetric).EventType,
+			).To(Equal("ContainerMetric"))
+		})
+
+		Context("translates", func() {
+			var metric *SplunkEvent
+			BeforeEach(func() {
+				metric = BuildContainerMetric(envelope)
+			})
+
+			It("metadata", func() {
+				eventTimeSeconds := "1467040874.046"
+				Expect(metric.Time).To(Equal(eventTimeSeconds))
+				Expect(metric.Host).To(Equal(ip))
+				Expect(metric.Source).To(Equal(job))
+			})
+
+			It("common components", func() {
+				event := metric.Event.(SplunkContainerMetric)
+
+				Expect(event.Deployment).To(Equal("cf-warden"))
+				Expect(event.Index).To(Equal("0"))
+				Expect(event.EventType).To(Equal("ContainerMetric"))
+			})
+
+			It("metric specific data", func() {
+				event := metric.Event.(SplunkContainerMetric)
+
+				Expect(event.ApplicationId).To(Equal(applicationId))
+				Expect(event.InstanceIndex).To(Equal(instanceIndex))
+				Expect(event.CpuPercentage).To(Equal(cpuPercentage))
+				Expect(event.MemoryBytes).To(Equal(memoryBytes))
+				Expect(event.DiskBytes).To(Equal(diskBytes))
+			})
+		})
+	})
 })
 
 type MockSplunkClient struct {
