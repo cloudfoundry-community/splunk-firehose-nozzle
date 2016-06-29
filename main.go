@@ -33,7 +33,9 @@ func main() {
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
 	//todo: do something more useful with error channel
 
-	splunkClient := nozzle.NewSplunkClient(config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify)
+	splunkClient := nozzle.NewSplunkClient(
+		config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify, logger,
+	)
 	forwarder := nozzle.NewSplunkForwarder(splunkClient, events, errors)
 	err = forwarder.Run()
 	if err != nil {

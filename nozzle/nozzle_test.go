@@ -35,7 +35,7 @@ var _ = Describe("Nozzle", func() {
 
 		capturedSplunkEvent = nil
 		nozzle = NewSplunkForwarder(&MockSplunkClient{
-			PostFn: func(event *SplunkEvent) error {
+			PostSingleFn: func(event *SplunkEvent) error {
 				capturedSplunkEvent = event
 				return nil
 			},
@@ -533,12 +533,20 @@ var _ = Describe("Nozzle", func() {
 })
 
 type MockSplunkClient struct {
-	PostFn func(event *SplunkEvent) error
+	PostSingleFn func(event *SplunkEvent) error
+	PostBatchFn  func(event []*SplunkEvent) error
 }
 
-func (m *MockSplunkClient) Post(event *SplunkEvent) error {
-	if m.PostFn != nil {
-		return m.PostFn(event)
+func (m *MockSplunkClient) PostSingle(event *SplunkEvent) error {
+	if m.PostSingleFn != nil {
+		return m.PostSingleFn(event)
+	}
+	return nil
+}
+
+func (m *MockSplunkClient) PostBatch(event []*SplunkEvent) error {
+	if m.PostBatchFn != nil {
+		return m.PostBatchFn(event)
 	}
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry-incubator/cf_http"
+	"github.com/pivotal-golang/lager"
 )
 
 type SplunkEvent struct {
@@ -23,16 +24,18 @@ type SplunkEvent struct {
 }
 
 type SplunkClient interface {
-	Post(*SplunkEvent) error
+	PostSingle(*SplunkEvent) error
+	PostBatch([]*SplunkEvent) error
 }
 
 type splunkClient struct {
 	httpClient  *http.Client
 	splunkToken string
 	splunkHost  string
+	logger      lager.Logger
 }
 
-func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool) SplunkClient {
+func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
 	httpClient := cf_http.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
@@ -43,17 +46,44 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 		httpClient:  httpClient,
 		splunkToken: splunkToken,
 		splunkHost:  splunkHost,
+		logger:      logger,
 	}
 }
 
-func (s *splunkClient) Post(event *SplunkEvent) error {
+func (s *splunkClient) PostSingle(event *SplunkEvent) error {
 	postBody, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
+	return s.send(&postBody)
+}
+
+func (s *splunkClient) PostBatch(events []*SplunkEvent) error {
+	bodyBuffer := new(bytes.Buffer)
+	for i, event := range events {
+		eventJson, err := json.Marshal(event)
+		if err == nil {
+			bodyBuffer.Write(eventJson)
+			if i < len(events)-1 {
+				bodyBuffer.Write([]byte("\n\n"))
+			}
+		} else {
+			s.logger.Error("Error marshalling event", err,
+				lager.Data{
+					"event": fmt.Sprintf("%+v", event),
+				},
+			)
+		}
+	}
+
+	bodyBytes := bodyBuffer.Bytes()
+	return s.send(&bodyBytes)
+}
+
+func (s *splunkClient) send(postBody *[]byte) error {
 	endpoint := fmt.Sprintf("%s/services/collector", s.splunkHost)
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(postBody))
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
 	if err != nil {
 		return err
 	}

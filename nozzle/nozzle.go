@@ -59,7 +59,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	}
 
 	if splunkEvent != nil {
-		s.splunkClient.Post(splunkEvent)
+		s.splunkClient.PostSingle(splunkEvent)
 	}
 }
 
@@ -77,7 +77,7 @@ func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields)
 	splunkEvent := &SplunkEvent{
 		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
 		Host:   nozzleEvent.GetIp(),
-		Source: nozzleEvent.GetJob(), //todo: consider app vs cf once understand full metric set
+		Source: nozzleEvent.GetJob(),
 	}
 	return splunkEvent
 }
