@@ -17,30 +17,47 @@ type Nozzle interface {
 }
 
 type SplunkNozzle struct {
-	splunkClient SplunkClient
-	events       <-chan *events.Envelope
-	errors       <-chan error
-	batch        []*SplunkEvent
-	logger       lager.Logger
+	splunkClient       SplunkClient
+	includedEventTypes map[events.Envelope_EventType]bool
+	eventsChannel      <-chan *events.Envelope
+	errorsChannel      <-chan error
+	batch              []*SplunkEvent
+	logger             lager.Logger
 }
 
-func NewSplunkForwarder(splunkClient SplunkClient, events <-chan *events.Envelope, errors <-chan error, logger lager.Logger) Nozzle {
-	return &SplunkNozzle{
-		splunkClient: splunkClient,
-		events:       events,
-		errors:       errors,
-		batch:        []*SplunkEvent{},
-		logger:       logger,
+func NewSplunkForwarder(splunkClient SplunkClient, selectedEventTypes []events.Envelope_EventType, eventsChannel <-chan *events.Envelope, errors <-chan error, logger lager.Logger) Nozzle {
+	splunkNozzle := &SplunkNozzle{
+		splunkClient:  splunkClient,
+		eventsChannel: eventsChannel,
+		errorsChannel: errors,
+		batch:         []*SplunkEvent{},
+		logger:        logger,
 	}
+
+	splunkNozzle.includedEventTypes = map[events.Envelope_EventType]bool{
+		events.Envelope_HttpStart:       false,
+		events.Envelope_HttpStop:        false,
+		events.Envelope_HttpStartStop:   false,
+		events.Envelope_LogMessage:      false,
+		events.Envelope_ValueMetric:     false,
+		events.Envelope_CounterEvent:    false,
+		events.Envelope_Error:           false,
+		events.Envelope_ContainerMetric: false,
+	}
+	for _, selectedEventType := range selectedEventTypes {
+		splunkNozzle.includedEventTypes[selectedEventType] = true
+	}
+
+	return splunkNozzle
 }
 
 func (s *SplunkNozzle) Run(flushWindow time.Duration) error {
 	ticker := time.Tick(flushWindow)
 	for {
 		select {
-		case err := <-s.errors:
+		case err := <-s.errorsChannel:
 			return err
-		case event := <-s.events:
+		case event := <-s.eventsChannel:
 			s.handleEvent(event)
 		case <-ticker:
 			if len(s.batch) > 0 {
@@ -55,7 +72,12 @@ func (s *SplunkNozzle) Run(flushWindow time.Duration) error {
 func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	var splunkEvent *SplunkEvent = nil
 
-	switch *event.EventType {
+	eventType := event.GetEventType()
+	if !s.includedEventTypes[eventType] {
+		return
+	}
+
+	switch eventType {
 	case events.Envelope_HttpStart:
 	case events.Envelope_HttpStop:
 	case events.Envelope_HttpStartStop:

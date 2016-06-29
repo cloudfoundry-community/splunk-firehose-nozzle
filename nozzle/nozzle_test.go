@@ -18,6 +18,7 @@ var _ = Describe("Nozzle", func() {
 		nozzle Nozzle
 		logger lager.Logger
 
+		allEventTypes        []events.Envelope_EventType
 		eventChannel         chan *events.Envelope
 		errorChannel         chan error
 		capturedSplunkEvents []*SplunkEvent
@@ -36,6 +37,14 @@ var _ = Describe("Nozzle", func() {
 		logger = lager.NewLogger("test")
 		eventChannel = make(chan *events.Envelope)
 		errorChannel = make(chan error, 1)
+		allEventTypes = []events.Envelope_EventType{
+			events.Envelope_HttpStartStop,
+			events.Envelope_LogMessage,
+			events.Envelope_ValueMetric,
+			events.Envelope_CounterEvent,
+			events.Envelope_Error,
+			events.Envelope_ContainerMetric,
+		}
 
 		capturedSplunkEvents = nil
 		nozzle = NewSplunkForwarder(&MockSplunkClient{
@@ -43,7 +52,7 @@ var _ = Describe("Nozzle", func() {
 				capturedSplunkEvents = events
 				return nil
 			},
-		}, eventChannel, errorChannel, logger)
+		}, allEventTypes, eventChannel, errorChannel, logger)
 
 		timestampNano = 1467040874046121775
 		deployment = "cf-warden"
@@ -69,7 +78,7 @@ var _ = Describe("Nozzle", func() {
 		Expect(err).To(Equal(errors.New("Fail")))
 	})
 
-	Context("Envelope HttpStartStop", func() {
+	Context("envelope HttpStartStop", func() {
 		var envelopeHttpStartStop *events.HttpStartStop
 		var startTimestamp, stopTimestamp int64
 		var requestId events.UUID
@@ -192,7 +201,7 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
-	Context("Envelope LogMessage", func() {
+	Context("envelope LogMessage", func() {
 		var message []byte
 		var messageType events.LogMessage_MessageType
 		var timestamp int64
@@ -269,7 +278,7 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
-	Context("Envelope ValueMetric", func() {
+	Context("envelope ValueMetric", func() {
 		var name, unit string
 		var value float64
 		var envelopeValueMetric *events.ValueMetric
@@ -335,7 +344,7 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
-	Context("Envelope CounterEvent", func() {
+	Context("envelope CounterEvent", func() {
 		var name string
 		var delta, total uint64
 		var counterEvent *events.CounterEvent
@@ -401,7 +410,7 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
-	Context("Envelope Error", func() {
+	Context("envelope Error", func() {
 		var source, message string
 		var code int32
 		var envelopeError *events.Error
@@ -466,7 +475,7 @@ var _ = Describe("Nozzle", func() {
 		})
 	})
 
-	Context("Envelope ContainerMetric", func() {
+	Context("envelope ContainerMetric", func() {
 		var applicationId string
 		var instanceIndex int32
 		var cpuPercentage float64
@@ -537,6 +546,114 @@ var _ = Describe("Nozzle", func() {
 				Expect(event.MemoryBytes).To(Equal(memoryBytes))
 				Expect(event.DiskBytes).To(Equal(diskBytes))
 			})
+		})
+	})
+
+	Context("Filters events", func() {
+		var newEvent = func(e events.Envelope_EventType) *events.Envelope {
+			newEventType := e
+			return &events.Envelope{
+				Origin:     &origin,
+				EventType:  &newEventType,
+				Timestamp:  &timestampNano,
+				Deployment: &deployment,
+				Job:        &job,
+				Index:      &index,
+				Ip:         &ip,
+			}
+		}
+
+		var sendAllEventTypes = func() {
+			envelope = newEvent(events.Envelope_HttpStartStop)
+			envelope.HttpStartStop = &events.HttpStartStop{}
+			eventChannel <- envelope
+
+			envelope = newEvent(events.Envelope_LogMessage)
+			envelope.LogMessage = &events.LogMessage{}
+			eventChannel <- envelope
+
+			envelope = newEvent(events.Envelope_ValueMetric)
+			envelope.ValueMetric = &events.ValueMetric{}
+			eventChannel <- envelope
+
+			envelope = newEvent(events.Envelope_CounterEvent)
+			envelope.CounterEvent = &events.CounterEvent{}
+			eventChannel <- envelope
+
+			envelope = newEvent(events.Envelope_Error)
+			envelope.Error = &events.Error{}
+			eventChannel <- envelope
+
+			envelope = newEvent(events.Envelope_ContainerMetric)
+			envelope.ContainerMetric = &events.ContainerMetric{}
+			eventChannel <- envelope
+		}
+
+		It("all events", func() {
+			capturedSplunkEvents = []*SplunkEvent{}
+			nozzle = NewSplunkForwarder(&MockSplunkClient{
+				PostBatchFn: func(events []*SplunkEvent) error {
+					capturedSplunkEvents = append(capturedSplunkEvents, events...)
+					return nil
+				},
+			}, allEventTypes, eventChannel, errorChannel, logger)
+
+			go func() { nozzle.Run(time.Millisecond * 100) }()
+
+			sendAllEventTypes()
+
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
+			}).Should(HaveLen(6))
+		})
+
+		It("filters events", func() {
+			selectedEventTypes := []events.Envelope_EventType{
+				events.Envelope_ValueMetric,
+				events.Envelope_CounterEvent,
+				events.Envelope_ContainerMetric,
+			}
+
+			capturedSplunkEvents = []*SplunkEvent{}
+			nozzle = NewSplunkForwarder(&MockSplunkClient{
+				PostBatchFn: func(events []*SplunkEvent) error {
+					capturedSplunkEvents = append(capturedSplunkEvents, events...)
+					return nil
+				},
+			}, selectedEventTypes, eventChannel, errorChannel, logger)
+
+			go func() { nozzle.Run(time.Millisecond * 100) }()
+
+			sendAllEventTypes()
+
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
+			}).Should(HaveLen(3))
+		})
+
+		It("filters to correct type", func() {
+			selectedEventTypes := []events.Envelope_EventType{
+				events.Envelope_ValueMetric,
+			}
+
+			capturedSplunkEvents = []*SplunkEvent{}
+			nozzle = NewSplunkForwarder(&MockSplunkClient{
+				PostBatchFn: func(events []*SplunkEvent) error {
+					capturedSplunkEvents = append(capturedSplunkEvents, events...)
+					return nil
+				},
+			}, selectedEventTypes, eventChannel, errorChannel, logger)
+
+			go func() { nozzle.Run(time.Millisecond * 100) }()
+
+			sendAllEventTypes()
+
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
+			}).Should(HaveLen(1))
+			Expect(
+				capturedSplunkEvents[0].Event.(SplunkValueMetric).EventType,
+			).To(Equal("ValueMetric"))
 		})
 	})
 })

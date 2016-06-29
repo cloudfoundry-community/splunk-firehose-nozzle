@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/cloudfoundry-incubator/cf-lager"
@@ -20,7 +21,7 @@ func main() {
 	cf_lager.AddFlags(flag.CommandLine)
 	flag.Parse()
 
-	logger, _ := cf_lager.New("logsearch-broker")
+	logger, _ := cf_lager.New("splunk-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
 	config, err := config.Parse()
@@ -38,8 +39,9 @@ func main() {
 	splunkClient := nozzle.NewSplunkClient(
 		config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify, logger,
 	)
+	logger.Info(fmt.Sprintf("Forwarding events: %s", config.SelectedEvents))
 	forwarder := nozzle.NewSplunkForwarder(
-		splunkClient, events, errors, logger,
+		splunkClient, config.SelectedEvents, events, errors, logger,
 	)
 	err = forwarder.Run(flushWindow)
 	if err != nil {

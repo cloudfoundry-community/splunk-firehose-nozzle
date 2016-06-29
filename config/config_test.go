@@ -3,6 +3,8 @@ package config_test
 import (
 	"os"
 
+	"github.com/cloudfoundry/sonde-go/events"
+
 	. "github.com/cf-platform-eng/splunk-firehose-nozzle/config"
 
 	. "github.com/onsi/ginkgo"
@@ -117,5 +119,47 @@ var _ = Describe("config", func() {
 
 		Expect(err).To(BeNil())
 		Expect(config.SplunkHost).To(Equal(splunkHostValue))
+	})
+
+	Context("selected events", func() {
+		It("defaults", func() {
+			config, err := Parse()
+
+			Expect(err).To(BeNil())
+			Expect(config.SelectedEvents).To(HaveLen(2))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_ValueMetric))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_CounterEvent))
+		})
+
+		It("pulls selectedEvents from env (single value)", func() {
+			os.Setenv("NOZZLE_SELECTED_EVENTS", "HttpStartStop")
+
+			config, err := Parse()
+
+			Expect(err).To(BeNil())
+			Expect(config.SelectedEvents).To(HaveLen(1))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_HttpStartStop))
+		})
+
+		It("pulls selectedEvents from env (multiple values)", func() {
+			os.Setenv("NOZZLE_SELECTED_EVENTS", "CounterEvent, HttpStartStop,ContainerMetric")
+
+			config, err := Parse()
+
+			Expect(err).To(BeNil())
+			Expect(config.SelectedEvents).To(HaveLen(3))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_CounterEvent))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_HttpStartStop))
+			Expect(config.SelectedEvents).To(ContainElement(events.Envelope_ContainerMetric))
+		})
+
+		It("errors on bad value", func() {
+			os.Setenv("NOZZLE_SELECTED_EVENTS", "Foo")
+
+			_, err := Parse()
+
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Foo"))
+		})
 	})
 })

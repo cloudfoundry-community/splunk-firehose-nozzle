@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
+
+	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type Config struct {
@@ -14,9 +17,15 @@ type Config struct {
 	TrafficControllerURL   string
 	FirehoseSubscriptionID string
 	InsecureSkipVerify     bool
+	SelectedEvents         []events.Envelope_EventType
 
 	SplunkToken string
 	SplunkHost  string
+}
+
+var defaultEvents = []events.Envelope_EventType{
+	events.Envelope_ValueMetric,
+	events.Envelope_CounterEvent,
 }
 
 func Parse() (*Config, error) {
@@ -40,6 +49,11 @@ func Parse() (*Config, error) {
 	}
 
 	err := getBoolEnv("NOZZLE_INSECURE_SKIP_VERIFY", &config.InsecureSkipVerify)
+	if err != nil {
+		return nil, err
+	}
+
+	err = parseSelectedEvents(&config.SelectedEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -69,5 +83,27 @@ func getBoolEnv(name string, value *bool) error {
 	}
 
 	*value = parsedEnvValue
+	return nil
+}
+
+func parseSelectedEvents(value *[]events.Envelope_EventType) error {
+	envValue := os.Getenv("NOZZLE_SELECTED_EVENTS")
+	if envValue == "" {
+		*value = defaultEvents
+	} else {
+		selectedEvents := []events.Envelope_EventType{}
+
+		for _, envValueSplit := range strings.Split(envValue, ",") {
+			envValueSlitTrimmed := strings.TrimSpace(envValueSplit)
+			val, found := events.Envelope_EventType_value[envValueSlitTrimmed]
+			if found {
+				selectedEvents = append(selectedEvents, events.Envelope_EventType(val))
+			} else {
+				return errors.New(fmt.Sprintf("[%s] is required", envValueSlitTrimmed))
+			}
+		}
+		*value = selectedEvents
+	}
+
 	return nil
 }
