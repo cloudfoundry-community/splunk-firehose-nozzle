@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"time"
 
 	"github.com/cloudfoundry-incubator/cf-lager"
 	"github.com/cloudfoundry/noaa/consumer"
@@ -12,6 +13,8 @@ import (
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/config"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
 )
+
+const flushWindow = time.Second * 10
 
 func main() {
 	cf_lager.AddFlags(flag.CommandLine)
@@ -31,13 +34,14 @@ func main() {
 		InsecureSkipVerify: config.InsecureSkipVerify,
 	}, nil)
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
-	//todo: do something more useful with error channel
 
 	splunkClient := nozzle.NewSplunkClient(
 		config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify, logger,
 	)
-	forwarder := nozzle.NewSplunkForwarder(splunkClient, events, errors)
-	err = forwarder.Run()
+	forwarder := nozzle.NewSplunkForwarder(
+		splunkClient, events, errors, logger,
+	)
+	err = forwarder.Run(flushWindow)
 	if err != nil {
 		logger.Fatal("Error forwarding", err)
 	}

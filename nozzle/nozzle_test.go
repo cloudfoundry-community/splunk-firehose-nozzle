@@ -2,11 +2,13 @@ package nozzle_test
 
 import (
 	"errors"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/pivotal-golang/lager"
 
 	. "github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
 )
@@ -14,10 +16,11 @@ import (
 var _ = Describe("Nozzle", func() {
 	var (
 		nozzle Nozzle
+		logger lager.Logger
 
-		eventChannel        chan *events.Envelope
-		errorChannel        chan error
-		capturedSplunkEvent *SplunkEvent
+		eventChannel         chan *events.Envelope
+		errorChannel         chan error
+		capturedSplunkEvents []*SplunkEvent
 
 		origin        string
 		deployment    string
@@ -30,16 +33,17 @@ var _ = Describe("Nozzle", func() {
 	)
 
 	BeforeEach(func() {
+		logger = lager.NewLogger("test")
 		eventChannel = make(chan *events.Envelope)
 		errorChannel = make(chan error, 1)
 
-		capturedSplunkEvent = nil
+		capturedSplunkEvents = nil
 		nozzle = NewSplunkForwarder(&MockSplunkClient{
-			PostSingleFn: func(event *SplunkEvent) error {
-				capturedSplunkEvent = event
+			PostBatchFn: func(events []*SplunkEvent) error {
+				capturedSplunkEvents = events
 				return nil
 			},
-		}, eventChannel, errorChannel)
+		}, eventChannel, errorChannel, logger)
 
 		timestampNano = 1467040874046121775
 		deployment = "cf-warden"
@@ -60,7 +64,7 @@ var _ = Describe("Nozzle", func() {
 		go func() {
 			errorChannel <- errors.New("Fail")
 		}()
-		err := nozzle.Run()
+		err := nozzle.Run(time.Millisecond)
 
 		Expect(err).To(Equal(errors.New("Fail")))
 	})
@@ -134,15 +138,16 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond * 100) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
+			Expect(capturedSplunkEvents).To(HaveLen(1))
 			Expect(
-				capturedSplunkEvent.Event.(SplunkHttpStartStopMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkHttpStartStopMetric).EventType,
 			).To(Equal("HttpStartStop"))
 		})
 
@@ -217,15 +222,16 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
+			Expect(capturedSplunkEvents).To(HaveLen(1))
 			Expect(
-				capturedSplunkEvent.Event.(SplunkLogMessageMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkLogMessageMetric).EventType,
 			).To(Equal("LogMessage"))
 		})
 
@@ -285,15 +291,16 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
+			Expect(capturedSplunkEvents).To(HaveLen(1))
 			Expect(
-				capturedSplunkEvent.Event.(SplunkValueMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkValueMetric).EventType,
 			).To(Equal("ValueMetric"))
 		})
 
@@ -350,15 +357,16 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
+			Expect(capturedSplunkEvents).To(HaveLen(1))
 			Expect(
-				capturedSplunkEvent.Event.(SplunkCounterEventMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkCounterEventMetric).EventType,
 			).To(Equal("CounterEvent"))
 		})
 
@@ -415,15 +423,15 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
 			Expect(
-				capturedSplunkEvent.Event.(SplunkErrorMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkErrorMetric).EventType,
 			).To(Equal("Error"))
 		})
 
@@ -486,15 +494,16 @@ var _ = Describe("Nozzle", func() {
 		})
 
 		It("posts envelope", func() {
-			go func() { nozzle.Run() }()
+			go func() { nozzle.Run(time.Millisecond) }()
 
 			eventChannel <- envelope
 
-			Eventually(func() *SplunkEvent {
-				return capturedSplunkEvent
+			Eventually(func() []*SplunkEvent {
+				return capturedSplunkEvents
 			}).ShouldNot(BeNil())
+			Expect(capturedSplunkEvents).To(HaveLen(1))
 			Expect(
-				capturedSplunkEvent.Event.(SplunkContainerMetric).EventType,
+				capturedSplunkEvents[0].Event.(SplunkContainerMetric).EventType,
 			).To(Equal("ContainerMetric"))
 		})
 

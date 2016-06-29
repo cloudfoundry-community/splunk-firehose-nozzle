@@ -6,36 +6,50 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/pivotal-golang/lager"
 )
 
 type Nozzle interface {
-	Run() error
+	Run(flushWindow time.Duration) error
 }
 
 type SplunkNozzle struct {
 	splunkClient SplunkClient
 	events       <-chan *events.Envelope
 	errors       <-chan error
+	batch        []*SplunkEvent
+	logger       lager.Logger
 }
 
-func NewSplunkForwarder(splunkClient SplunkClient, events <-chan *events.Envelope, errors <-chan error) Nozzle {
+func NewSplunkForwarder(splunkClient SplunkClient, events <-chan *events.Envelope, errors <-chan error, logger lager.Logger) Nozzle {
 	return &SplunkNozzle{
 		splunkClient: splunkClient,
 		events:       events,
 		errors:       errors,
+		batch:        []*SplunkEvent{},
+		logger:       logger,
 	}
 }
 
-func (s *SplunkNozzle) Run() error {
-	go func() {
-		for event := range s.events {
+func (s *SplunkNozzle) Run(flushWindow time.Duration) error {
+	ticker := time.Tick(flushWindow)
+	for {
+		select {
+		case err := <-s.errors:
+			return err
+		case event := <-s.events:
 			s.handleEvent(event)
+		case <-ticker:
+			if len(s.batch) > 0 {
+				s.logger.Info(fmt.Sprintf("Posting %d events", len(s.batch)))
+				s.splunkClient.PostBatch(s.batch)
+				s.batch = []*SplunkEvent{}
+			}
 		}
-	}()
-
-	return <-s.errors
+	}
 }
 
 func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
@@ -59,7 +73,7 @@ func (s *SplunkNozzle) handleEvent(event *events.Envelope) {
 	}
 
 	if splunkEvent != nil {
-		s.splunkClient.PostSingle(splunkEvent)
+		s.batch = append(s.batch, splunkEvent)
 	}
 }
 
