@@ -14,7 +14,12 @@
             <chart>
                 <title>Runner CPU Load</title>
                 <search>
-                    <query>index="sandbox" source=runner_* eventType=ValueMetric name=avg_cpu_load     | spath index      | eval job_and_index=source+"-"+index      | timechart avg(value) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=runner_* eventType=ValueMetric name=avg_cpu_load
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart avg(value) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -48,7 +53,13 @@
             <chart>
                 <title>Runner Reamining Disk (gb)</title>
                 <search>
-                    <query>index="sandbox" source=runner_* eventType=ValueMetric name=remaining_disk      | eval remaining_disk_gb=value/1024     | spath index     | eval job_and_index=source+"-"+index      | timechart min(remaining_disk_gb) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=runner_* eventType=ValueMetric name=remaining_disk
+                        | eval remaining_disk_gb=value/1024
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart min(remaining_disk_gb) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -82,7 +93,13 @@
             <chart>
                 <title>Runner Reamining Memory (gb)</title>
                 <search>
-                    <query>index="sandbox" source=runner_* eventType=ValueMetric name=remaining_memory      | eval remaining_memory_gb=value/1024     | spath index      | eval job_and_index=source+"-"+index      | timechart min(remaining_memory_gb) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=runner_* eventType=ValueMetric name=remaining_memory
+                        | eval remaining_memory_gb=value/1024
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart min(remaining_memory_gb) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -118,7 +135,12 @@
             <chart>
                 <title>Router Latency (ms)</title>
                 <search>
-                    <query>index="sandbox" source=router_* eventType=ValueMetric name=latency | spath index | eval job_and_index=source+"-"+index | timechart avg(value) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=router_* eventType=ValueMetric name=latency
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart avg(value) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -151,7 +173,12 @@
             <chart>
                 <title>Router Total Responses</title>
                 <search>
-                    <query>index="sandbox" source=router_* eventType=CounterEvent name=responses      | spath index      | eval job_and_index=source+"-"+index      | timechart sum(delta) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=router_* eventType=CounterEvent name=responses
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart sum(delta) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -186,7 +213,14 @@
             <chart>
                 <title>API Requests</title>
                 <search>
-                    <query>index="sandbox" source=api_* eventType=ValueMetric name=http_status.2XX | spath index | eval job_and_index=source+"-"+index | delta value as rawChange | eval change=rawChange*-1 | timechart sum(change) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=api_* eventType=ValueMetric name=http_status.2XX
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | delta value as rawChange
+                        | eval change=rawChange*-1
+                        | timechart sum(change) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -219,7 +253,12 @@
             <chart>
                 <title>Router Cloud Controller Latency (ms)</title>
                 <search>
-                    <query>index="sandbox" source=router_* eventType=ValueMetric name=latency.CloudController | spath index | eval job_and_index=source+"-"+index | timechart avg(value) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=router_* eventType=ValueMetric name=latency.CloudController
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart avg(value) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -252,7 +291,12 @@
             <chart>
                 <title>API CPU</title>
                 <search>
-                    <query>index="sandbox" source=api_* eventType=ValueMetric name=vitals.cpu | spath index | eval job_and_index=source+"-"+index | timechart avg(value) by job_and_index cont=false</query>
+                    <query>
+                        index="sandbox" source=api_* eventType=ValueMetric name=vitals.cpu
+                        | spath index
+                        | eval job_and_index=source+"-"+index
+                        | timechart avg(value) by job_and_index cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -287,7 +331,13 @@
             <chart>
                 <title>UAA Auth Failure Count</title>
                 <search>
-                    <query>index="sandbox" source=uaa_* eventType=ValueMetric name=audit_service.principal_authentication_failure_count     | delta value as rawChange      | eval change=rawChange*-1      | timechart sum(change) as "Failure Count" cont=false     | fieldformat _time=strftime(_time,"%Y-%m-%d %H:%M")</query>
+                    <query>
+                        index="sandbox" source=uaa_* eventType=ValueMetric name=audit_service.principal_authentication_failure_count
+                        | delta value as rawChange
+                        | eval change=rawChange*-1
+                        | timechart sum(change) as "Failure Count" cont=false
+                        | fieldformat _time=strftime(_time,"%Y-%m-%d %H:%M")
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -320,7 +370,12 @@
             <chart>
                 <title>UAA Password</title>
                 <search>
-                    <query>index="sandbox" source=uaa_* eventType=ValueMetric name=audit_service.user_password_failures        | timechart sum(value) cont=false</query>
+                    <query>
+                        index="sandbox" source=uaa_* eventType=ValueMetric name=audit_service.user_password_failures
+                        | delta value as rawChange
+                        | eval change=rawChange*-1
+                        | timechart sum(change) as "Failure Count" cont=false
+                    </query>
                     <earliest>$time_picker.earliest$</earliest>
                     <latest>$time_picker.latest$</latest>
                 </search>
@@ -333,7 +388,7 @@
                 <option name="charting.axisY.scale">linear</option>
                 <option name="charting.axisY2.enabled">0</option>
                 <option name="charting.axisY2.scale">inherit</option>
-                <option name="charting.chart">line</option>
+                <option name="charting.chart">column</option>
                 <option name="charting.chart.bubbleMaximumSize">50</option>
                 <option name="charting.chart.bubbleMinimumSize">10</option>
                 <option name="charting.chart.bubbleSizeBy">area</option>

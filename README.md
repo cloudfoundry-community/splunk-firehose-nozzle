@@ -28,10 +28,30 @@ For development against
 [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing values.
 
+### Exploring Events
+
+Here are a few splunk queries to show the events you might want to dashboard
+
+```
+index="sandbox" eventType=ValueMetric
+    | eval job_and_name=source+"-"+name
+    | stats values(job_and_name)
+```
+
+```
+index="sandbox" eventType=CounterEvent
+    |  eval job_and_name=source+"-"+name
+    | stats values(job_and_name)
+```
+
 ### Reminder/Todo
 
-* Never able to generate `events.Envelope_Error` in real cf deploy
-* omitempty on all the splunk json?
+- [ ] Configurable index on dashboard
+- [ ] Timeouts connecting to firehose (had bosh-lite shut down & took ages to crash / stop)
+- [ ] Retries? Or rely on Firehose library
+- [ ] Never able to generate `events.Envelope_Error` in real cf deploy
+- [ ] omitempty on splunk json?
+- [ ] Issue w/ Splunk cloud free SSL termination
 
 For release repo, add errand to setup uaa client, see:
 https://github.com/cloudfoundry-community/admin-ui-boshrelease/tree/master/jobs/register_admin_ui
