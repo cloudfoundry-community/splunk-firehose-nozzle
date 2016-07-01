@@ -40,7 +40,7 @@ index="sandbox" eventType=ValueMetric
 
 ```
 index="sandbox" eventType=CounterEvent
-    |  eval job_and_name=source+"-"+name
+    | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
 

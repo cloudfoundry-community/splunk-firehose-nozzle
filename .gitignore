@@ -1,5 +1,5 @@
 .idea
 
-scripts/dev.sh
+scripts/dev*.sh
 
 main
