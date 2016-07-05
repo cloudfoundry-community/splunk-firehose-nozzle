@@ -43,21 +43,6 @@ var _ = Describe("SplunkClient", func() {
 			}))
 		})
 
-		Context("post single", func() {
-			It("posts event json", func() {
-				client := NewSplunkClient("token", testServer.URL, true, logger)
-				err := client.PostSingle(&SplunkEvent{
-					Event: map[string]string{
-						"message": "hello world",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				Expect(capturedRequest).NotTo(BeNil())
-				Expect(string(capturedBody)).To(Equal(`{"event":{"message":"hello world"}}`))
-			})
-		})
-
 		AfterEach(func() {
 			testServer.Close()
 		})

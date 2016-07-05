@@ -23,7 +23,6 @@ type ForwardingNozzle struct {
 }
 
 type Client interface {
-	PostSingle(interface{}) error
 	PostBatch([]interface{}) error
 }
 
