@@ -46,23 +46,5 @@ index="sandbox" eventType=CounterEvent
 
 ### Reminder/Todo
 
-- [ ] Configurable index on dashboard
-- [ ] Timeouts connecting to firehose (had bosh-lite shut down & took ages to crash / stop)
-- [ ] Retries? Or rely on Firehose library
-- [ ] Never able to generate `events.Envelope_Error` in real cf deploy
 - [ ] omitempty on splunk json?
 - [ ] Issue w/ Splunk cloud free SSL termination
-
-For release repo, add errand to setup uaa client, see:
-https://github.com/cloudfoundry-community/admin-ui-boshrelease/tree/master/jobs/register_admin_ui
-
-### Notes
-
-* https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events
-* https://github.com/cloudfoundry/firehose-plugin
-
-* https://github.com/cloudfoundry-incubator/cf-lager
-* https://github.com/pivotal-golang/lager
-* https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle
-* https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle-release
-* https://github.com/cloudfoundry-community/firehose-to-syslog

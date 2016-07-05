@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/config"
+	"github.com/cf-platform-eng/firehose-nozzle/config"
 )
 
 type SplunkConfig struct {
