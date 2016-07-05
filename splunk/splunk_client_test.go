@@ -1,4 +1,4 @@
-package nozzle_test
+package splunk_test
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
+	. "github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )
 
 var _ = Describe("SplunkClient", func() {
@@ -65,7 +65,8 @@ var _ = Describe("SplunkClient", func() {
 		It("correctly authenticates requests", func() {
 			tokenValue := "abc-some-random-token"
 			client := NewSplunkClient(tokenValue, testServer.URL, true, logger)
-			events := []*SplunkEvent{&SplunkEvent{}}
+			events := []interface{}{&SplunkEvent{}}
+
 			err := client.PostBatch(events)
 
 			Expect(err).To(BeNil())
@@ -79,7 +80,7 @@ var _ = Describe("SplunkClient", func() {
 
 		It("sets content type to json", func() {
 			client := NewSplunkClient("token", testServer.URL, true, logger)
-			events := []*SplunkEvent{&SplunkEvent{}}
+			events := []interface{}{&SplunkEvent{}}
 			err := client.PostBatch(events)
 
 			Expect(err).To(BeNil())
@@ -91,7 +92,7 @@ var _ = Describe("SplunkClient", func() {
 
 		It("posts batch event json", func() {
 			client := NewSplunkClient("token", testServer.URL, true, logger)
-			events := []*SplunkEvent{
+			events := []interface{}{
 				&SplunkEvent{
 					Event: map[string]string{"greeting": "hello world"},
 				},
@@ -119,7 +120,7 @@ var _ = Describe("SplunkClient", func() {
 
 		It("posts to correct endpoint", func() {
 			client := NewSplunkClient("token", testServer.URL, true, logger)
-			events := []*SplunkEvent{&SplunkEvent{}}
+			events := []interface{}{&SplunkEvent{}}
 			err := client.PostBatch(events)
 
 			Expect(err).To(BeNil())
@@ -130,7 +131,7 @@ var _ = Describe("SplunkClient", func() {
 	It("returns error on bad splunk host", func() {
 		client := NewSplunkClient("token", ":", true, logger)
 
-		events := []*SplunkEvent{&SplunkEvent{}}
+		events := []interface{}{&SplunkEvent{}}
 		err := client.PostBatch(events)
 
 		Expect(err).NotTo(BeNil())
@@ -144,7 +145,7 @@ var _ = Describe("SplunkClient", func() {
 		}))
 
 		client := NewSplunkClient("token", testServer.URL, true, logger)
-		events := []*SplunkEvent{&SplunkEvent{}}
+		events := []interface{}{&SplunkEvent{}}
 		err := client.PostBatch(events)
 
 		Expect(err).NotTo(BeNil())
@@ -153,7 +154,7 @@ var _ = Describe("SplunkClient", func() {
 
 	It("Returns error from http client", func() {
 		client := NewSplunkClient("token", "foo://example.com", true, logger)
-		events := []*SplunkEvent{&SplunkEvent{}}
+		events := []interface{}{&SplunkEvent{}}
 		err := client.PostBatch(events)
 
 		Expect(err).NotTo(BeNil())

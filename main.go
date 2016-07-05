@@ -13,6 +13,7 @@ import (
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/config"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )
 
 const flushWindow = time.Second * 10
@@ -36,12 +37,15 @@ func main() {
 	}, nil)
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
 
-	splunkClient := nozzle.NewSplunkClient(
+	splunkEventSerializer := &splunk.SplunkEventSerializer{}
+	splunkClient := splunk.NewSplunkClient(
 		config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify, logger,
 	)
+
 	logger.Info(fmt.Sprintf("Forwarding events: %s", config.SelectedEvents))
-	forwarder := nozzle.NewSplunkForwarder(
-		splunkClient, config.SelectedEvents, events, errors, logger,
+	forwarder := nozzle.NewForwarder(
+		splunkClient, splunkEventSerializer,
+		config.SelectedEvents, events, errors, logger,
 	)
 	err = forwarder.Run(flushWindow)
 	if err != nil {

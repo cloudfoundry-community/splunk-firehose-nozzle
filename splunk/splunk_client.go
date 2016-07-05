@@ -1,4 +1,4 @@
-package nozzle
+package splunk
 
 import (
 	"bytes"
@@ -13,19 +13,9 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-type SplunkEvent struct {
-	Time       string `json:"time,omitempty"`
-	Host       string `json:"host,omitempty"`
-	Source     string `json:"source,omitempty"`
-	SourceType string `json:"sourcetype,omitempty"`
-	Index      string `json:"index,omitempty"`
-
-	Event interface{} `json:"event"`
-}
-
 type SplunkClient interface {
-	PostSingle(*SplunkEvent) error
-	PostBatch([]*SplunkEvent) error
+	PostSingle(interface{}) error
+	PostBatch([]interface{}) error
 }
 
 type splunkClient struct {
@@ -50,7 +40,7 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 	}
 }
 
-func (s *splunkClient) PostSingle(event *SplunkEvent) error {
+func (s *splunkClient) PostSingle(event interface{}) error {
 	postBody, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -59,7 +49,7 @@ func (s *splunkClient) PostSingle(event *SplunkEvent) error {
 	return s.send(&postBody)
 }
 
-func (s *splunkClient) PostBatch(events []*SplunkEvent) error {
+func (s *splunkClient) PostBatch(events []interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
 		eventJson, err := json.Marshal(event)

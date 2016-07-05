@@ -47,6 +47,7 @@ index="sandbox" eventType=CounterEvent
 ### Reminder/Todo
 
 - [ ] Configurable index on dashboard
+- [ ] Make batching optional?
 - [ ] Timeouts connecting to firehose (had bosh-lite shut down & took ages to crash / stop)
 - [ ] Retries? Or rely on Firehose library
 - [ ] Never able to generate `events.Envelope_Error` in real cf deploy
