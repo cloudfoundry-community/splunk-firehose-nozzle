@@ -27,7 +27,7 @@ func main() {
 
 	config, err := config.Parse()
 	if err != nil {
-		logger.Fatal("Unable to parse config", err)
+		logger.Fatal("Unable to build config from environment", err)
 	}
 
 	token := getToken(config, logger)
@@ -37,9 +37,14 @@ func main() {
 	}, nil)
 	events, errors := consumer.Firehose(config.FirehoseSubscriptionID, token)
 
+	splunkConfig, err := splunk.Parse()
+	if err != nil {
+		logger.Fatal("Unable to build config from environment", err)
+	}
+
 	splunkEventSerializer := &splunk.SplunkEventSerializer{}
 	splunkClient := splunk.NewSplunkClient(
-		config.SplunkToken, config.SplunkHost, config.InsecureSkipVerify, logger,
+		splunkConfig.SplunkToken, splunkConfig.SplunkHost, config.InsecureSkipVerify, logger,
 	)
 
 	logger.Info(fmt.Sprintf("Forwarding events: %s", config.SelectedEvents))

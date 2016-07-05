@@ -18,9 +18,6 @@ type Config struct {
 	FirehoseSubscriptionID string
 	InsecureSkipVerify     bool
 	SelectedEvents         []events.Envelope_EventType
-
-	SplunkToken string
-	SplunkHost  string
 }
 
 var defaultEvents = []events.Envelope_EventType{
@@ -37,18 +34,16 @@ func Parse() (*Config, error) {
 		"NOZZLE_PASSWORD":                 &config.Password,
 		"NOZZLE_TRAFFIC_CONTROLLER_URL":   &config.TrafficControllerURL,
 		"NOZZLE_FIREHOSE_SUBSCRIPTION_ID": &config.FirehoseSubscriptionID,
-		"NOZZLE_SPLUNK_TOKEN":             &config.SplunkToken,
-		"NOZZLE_SPLUNK_HOST":              &config.SplunkHost,
 	}
 
 	for name, dest := range envVars {
-		err := getRequiredStringEnv(name, dest)
-		if err != nil {
-			return nil, err
+		SetFromStringEnv(name, dest)
+		if *dest == "" {
+			return nil, errors.New(fmt.Sprintf("[%s] is required", name))
 		}
 	}
 
-	err := getBoolEnv("NOZZLE_INSECURE_SKIP_VERIFY", &config.InsecureSkipVerify)
+	err := SetFromBoolEnv("NOZZLE_INSECURE_SKIP_VERIFY", &config.InsecureSkipVerify)
 	if err != nil {
 		return nil, err
 	}
@@ -61,17 +56,12 @@ func Parse() (*Config, error) {
 	return config, nil
 }
 
-func getRequiredStringEnv(name string, value *string) error {
+func SetFromStringEnv(name string, value *string) {
 	envValue := os.Getenv(name)
-	if envValue == "" {
-		return errors.New(fmt.Sprintf("[%s] is required", name))
-	}
-
 	*value = envValue
-	return nil
 }
 
-func getBoolEnv(name string, value *bool) error {
+func SetFromBoolEnv(name string, value *bool) error {
 	envValue := os.Getenv(name)
 	if envValue == "" {
 		return nil

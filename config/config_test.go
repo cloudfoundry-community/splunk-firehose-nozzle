@@ -19,8 +19,6 @@ var _ = Describe("config", func() {
 		passwordValue               = "password"
 		trafficControllerURLValue   = "wss://doppler.example.com"
 		firehoseSubscriptionIDValue = "splunk-nozzle-subscription"
-		splunkTokenValue            = "83e9f712-9734-4a48-927e-3a195b9a6beb"
-		splunkHostValue             = "https://splunk.cloud.example.com"
 	)
 
 	BeforeEach(func() {
@@ -30,8 +28,6 @@ var _ = Describe("config", func() {
 		os.Setenv("NOZZLE_TRAFFIC_CONTROLLER_URL", trafficControllerURLValue)
 		os.Setenv("NOZZLE_FIREHOSE_SUBSCRIPTION_ID", firehoseSubscriptionIDValue)
 		os.Setenv("NOZZLE_INSECURE_SKIP_VERIFY", "true")
-		os.Setenv("NOZZLE_SPLUNK_TOKEN", splunkTokenValue)
-		os.Setenv("NOZZLE_SPLUNK_HOST", splunkHostValue)
 	})
 
 	It("returns config when all values present", func() {
@@ -53,8 +49,6 @@ var _ = Describe("config", func() {
 		Entry("password", "NOZZLE_PASSWORD"),
 		Entry("trafficControllerUrl", "NOZZLE_TRAFFIC_CONTROLLER_URL"),
 		Entry("firehoseSubscriptionID", "NOZZLE_FIREHOSE_SUBSCRIPTION_ID"),
-		Entry("splunkToken", "NOZZLE_SPLUNK_TOKEN"),
-		Entry("splunkHost", "NOZZLE_SPLUNK_HOST"),
 	)
 
 	It("pulls uaaUrl from env", func() {
@@ -105,20 +99,6 @@ var _ = Describe("config", func() {
 
 		Expect(err).To(BeNil())
 		Expect(config.InsecureSkipVerify).To(BeFalse())
-	})
-
-	It("pulls splunkToken fron env", func() {
-		config, err := Parse()
-
-		Expect(err).To(BeNil())
-		Expect(config.SplunkToken).To(Equal(splunkTokenValue))
-	})
-
-	It("pulls splunkHost fron env", func() {
-		config, err := Parse()
-
-		Expect(err).To(BeNil())
-		Expect(config.SplunkHost).To(Equal(splunkHostValue))
 	})
 
 	Context("selected events", func() {
