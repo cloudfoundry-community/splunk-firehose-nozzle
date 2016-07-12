@@ -41,7 +41,7 @@ var _ = Describe("config", func() {
 	})
 
 	It("errors when token missing", func() {
-		os.Setenv("NOZZLE_SPLUNK_TOKEN", "")
+		os.Unsetenv("NOZZLE_SPLUNK_TOKEN")
 
 		_, err := Parse()
 
@@ -49,7 +49,7 @@ var _ = Describe("config", func() {
 	})
 
 	It("errors when host missing", func() {
-		os.Setenv("NOZZLE_SPLUNK_HOST", "")
+		os.Unsetenv("NOZZLE_SPLUNK_HOST")
 
 		_, err := Parse()
 

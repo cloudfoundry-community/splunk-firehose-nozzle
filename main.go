@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-incubator/cf-lager"
-	"github.com/cloudfoundry/noaa/consumer"
-	"github.com/pivotal-golang/lager"
 	"github.com/cf-platform-eng/firehose-nozzle/auth"
 	"github.com/cf-platform-eng/firehose-nozzle/config"
 	"github.com/cf-platform-eng/firehose-nozzle/nozzle"
+
+	"github.com/cloudfoundry-incubator/cf-lager"
+	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/pivotal-golang/lager"
 
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )

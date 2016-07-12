@@ -48,3 +48,4 @@ index="sandbox" eventType=CounterEvent
 
 - [ ] omitempty on splunk json?
 - [ ] Issue w/ Splunk cloud free SSL termination
+- [ ] Vendor dependencies

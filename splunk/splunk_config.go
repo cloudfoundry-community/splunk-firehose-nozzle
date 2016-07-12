@@ -1,28 +1,20 @@
 package splunk
 
 import (
-	"errors"
-	"fmt"
-
-	"github.com/cf-platform-eng/firehose-nozzle/config"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type SplunkConfig struct {
-	SplunkToken string
-	SplunkHost  string
+	SplunkToken string `required:"true" envconfig:"splunk_token"`
+	SplunkHost  string `required:"true" envconfig:"splunk_host"`
 }
 
 func Parse() (*SplunkConfig, error) {
 	splunkConfig := &SplunkConfig{}
 
-	config.SetFromStringEnv("NOZZLE_SPLUNK_TOKEN", &splunkConfig.SplunkToken)
-	if splunkConfig.SplunkToken == "" {
-		return nil, errors.New(fmt.Sprintf("[%s] is required", "SplunkToken"))
-	}
-
-	config.SetFromStringEnv("NOZZLE_SPLUNK_HOST", &splunkConfig.SplunkHost)
-	if splunkConfig.SplunkHost == "" {
-		return nil, errors.New(fmt.Sprintf("[%s] is required", "SplunkHost"))
+	err := envconfig.Process("nozzle", splunkConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	return splunkConfig, nil
