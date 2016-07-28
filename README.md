@@ -1,4 +1,4 @@
-## PoC Splunk Nozzle
+## Splunk Nozzle
 
 ### Setup
 
@@ -27,6 +27,13 @@ properties:
 For development against
 [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing values.
+
+Dependency management is done via [Glide](https://glide.sh/)
+
+Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
+```
+ginkgo -r
+```
 
 ### Exploring Events
 

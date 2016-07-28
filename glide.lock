@@ -1,0 +1,34 @@
+hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
+updated: 2016-07-28T13:21:55.299373025-07:00
+imports:
+- name: code.cloudfoundry.org/cfhttp
+  version: 9f848b8c7da7bf7be58029e20cf2a7dbc2de1fca
+  subpackages:
+  - unix_transport
+- name: code.cloudfoundry.org/cflager
+  version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
+- name: code.cloudfoundry.org/lager
+  version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
+- name: github.com/cloudfoundry-incubator/uaago
+  version: 5253fdf54e4a464366e5ffa8e5f456f5f1e50a2f
+- name: github.com/cloudfoundry/noaa
+  version: 0ca0d30d65c7422750132450593d402428dd2273
+  subpackages:
+  - consumer
+  - consumer/internal
+  - errors
+- name: github.com/cloudfoundry/sonde-go
+  version: 27b0c7026ccc2de35ac218b1d15434b254ca57e9
+  subpackages:
+  - events
+- name: github.com/gogo/protobuf
+  version: e33835a643a970c11ac74f6333f5f6866387a101
+  subpackages:
+  - proto
+  - gogoproto
+  - protoc-gen-gogo/descriptor
+- name: github.com/gorilla/websocket
+  version: 5e2e56d5dfd46884df1036f828777ee6273f2cff
+- name: github.com/kelseyhightower/envconfig
+  version: 91921eb4cf999321cdbeebdba5a03555800d493b
+testImports: []
