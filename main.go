@@ -6,24 +6,23 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cf-platform-eng/firehose-nozzle/auth"
-	"github.com/cf-platform-eng/firehose-nozzle/config"
-	"github.com/cf-platform-eng/firehose-nozzle/nozzle"
-
-	"github.com/cloudfoundry-incubator/cf-lager"
+	"code.cloudfoundry.org/cflager"
+	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/noaa/consumer"
-	"github.com/pivotal-golang/lager"
 
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/config"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/nozzle"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )
 
 const flushWindow = time.Second * 10
 
 func main() {
-	cf_lager.AddFlags(flag.CommandLine)
+	cflager.AddFlags(flag.CommandLine)
 	flag.Parse()
 
-	logger, _ := cf_lager.New("splunk-logger")
+	logger, _ := cflager.New("splunk-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
 	config, err := config.Parse()

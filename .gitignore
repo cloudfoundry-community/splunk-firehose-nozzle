@@ -3,3 +3,4 @@
 scripts/dev*.sh
 
 main
+splunk-firehose-nozzle

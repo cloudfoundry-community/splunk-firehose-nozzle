@@ -9,8 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/cf_http"
-	"github.com/pivotal-golang/lager"
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 )
 
 type SplunkClient struct {
@@ -21,7 +21,7 @@ type SplunkClient struct {
 }
 
 func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool, logger lager.Logger) *SplunkClient {
-	httpClient := cf_http.NewClient()
+	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
 	}
