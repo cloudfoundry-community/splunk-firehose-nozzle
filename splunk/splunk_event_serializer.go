@@ -26,12 +26,14 @@ type CommonMetricFields struct {
 	Deployment string `json:"deployment"`
 	Index      string `json:"index"`
 	EventType  string `json:"eventType"`
+	Origin     string `json:"origin"`
 }
 
 func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields) *SplunkEvent {
 	shared.Deployment = nozzleEvent.GetDeployment()
 	shared.Index = nozzleEvent.GetIndex()
 	shared.EventType = nozzleEvent.GetEventType().String()
+	shared.Origin = nozzleEvent.GetOrigin()
 
 	splunkEvent := &SplunkEvent{
 		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),

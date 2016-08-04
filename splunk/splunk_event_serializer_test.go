@@ -127,6 +127,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("HttpStartStop"))
+			Expect(event.Origin).To(Equal("gorouter"))
 		})
 
 		It("log message specific data", func() {
@@ -196,6 +197,8 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("LogMessage"))
+			Expect(event.Origin).To(Equal("dea_logging_agent"))
+
 		})
 
 		It("log message specific data", func() {
@@ -246,6 +249,8 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("ValueMetric"))
+			Expect(event.Origin).To(Equal("MetronAgent"))
+
 		})
 
 		It("metric specific data", func() {
@@ -293,6 +298,8 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("CounterEvent"))
+			Expect(event.Origin).To(Equal("gorouter"))
+
 		})
 
 		It("metric specific data", func() {
@@ -340,6 +347,8 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("Error"))
+			Expect(event.Origin).To(Equal("Unknown"))
+
 		})
 
 		It("metric specific data", func() {
@@ -393,6 +402,8 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(event.Deployment).To(Equal("cf-warden"))
 			Expect(event.Index).To(Equal("0"))
 			Expect(event.EventType).To(Equal("ContainerMetric"))
+			Expect(event.Origin).To(Equal("DEA"))
+
 		})
 
 		It("metric specific data", func() {
