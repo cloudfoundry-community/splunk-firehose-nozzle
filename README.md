@@ -30,10 +30,24 @@ copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing v
 
 Dependency management is done via [Glide](https://glide.sh/)
 
+Reinstall dependencies:
+```
+glide update
+```
+
+Update dependencies (without `strip-vcs` you'll end up with submodules):
+```
+glide update --strip-vcs
+```
+
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
 ```
 ginkgo -r
 ```
+
+##### CI
+
+https://ci.run-01.haas-26.pez.pivotal.io/pipelines/splunk-firehose-nozzle
 
 ### Exploring Events
 
