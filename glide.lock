@@ -1,5 +1,5 @@
 hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
-updated: 2016-07-28T13:21:55.299373025-07:00
+updated: 2016-08-05T13:22:55.429755089-07:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 9f848b8c7da7bf7be58029e20cf2a7dbc2de1fca
@@ -18,17 +18,17 @@ imports:
   - consumer/internal
   - errors
 - name: github.com/cloudfoundry/sonde-go
-  version: 27b0c7026ccc2de35ac218b1d15434b254ca57e9
+  version: 81c3f6be579cf4337477a8b0d03852d0760b5801
   subpackages:
   - events
 - name: github.com/gogo/protobuf
-  version: e33835a643a970c11ac74f6333f5f6866387a101
+  version: a4cceea7a401a73fefafd1a21fedbd4694124a82
   subpackages:
   - proto
   - gogoproto
   - protoc-gen-gogo/descriptor
 - name: github.com/gorilla/websocket
-  version: 5e2e56d5dfd46884df1036f828777ee6273f2cff
+  version: a69d25be2fe2923a97c2af6849b2f52426f68fc0
 - name: github.com/kelseyhightower/envconfig
   version: 91921eb4cf999321cdbeebdba5a03555800d493b
 testImports: []
