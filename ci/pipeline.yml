@@ -1,0 +1,10 @@
+---
+
+resources:
+- name: solace-tile-repo
+  type: git
+  source:
+    branch: master
+    uri: git@github.com:cf-platform-eng/splunk-firehose-nozzle
+    private_key: {{github-deploy-key}}
+
