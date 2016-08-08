@@ -22,17 +22,43 @@ properties:
         authorities: oauth.login,doppler.firehose
 ```
 
+#### Software Requirements
+
+Make sure you have the following installed on your workstation:
+| Software | Version
+| --- | --- |
+| go | go1.6.x
+| glide | 0.11.x
+
+Then install all dependent packages via [Glide](https://glide.sh/):
+````
+$ cd <REPO_ROOT_DIRECTORY>
+$ glide install
+```
+
 ### Development
 
-For development against
-[bosh-lite](https://github.com/cloudfoundry/bosh-lite),
-copy `scripts/dev.sh.template` to `scripts/dev.sh.template` and supply missing values.
+For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
+copy `scripts/dev.sh.template` to `scripts/dev.sh` and supply missing values:
+```
+$ cp script/dev.sh.template scripts/dev.sh
+$ chmod +x scripts/dev.sh
+```
 
-Dependency management is done via [Glide](https://glide.sh/)
+Build project:
+```
+$ go build main.go
+```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
 ```
-ginkgo -r
+$ ginkgo -r
+```
+
+Run app
+```
+# this will run: go run main.go
+$ ./scripts/dev.sh
 ```
 
 ### Exploring Events
