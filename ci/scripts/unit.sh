@@ -4,6 +4,8 @@ set -ex
 
 echo "Jumping through hoops for golang"
 export GOPATH=`pwd`
+export PATH=$GOPATH/bin:$PATH
+
 cp -r firehose-repo splunk-firehose-nozzle
 mkdir -p src/github.com/cf-platform-eng
 mv splunk-firehose-nozzle src/github.com/cf-platform-eng

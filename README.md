@@ -50,6 +50,16 @@ Build project:
 $ go build main.go
 ```
 
+Reinstall dependencies:
+```
+glide update
+```
+
+Update dependencies (without `strip-vcs` you'll end up with submodules):
+```
+glide update --strip-vcs
+```
+
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
 ```
 $ ginkgo -r
@@ -60,6 +70,10 @@ Run app
 # this will run: go run main.go
 $ ./scripts/dev.sh
 ```
+
+##### CI
+
+https://ci.run-01.haas-26.pez.pivotal.io/pipelines/splunk-firehose-nozzle
 
 ### Exploring Events
 
