@@ -25,6 +25,7 @@ properties:
 #### Software Requirements
 
 Make sure you have the following installed on your workstation:
+
 | Software | Version
 | --- | --- |
 | go | go1.6.x
