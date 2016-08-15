@@ -18,14 +18,14 @@ type SplunkEvent struct {
 	Host       string `json:"host,omitempty"`
 	Source     string `json:"source,omitempty"`
 	SourceType string `json:"sourcetype,omitempty"`
-	Index      string `json:"index,omitempty"`
+	//todo: config option for index
 
 	Event interface{} `json:"event"`
 }
 
 type CommonMetricFields struct {
 	Deployment string `json:"deployment"`
-	Index      string `json:"index"`
+	JobIndex   string `json:"jobIndex"`
 	EventType  string `json:"eventType"`
 	Origin     string `json:"origin"`
 }
@@ -36,14 +36,14 @@ func buildSplunkSourceType(nozzleEvent *events.Envelope) string {
 
 func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields) *SplunkEvent {
 	shared.Deployment = nozzleEvent.GetDeployment()
-	shared.Index = nozzleEvent.GetIndex()
+	shared.JobIndex = nozzleEvent.GetIndex()
 	shared.EventType = nozzleEvent.GetEventType().String()
 	shared.Origin = nozzleEvent.GetOrigin()
 
 	splunkEvent := &SplunkEvent{
-		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
-		Host:   nozzleEvent.GetIp(),
-		Source: nozzleEvent.GetJob(),
+		Time:       nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
+		Host:       nozzleEvent.GetIp(),
+		Source:     nozzleEvent.GetJob(),
 		SourceType: buildSplunkSourceType(nozzleEvent),
 	}
 	return splunkEvent

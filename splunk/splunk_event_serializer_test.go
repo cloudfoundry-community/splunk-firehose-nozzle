@@ -6,6 +6,7 @@ import (
 
 	. "github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 
+	"encoding/json"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -17,7 +18,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 		origin        string
 		deployment    string
 		job           string
-		index         string
+		jobIndex      string
 		ip            string
 		timestampNano int64
 		envelope      *events.Envelope
@@ -29,7 +30,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 	BeforeEach(func() {
 		timestampNano = 1467040874046121775
 		deployment = "cf-warden"
-		index = "0"
+		jobIndex = "85c9ff80-e99b-470b-a194-b397a6e73913"
 		ip = "10.244.0.22"
 		envelope = &events.Envelope{
 			Origin:     &origin,
@@ -37,11 +38,50 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Timestamp:  &timestampNano,
 			Deployment: &deployment,
 			Job:        &job,
-			Index:      &index,
+			Index:      &jobIndex,
 			Ip:         &ip,
 		}
 
 		splunkEventSerializer = &SplunkEventSerializer{}
+	})
+
+	It("properly serializes to splunk json", func() {
+		var envelopeValueMetric *events.ValueMetric
+
+		name := "ms_since_last_registry_update"
+		value := 1581.0
+		unit := "ms"
+		envelopeValueMetric = &events.ValueMetric{
+			Name:  &name,
+			Value: &value,
+			Unit:  &unit,
+		}
+
+		job = "router_z1"
+		origin = "MetronAgent"
+		eventType = events.Envelope_ValueMetric
+		envelope.ValueMetric = envelopeValueMetric
+
+		metric = splunkEventSerializer.BuildValueMetricEvent(envelope).(*SplunkEvent)
+
+		marshalled, err := json.MarshalIndent(metric, "", "    ")
+		Expect(err).To(BeNil())
+
+		Expect(string(marshalled)).To(Equal(`{
+    "time": "1467040874.046",
+    "host": "10.244.0.22",
+    "source": "router_z1",
+    "sourcetype": "cf:valuemetric",
+    "event": {
+        "deployment": "cf-warden",
+        "jobIndex": "85c9ff80-e99b-470b-a194-b397a6e73913",
+        "eventType": "ValueMetric",
+        "origin": "MetronAgent",
+        "name": "ms_since_last_registry_update",
+        "value": 1581,
+        "unit": "ms"
+    }
+}`))
 	})
 
 	Context("envelope HttpStartStop", func() {
@@ -126,7 +166,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkHttpStartStopMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("HttpStartStop"))
 			Expect(event.Origin).To(Equal("gorouter"))
 		})
@@ -197,7 +237,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkLogMessageMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("LogMessage"))
 			Expect(event.Origin).To(Equal("dea_logging_agent"))
 
@@ -250,7 +290,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkValueMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("ValueMetric"))
 			Expect(event.Origin).To(Equal("MetronAgent"))
 
@@ -300,7 +340,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkCounterEventMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("CounterEvent"))
 			Expect(event.Origin).To(Equal("gorouter"))
 
@@ -350,7 +390,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkErrorMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("Error"))
 			Expect(event.Origin).To(Equal("Unknown"))
 
@@ -406,7 +446,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			event := metric.Event.(SplunkContainerMetric)
 
 			Expect(event.Deployment).To(Equal("cf-warden"))
-			Expect(event.Index).To(Equal("0"))
+			Expect(event.JobIndex).To(Equal("85c9ff80-e99b-470b-a194-b397a6e73913"))
 			Expect(event.EventType).To(Equal("ContainerMetric"))
 			Expect(event.Origin).To(Equal("DEA"))
 
