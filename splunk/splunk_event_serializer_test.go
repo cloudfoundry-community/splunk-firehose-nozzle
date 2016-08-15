@@ -119,6 +119,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:httpstartstop"))
 		})
 
 		It("common components", func() {
@@ -189,6 +190,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:logmessage"))
 		})
 
 		It("common components", func() {
@@ -241,6 +243,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:valuemetric"))
 		})
 
 		It("common components", func() {
@@ -290,6 +293,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:counterevent"))
 		})
 
 		It("common components", func() {
@@ -339,6 +343,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:error"))
 		})
 
 		It("common components", func() {
@@ -394,6 +399,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
+			Expect(metric.SourceType).To(Equal("cf:containermetric"))
 		})
 
 		It("common components", func() {

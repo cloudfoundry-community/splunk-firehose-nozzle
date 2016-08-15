@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/cloudfoundry/sonde-go/events"
+	"strings"
 )
 
 type SplunkEventSerializer struct{}
@@ -29,6 +30,10 @@ type CommonMetricFields struct {
 	Origin     string `json:"origin"`
 }
 
+func buildSplunkSourceType(nozzleEvent *events.Envelope) string {
+	return fmt.Sprintf("cf:%s", strings.ToLower(nozzleEvent.GetEventType().String()))
+}
+
 func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields) *SplunkEvent {
 	shared.Deployment = nozzleEvent.GetDeployment()
 	shared.Index = nozzleEvent.GetIndex()
@@ -39,6 +44,7 @@ func buildSplunkMetric(nozzleEvent *events.Envelope, shared *CommonMetricFields)
 		Time:   nanoSecondsToSeconds(nozzleEvent.GetTimestamp()),
 		Host:   nozzleEvent.GetIp(),
 		Source: nozzleEvent.GetJob(),
+		SourceType: buildSplunkSourceType(nozzleEvent),
 	}
 	return splunkEvent
 }
