@@ -1,4 +1,5 @@
 .idea
+*.iml
 
 scripts/dev*.sh
 
