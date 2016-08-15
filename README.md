@@ -22,6 +22,8 @@ properties:
         authorities: oauth.login,doppler.firehose
 ```
 
+### Development
+
 #### Software Requirements
 
 Make sure you have the following installed on your workstation:
@@ -32,12 +34,12 @@ Make sure you have the following installed on your workstation:
 | glide | 0.11.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
-````
+```
 $ cd <REPO_ROOT_DIRECTORY>
 $ glide install
 ```
 
-### Development
+#### Setup
 
 For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `scripts/dev.sh.template` to `scripts/dev.sh` and supply missing values:
@@ -91,9 +93,3 @@ index="sandbox" eventType=CounterEvent
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
-
-### Reminder/Todo
-
-- [ ] omitempty on splunk json?
-- [ ] Issue w/ Splunk cloud free SSL termination
-- [ ] Vendor dependencies
