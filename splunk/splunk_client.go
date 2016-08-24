@@ -9,25 +9,30 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/cfhttp"
 )
 
-type SplunkClient struct {
+type SplunkClient interface {
+	Post(events []*[]byte) error
+	PostBatch(events []interface{}) error
+}
+
+type splunkClient struct {
 	httpClient  *http.Client
 	splunkToken string
 	splunkHost  string
 	logger      lager.Logger
 }
 
-func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool, logger lager.Logger) *SplunkClient {
+func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
 	}
 	httpClient.Transport = tr
 
-	return &SplunkClient{
+	return &splunkClient{
 		httpClient:  httpClient,
 		splunkToken: splunkToken,
 		splunkHost:  splunkHost,
@@ -35,7 +40,21 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 	}
 }
 
-func (s *SplunkClient) PostBatch(events []interface{}) error {
+func (s *splunkClient) Post(events []*[]byte) error {
+	bodyBuffer := new(bytes.Buffer)
+	for i, event := range events {
+		bodyBuffer.Write(*event)
+		if i < len(events)-1 {
+			bodyBuffer.Write([]byte("\n\n"))
+		}
+	}
+	bodyBytes := bodyBuffer.Bytes()
+	return s.send(&bodyBytes)
+	//println(string(bodyBytes))
+	//return nil
+}
+
+func (s *splunkClient) PostBatch(events []interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
 		eventJson, err := json.Marshal(event)
@@ -57,7 +76,7 @@ func (s *SplunkClient) PostBatch(events []interface{}) error {
 	return s.send(&bodyBytes)
 }
 
-func (s *SplunkClient) send(postBody *[]byte) error {
+func (s *splunkClient) send(postBody *[]byte) error {
 	endpoint := fmt.Sprintf("%s/services/collector", s.splunkHost)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
 	if err != nil {

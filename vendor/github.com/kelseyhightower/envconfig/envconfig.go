@@ -5,6 +5,7 @@
 package envconfig
 
 import (
+	"encoding"
 	"errors"
 	"fmt"
 	"reflect"
@@ -26,10 +27,16 @@ type ParseError struct {
 	Value     string
 }
 
-// A Decoder is a type that knows how to de-serialize environment variables
-// into itself.
+// Decoder has the same semantics as Setter, but takes higher precedence.
+// It is provided for historical compatibility.
 type Decoder interface {
 	Decode(value string) error
+}
+
+// Setter is implemented by types can self-deserialize values.
+// Any type that implements flag.Value also implements Setter.
+type Setter interface {
+	Set(value string) error
 }
 
 func (e *ParseError) Error() string {
@@ -50,24 +57,53 @@ func Process(prefix string, spec interface{}) error {
 	typeOfSpec := s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
-		if !f.CanSet() || typeOfSpec.Field(i).Tag.Get("ignored") == "true" {
+		ftype := typeOfSpec.Field(i)
+		if !f.CanSet() || ftype.Tag.Get("ignored") == "true" {
 			continue
 		}
 
-		if typeOfSpec.Field(i).Anonymous && f.Kind() == reflect.Struct {
-			embeddedPtr := f.Addr().Interface()
-			if err := Process(prefix, embeddedPtr); err != nil {
-				return err
+		for f.Kind() == reflect.Ptr {
+			if f.IsNil() {
+				if f.Type().Elem().Kind() != reflect.Struct {
+					// nil pointer to a non-struct: leave it alone
+					break
+				}
+				// nil pointer to struct: create a zero instance
+				f.Set(reflect.New(f.Type().Elem()))
 			}
-			f.Set(reflect.ValueOf(embeddedPtr).Elem())
+			f = f.Elem()
 		}
 
-		alt := typeOfSpec.Field(i).Tag.Get("envconfig")
-		fieldName := typeOfSpec.Field(i).Name
+		alt := ftype.Tag.Get("envconfig")
+		fieldName := ftype.Name
 		if alt != "" {
 			fieldName = alt
 		}
-		key := strings.ToUpper(fmt.Sprintf("%s_%s", prefix, fieldName))
+
+		key := fieldName
+		if prefix != "" {
+			key = fmt.Sprintf("%s_%s", prefix, key)
+		}
+		key = strings.ToUpper(key)
+
+		if f.Kind() == reflect.Struct {
+			// honor Decode if present
+			if decoderFrom(f) == nil && setterFrom(f) == nil && textUnmarshaler(f) == nil {
+				innerPrefix := prefix
+				if !ftype.Anonymous {
+					innerPrefix = key
+				}
+
+				embeddedPtr := f.Addr().Interface()
+				if err := Process(innerPrefix, embeddedPtr); err != nil {
+					return err
+				}
+				f.Set(reflect.ValueOf(embeddedPtr).Elem())
+
+				continue
+			}
+		}
+
 		// `os.Getenv` cannot differentiate between an explicitly set empty value
 		// and an unset value. `os.LookupEnv` is preferred to `syscall.Getenv`,
 		// but it is only available in go1.5 or newer.
@@ -77,12 +113,12 @@ func Process(prefix string, spec interface{}) error {
 			value, ok = syscall.Getenv(key)
 		}
 
-		def := typeOfSpec.Field(i).Tag.Get("default")
+		def := ftype.Tag.Get("default")
 		if def != "" && !ok {
 			value = def
 		}
 
-		req := typeOfSpec.Field(i).Tag.Get("required")
+		req := ftype.Tag.Get("required")
 		if !ok && def == "" {
 			if req == "true" {
 				return fmt.Errorf("required key %s missing value", key)
@@ -116,6 +152,15 @@ func processField(value string, field reflect.Value) error {
 	decoder := decoderFrom(field)
 	if decoder != nil {
 		return decoder.Decode(value)
+	}
+	// look for Set method if Decode not defined
+	setter := setterFrom(field)
+	if setter != nil {
+		return setter.Set(value)
+	}
+
+	if t := textUnmarshaler(field); t != nil {
+		return t.UnmarshalText([]byte(value))
 	}
 
 	if typ.Kind() == reflect.Ptr {
@@ -179,23 +224,29 @@ func processField(value string, field reflect.Value) error {
 	return nil
 }
 
-func decoderFrom(field reflect.Value) Decoder {
-	if field.CanInterface() {
-		dec, ok := field.Interface().(Decoder)
-		if ok {
-			return dec
-		}
+func interfaceFrom(field reflect.Value, fn func(interface{}, *bool)) {
+	// it may be impossible for a struct field to fail this check
+	if !field.CanInterface() {
+		return
 	}
-
-	// also check if pointer-to-type implements Decoder,
-	// and we can get a pointer to our field
-	if field.CanAddr() {
-		field = field.Addr()
-		dec, ok := field.Interface().(Decoder)
-		if ok {
-			return dec
-		}
+	var ok bool
+	fn(field.Interface(), &ok)
+	if !ok && field.CanAddr() {
+		fn(field.Addr().Interface(), &ok)
 	}
+}
 
-	return nil
+func decoderFrom(field reflect.Value) (d Decoder) {
+	interfaceFrom(field, func(v interface{}, ok *bool) { d, *ok = v.(Decoder) })
+	return d
+}
+
+func setterFrom(field reflect.Value) (s Setter) {
+	interfaceFrom(field, func(v interface{}, ok *bool) { s, *ok = v.(Setter) })
+	return s
+}
+
+func textUnmarshaler(field reflect.Value) (t encoding.TextUnmarshaler) {
+	interfaceFrom(field, func(v interface{}, ok *bool) { t, *ok = v.(encoding.TextUnmarshaler) })
+	return t
 }

@@ -135,6 +135,7 @@ envconfig supports supports these struct field types:
   * int8, int16, int32, int64
   * bool
   * float32, float64
+  * [encoding.TextUnmarshaler](https://golang.org/pkg/encoding/#TextUnmarshaler)
 
 Embedded structs using these fields are also supported.
 
@@ -159,3 +160,6 @@ type DNSConfig struct {
     Address IPDecoder `envconfig:"DNS_SERVER"`
 }
 ```
+
+Also, envconfig will use a `Set(string) error` method like from the
+[flag.Value](https://godoc.org/flag#Value) interface if implemented.

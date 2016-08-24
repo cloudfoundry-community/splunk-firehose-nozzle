@@ -1,0 +1,15 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: getourneau/alpine-golang-bash
+
+inputs:
+  - name: firehose-to-syslog-ci
+    path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/
+  
+run:
+  path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/ci/unit-testing/unit-testing
+

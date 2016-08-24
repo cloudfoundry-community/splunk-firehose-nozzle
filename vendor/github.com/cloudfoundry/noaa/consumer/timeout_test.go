@@ -19,9 +19,9 @@ func (h nullHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 }
 
 const (
-	appGuid              = "fakeAppGuid"
-	authToken            = "fakeAuthToken"
-	testHandshakeTimeout = 1 * time.Second
+	appGuid     = "fakeAppGuid"
+	authToken   = "fakeAuthToken"
+	testTimeout = 1 * time.Second
 )
 
 var (
@@ -38,7 +38,7 @@ var _ = Describe("Timeout", func() {
 	})
 
 	BeforeEach(func() {
-		internal.HandshakeTimeout = testHandshakeTimeout
+		internal.Timeout = testTimeout
 
 		fakeHandler = make(nullHandler, 1)
 		testServer = httptest.NewServer(fakeHandler)
@@ -55,7 +55,7 @@ var _ = Describe("Timeout", func() {
 
 			_, errCh := cnsmr.TailingLogsWithoutReconnect(appGuid, authToken)
 			var err error
-			Eventually(errCh, 2*testHandshakeTimeout).Should(Receive(&err))
+			Eventually(errCh, 2*testTimeout).Should(Receive(&err))
 			Expect(err.Error()).To(ContainSubstring("i/o timeout"))
 		})
 	})
@@ -68,9 +68,24 @@ var _ = Describe("Timeout", func() {
 
 			_, errCh := cnsmr.Stream(appGuid, authToken)
 			var err error
-			Eventually(errCh, 2*testHandshakeTimeout).Should(Receive(&err))
+			Eventually(errCh, 2*testTimeout).Should(Receive(&err))
 			Expect(err.Error()).To(ContainSubstring("i/o timeout"))
 		})
 	})
 
+	Describe("RecentLogs", func() {
+		It("times out due to an unresponsive server", func() {
+			defer close(fakeHandler)
+			errs := make(chan error, 10)
+			cnsmr = consumer.New(strings.Replace(testServer.URL, "http", "ws", 1), nil, nil)
+			go func() {
+				_, err := cnsmr.RecentLogs("some-guid", "some-token")
+				errs <- err
+			}()
+
+			var err error
+			Eventually(errs, 2*testTimeout).Should(Receive(&err))
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })
