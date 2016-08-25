@@ -157,6 +157,7 @@ var _ = Describe("SplunkEventSerializer", func() {
 		It("metadata", func() {
 			eventTimeSeconds := "1467040874.046"
 			Expect(metric.Time).To(Equal(eventTimeSeconds))
+			//Expect(metric.Index).To(Equal(index))
 			Expect(metric.Host).To(Equal(ip))
 			Expect(metric.Source).To(Equal(job))
 			Expect(metric.SourceType).To(Equal("cf:httpstartstop"))

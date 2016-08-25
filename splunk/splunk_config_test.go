@@ -13,11 +13,13 @@ var _ = Describe("config", func() {
 	var (
 		splunkTokenValue = "83e9f712-9734-4a48-927e-3a195b9a6beb"
 		splunkHostValue  = "https://splunk.cloud.example.com"
+		splunkIndexValue = "my-cf-index"
 	)
 
 	BeforeEach(func() {
 		os.Setenv("NOZZLE_SPLUNK_TOKEN", splunkTokenValue)
 		os.Setenv("NOZZLE_SPLUNK_HOST", splunkHostValue)
+		os.Setenv("NOZZLE_SPLUNK_INDEX", splunkIndexValue)
 	})
 
 	It("returns config when all values present", func() {
@@ -40,6 +42,13 @@ var _ = Describe("config", func() {
 		Expect(config.SplunkHost).To(Equal(splunkHostValue))
 	})
 
+	It("pulls index from env", func() {
+		config, err := Parse()
+
+		Expect(err).To(BeNil())
+		Expect(config.SplunkIndex).To(Equal(splunkIndexValue))
+	})
+
 	It("errors when token missing", func() {
 		os.Unsetenv("NOZZLE_SPLUNK_TOKEN")
 
@@ -50,6 +59,14 @@ var _ = Describe("config", func() {
 
 	It("errors when host missing", func() {
 		os.Unsetenv("NOZZLE_SPLUNK_HOST")
+
+		_, err := Parse()
+
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("errors when index missing", func() {
+		os.Unsetenv("NOZZLE_SPLUNK_INDEX")
 
 		_, err := Parse()
 

@@ -11,7 +11,8 @@ export NOZZLE_FIREHOSE_SUBSCRIPTION_ID=splunk-firehose-subscription-id
 export NOZZLE_INSECURE_SKIP_VERIFY=true
 export NOZZLE_SELECTED_EVENTS=ValueMetric,CounterEvent
 
-export NOZZLE_SPLUNK_TOKEN=<token>
 export NOZZLE_SPLUNK_HOST=<host, something like https://example.cloud.splunk.com:8088>
+export NOZZLE_SPLUNK_TOKEN=<hec_token>
+export NOZZLE_SPLUNK_INDEX=<index>
 
 go run main.go

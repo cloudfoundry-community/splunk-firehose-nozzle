@@ -7,6 +7,7 @@ import (
 type SplunkConfig struct {
 	SplunkToken string `required:"true" envconfig:"splunk_token"`
 	SplunkHost  string `required:"true" envconfig:"splunk_host"`
+	SplunkIndex string `required:"true" envconfig:"splunk_index"`
 }
 
 func Parse() (*SplunkConfig, error) {
