@@ -9,13 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 )
 
 type SplunkClient interface {
-	Post(events []*[]byte) error
-	PostBatch(events []interface{}) error
+	Post([]map[string]interface{}) error
 }
 
 type splunkClient struct {
@@ -40,21 +39,7 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 	}
 }
 
-func (s *splunkClient) Post(events []*[]byte) error {
-	bodyBuffer := new(bytes.Buffer)
-	for i, event := range events {
-		bodyBuffer.Write(*event)
-		if i < len(events)-1 {
-			bodyBuffer.Write([]byte("\n\n"))
-		}
-	}
-	bodyBytes := bodyBuffer.Bytes()
-	return s.send(&bodyBytes)
-	//println(string(bodyBytes))
-	//return nil
-}
-
-func (s *splunkClient) PostBatch(events []interface{}) error {
+func (s *splunkClient) Post(events []map[string]interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
 		eventJson, err := json.Marshal(event)
@@ -71,8 +56,8 @@ func (s *splunkClient) PostBatch(events []interface{}) error {
 			)
 		}
 	}
-
 	bodyBytes := bodyBuffer.Bytes()
+
 	return s.send(&bodyBytes)
 }
 

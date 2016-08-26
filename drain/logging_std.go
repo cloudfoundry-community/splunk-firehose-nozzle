@@ -1,4 +1,4 @@
-package splunk
+package drain
 
 import "fmt"
 

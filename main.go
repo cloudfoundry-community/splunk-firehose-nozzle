@@ -13,13 +13,14 @@ import (
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )
 
 var (
 	debug = kingpin.
 		Flag("debug", "Enable debug mode: forward to standard out intead of splunk").
-		Default("false").OverrideDefaultFromEnvar("DEBUG").Bool()
+		OverrideDefaultFromEnvar("DEBUG").Default("false").Bool()
 	apiEndpoint = kingpin.
 			Flag("api-endpoint", "Api endpoint address").
 			OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
@@ -34,26 +35,29 @@ var (
 			OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").Required().String()
 	skipSSLValidation = kingpin.
 				Flag("skip-ssl-validation", "Please don't").
-				Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
+				OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").Bool()
 	wantedEvents = kingpin.
 			Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).
-			Default("ValueMetric,CounterEvent,ContainerMetric").OverrideDefaultFromEnvar("EVENTS").String()
+			OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
 	keepAlive = kingpin.
 			Flag("fh-keep-alive", "Keep Alive duration for the firehose consumer").
-			Default("25s").OverrideDefaultFromEnvar("FH_KEEP_ALIVE").Duration()
+			OverrideDefaultFromEnvar("FH_KEEP_ALIVE").Default("25s").Duration()
 	subscriptionId = kingpin.
 			Flag("subscription-id", "Id for the subscription.").
-			Default("splunk-firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
+			OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").String()
 	splunkToken = kingpin.
 			Flag("splunk-token", "Splunk HTTP event collector token").
 			OverrideDefaultFromEnvar("SPLUNK_TOKEN").Required().String()
 	splunkHost = kingpin.
-			Flag("splunk-toekn", "Splunk HTTP event collector host").
+			Flag("splunk-host", "Splunk HTTP event collector host").
 			OverrideDefaultFromEnvar("SPLUNK_HOST").Required().String()
+	flushInterval = kingpin.
+			Flag("flush-interval", "Every interval flushes to heavy forwarder every ").
+			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
 )
 
 var (
-	version = "0.0.0"
+	version = "0.0.1"
 )
 
 func main() {
@@ -68,10 +72,10 @@ func main() {
 
 	var loggingClient logging.Logging
 	if *debug {
-		loggingClient = &splunk.LoggingStd{}
+		loggingClient = &drain.LoggingStd{}
 	} else {
 		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *skipSSLValidation, logger)
-		loggingClient = splunk.NewLoggingSplunk(logger, splunkCLient)
+		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
 	}
 
 	events := eventRouting.NewEventRouting(caching.NewCachingEmpty() /*todo*/, loggingClient)
