@@ -18,5 +18,6 @@ export EVENTS=ValueMetric,CounterEvent
 
 export SPLUNK_TOKEN=<token>
 export SPLUNK_HOST=<hec host, something like https://example.cloud.splunk.com:8088>
+export SPLUNK_INDEX=<index>
 
 go run main.go
