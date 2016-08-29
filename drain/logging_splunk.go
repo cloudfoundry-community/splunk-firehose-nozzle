@@ -72,9 +72,6 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 	eventType := strings.ToLower(fields["event_type"].(string))
 	event["sourcetype"] = fmt.Sprintf("cf:%s", eventType)
 
-	//todo
-	//event["index"]
-
 	event["event"] = fields
 
 	return event
