@@ -2,13 +2,14 @@ package splunk
 
 import (
 	"crypto/tls"
+	"time"
+
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 type FirehoseNozzle struct {

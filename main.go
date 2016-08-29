@@ -78,12 +78,15 @@ func main() {
 		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
 	}
 
-	events := eventRouting.NewEventRouting(caching.NewCachingEmpty() /*todo*/, loggingClient)
+	//todo: enable caching client
+	logger.Info("Setting up event routing")
+	events := eventRouting.NewEventRouting(caching.NewCachingEmpty(), loggingClient)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		log.Fatal("Error setting up event routing: ", err)
 	}
 
+	logger.Info("Connecting to Cloud Foundry")
 	cfConfig := &cfclient.Config{
 		ApiAddress:        *apiEndpoint,
 		Username:          *user,
@@ -100,6 +103,7 @@ func main() {
 	}
 
 	//todo: replace firehose-to-syslog client, get token via uaa
+	logger.Info("Connecting logging client")
 	if loggingClient.Connect() {
 		firehoseClient := splunk.NewFirehoseNozzle(cfClient, events, firehoseConfig)
 		err := firehoseClient.Start()
