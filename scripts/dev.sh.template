@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
 export API_ENDPOINT=https://api.bosh-lite.com
-export SKIP_SSL_VALIDATION=true
-export FIREHOSE_USER=<username>
-export FIREHOSE_PASSWORD=<password>
 # DOPPLER_ENDPOINT is /v2/info -> "logging_endpoint"
 export DOPPLER_ENDPOINT=wss://doppler.bosh-lite.com:4443
+# UAA_ENDPOINT is /v2/info -> 'token_endpoint'
+export UAA_ENDPOINT=https://uaa.bosh-lite.com
+export SKIP_SSL_VALIDATION=true
+
+export FIREHOSE_USER=admin
+export FIREHOSE_PASSWORD=admin
+export FIREHOSE_UAA_USER=<client>
+export FIREHOSE_UAA_SECRET=<secret>
+
 # possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 export EVENTS=ValueMetric,CounterEvent
-
 export SPLUNK_TOKEN=<token>
-export SPLUNK_HOST=<host, something like https://example.cloud.splunk.com:8088>
+export SPLUNK_HOST=<hec host, something like https://example.cloud.splunk.com:8088>
 
 go run main.go

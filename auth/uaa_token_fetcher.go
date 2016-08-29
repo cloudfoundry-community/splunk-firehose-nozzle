@@ -1,6 +1,8 @@
 package auth
 
-import "github.com/cloudfoundry-incubator/uaago"
+import (
+	"github.com/cloudfoundry-incubator/uaago"
+)
 
 type uaaTokenFetcher struct {
 	uaaUrl                string
@@ -18,7 +20,7 @@ func NewUAATokenFetcher(url string, username string, password string, sslSkipVer
 	}
 }
 
-func (uaa *uaaTokenFetcher) FetchAuthToken() (string, error) {
+func (uaa *uaaTokenFetcher) RefreshAuthToken() (string, error) {
 	uaaClient, err := uaago.NewClient(uaa.uaaUrl)
 	if err != nil {
 		return "", err

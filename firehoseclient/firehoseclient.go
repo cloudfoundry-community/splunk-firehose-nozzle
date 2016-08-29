@@ -1,4 +1,4 @@
-package splunk
+package firehoseclient
 
 import (
 	"crypto/tls"
@@ -13,12 +13,12 @@ import (
 )
 
 type FirehoseNozzle struct {
-	errs         <-chan error
-	messages     <-chan *events.Envelope
-	consumer     *consumer.Consumer
-	eventRouting *eventRouting.EventRouting
-	config       *FirehoseConfig
-	cfClient     *cfclient.Client
+	errs           <-chan error
+	messages       <-chan *events.Envelope
+	consumer       *consumer.Consumer
+	eventRouting   *eventRouting.EventRouting
+	config         *FirehoseConfig
+	tokenRefresher consumer.TokenRefresher
 }
 
 type FirehoseConfig struct {
@@ -32,13 +32,13 @@ type CfClientTokenRefresh struct {
 	cfClient *cfclient.Client
 }
 
-func NewFirehoseNozzle(cfClient *cfclient.Client, eventRouting *eventRouting.EventRouting, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
+func NewFirehoseNozzle(tokenRefresher consumer.TokenRefresher, eventRouting *eventRouting.EventRouting, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
 	return &FirehoseNozzle{
-		errs:         make(<-chan error),
-		messages:     make(<-chan *events.Envelope),
-		eventRouting: eventRouting,
-		config:       firehoseconfig,
-		cfClient:     cfClient,
+		errs:           make(<-chan error),
+		messages:       make(<-chan *events.Envelope),
+		eventRouting:   eventRouting,
+		config:         firehoseconfig,
+		tokenRefresher: tokenRefresher,
 	}
 }
 
@@ -51,10 +51,12 @@ func (f *FirehoseNozzle) Start() error {
 func (f *FirehoseNozzle) consumeFirehose() {
 	f.consumer = consumer.New(
 		f.config.TrafficControllerURL,
-		&tls.Config{InsecureSkipVerify: f.config.InsecureSSLSkipVerify},
-		nil)
-	refresher := CfClientTokenRefresh{cfClient: f.cfClient}
-	f.consumer.RefreshTokenFrom(&refresher)
+		&tls.Config{
+			InsecureSkipVerify: f.config.InsecureSSLSkipVerify,
+		},
+		nil,
+	)
+	f.consumer.RefreshTokenFrom(f.tokenRefresher)
 	f.consumer.SetIdleTimeout(time.Duration(f.config.IdleTimeoutSeconds) * time.Second)
 	f.messages, f.errs = f.consumer.Firehose(f.config.FirehoseSubscriptionID, "")
 }
