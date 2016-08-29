@@ -56,6 +56,8 @@ var (
 			OverrideDefaultFromEnvar("SPLUNK_TOKEN").Required().String()
 	splunkHost = kingpin.Flag("splunk-host", "Splunk HTTP event collector host").
 			OverrideDefaultFromEnvar("SPLUNK_HOST").Required().String()
+	splunkIndex = kingpin.Flag("splunk-index", "Splunk index").
+			OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().String()
 	flushInterval = kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every ").
 			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
 )
@@ -78,7 +80,7 @@ func main() {
 	if *debug {
 		loggingClient = &drain.LoggingStd{}
 	} else {
-		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *skipSSL, logger)
+		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, *skipSSL, logger)
 		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
 	}
 

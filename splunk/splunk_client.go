@@ -21,10 +21,11 @@ type splunkClient struct {
 	httpClient  *http.Client
 	splunkToken string
 	splunkHost  string
+	index       string
 	logger      lager.Logger
 }
 
-func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
+func NewSplunkClient(splunkToken string, splunkHost string, index string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
@@ -35,6 +36,7 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 		httpClient:  httpClient,
 		splunkToken: splunkToken,
 		splunkHost:  splunkHost,
+		index:       index,
 		logger:      logger,
 	}
 }
@@ -42,6 +44,9 @@ func NewSplunkClient(splunkToken string, splunkHost string, insecureSkipVerify b
 func (s *splunkClient) Post(events []map[string]interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
+		if s.index != "" {
+			event["index"] = s.index
+		}
 		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
