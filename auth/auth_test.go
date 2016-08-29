@@ -35,7 +35,7 @@ var _ = Describe("uaa_token_fetcher", func() {
 
 	It("requests token using credentials", func() {
 		fetcher := NewUAATokenFetcher(testServer.URL, "user", "pass", true)
-		fetcher.FetchAuthToken()
+		fetcher.RefreshAuthToken()
 
 		authValue := capturedRequest.Header.Get("Authorization")
 		expectedAuthValue := "Basic " + base64.StdEncoding.EncodeToString([]byte("user:pass"))
@@ -46,7 +46,7 @@ var _ = Describe("uaa_token_fetcher", func() {
 
 	It("returns token", func() {
 		fetcher := NewUAATokenFetcher(testServer.URL, "user", "password", true)
-		token, err := fetcher.FetchAuthToken()
+		token, err := fetcher.RefreshAuthToken()
 
 		//not a fan of retesting uaago, but doesn't Client struct doesn't implement interface
 		Expect(err).To(BeNil())

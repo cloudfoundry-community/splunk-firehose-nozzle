@@ -60,7 +60,7 @@ glide update
 
 Update dependencies (without `strip-vcs` you'll end up with submodules):
 ```
-glide update --strip-vcs
+glide install --strip-vendor --strip-vcs --update-vendored
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)

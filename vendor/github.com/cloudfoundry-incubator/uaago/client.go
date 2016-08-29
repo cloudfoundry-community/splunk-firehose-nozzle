@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type Client struct {
@@ -47,17 +48,13 @@ func (c *Client) GetAuthTokenWithExpiresIn(username, password string, insecureSk
 	request.SetBasicAuth(username, password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	config := &tls.Config{InsecureSkipVerify: insecureSkipVerify}
-	tr := &http.Transport{TLSClientConfig: config}
-	httpClient := &http.Client{Transport: tr}
-
-	resp, err := httpClient.Do(request)
+	resp, err := c.httpClient(insecureSkipVerify).Do(request)
 	if err != nil {
 		return "", -1, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", -1,  fmt.Errorf("Received a status code %v", resp.Status)
+		return "", -1, fmt.Errorf("Received a status code %v", resp.Status)
 	}
 
 	jsonData := make(map[string]interface{})
@@ -74,4 +71,40 @@ func (c *Client) GetAuthTokenWithExpiresIn(username, password string, insecureSk
 	}
 
 	return fmt.Sprintf("%s %s", jsonData["token_type"], jsonData["access_token"]), expiresIn, err
+}
+
+func (c *Client) TokenIsAuthorized(username, password, token, client_id string, insecureSkipVerify bool) bool {
+
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/check_token", c.uaaUrl.String()), strings.NewReader("token="+token))
+	if err != nil {
+		return false
+	}
+	request.SetBasicAuth(username, password)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.httpClient(insecureSkipVerify).Do(request)
+	if err != nil {
+		return false
+	}
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(responseBody), client_id) {
+		return true
+	}
+
+	return false
+}
+
+func (c *Client) httpClient(insecureSkipVerify bool) *http.Client {
+	config := &tls.Config{InsecureSkipVerify: insecureSkipVerify}
+	tr := &http.Transport{TLSClientConfig: config}
+	return &http.Client{Transport: tr}
 }

@@ -34,7 +34,7 @@ var _ = Describe("cf_http handlers", func() {
 		})
 		Context("with invalid json structure", func() {
 			It("should fail", func() {
-				var garbage map[int]string
+				var garbage map[float64]string
 				defer func() {
 					r := recover()
 					Expect(r).NotTo(BeNil())

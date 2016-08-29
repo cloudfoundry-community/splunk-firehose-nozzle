@@ -1,7 +1,7 @@
 .idea
-*.iml
 
 scripts/dev*.sh
 
 main
+cache.db
 splunk-firehose-nozzle

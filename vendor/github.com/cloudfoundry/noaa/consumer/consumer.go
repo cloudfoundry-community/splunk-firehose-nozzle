@@ -63,14 +63,17 @@ type Consumer struct {
 
 // New creates a new consumer to a trafficcontroller.
 func New(trafficControllerUrl string, tlsConfig *tls.Config, proxy func(*http.Request) (*url.URL, error)) *Consumer {
-	transport := &http.Transport{Proxy: proxy, TLSClientConfig: tlsConfig, TLSHandshakeTimeout: internal.HandshakeTimeout, DisableKeepAlives: true}
+	transport := &http.Transport{Proxy: proxy, TLSClientConfig: tlsConfig, TLSHandshakeTimeout: internal.Timeout, DisableKeepAlives: true}
 	consumer := &Consumer{
 		trafficControllerUrl: trafficControllerUrl,
 		proxy:                proxy,
 		debugPrinter:         noaa.NullDebugPrinter{},
-		client:               &http.Client{Transport: transport},
+		client: &http.Client{
+			Transport: transport,
+			Timeout:   internal.Timeout,
+		},
 	}
-	consumer.dialer = websocket.Dialer{HandshakeTimeout: internal.HandshakeTimeout, NetDial: consumer.proxyDial, TLSClientConfig: tlsConfig}
+	consumer.dialer = websocket.Dialer{HandshakeTimeout: internal.Timeout, NetDial: consumer.proxyDial, TLSClientConfig: tlsConfig}
 	return consumer
 }
 

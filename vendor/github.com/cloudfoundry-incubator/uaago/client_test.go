@@ -5,10 +5,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"io/ioutil"
+
 	"github.com/cloudfoundry-incubator/uaago"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+type request struct {
+	Request *http.Request
+	Body    []byte
+}
 
 var _ = Describe("Client", func() {
 	Context("GetOauthToken", func() {
@@ -236,6 +243,69 @@ var _ = Describe("Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(token).To(Equal("bearer good-token"))
 				Expect(expiresIn).To(Equal(0))
+			})
+		})
+	})
+
+	Context("TokenIsAuthorized", func() {
+		var (
+			uaaTestServer     *httptest.Server
+			uaaRequests       = make(chan *request, 10)
+			uaaResponseBodies = make(chan string, 10)
+			client            *uaago.Client
+
+			basicAuthUser = "some-basic-auth-user"
+			basicAuthPass = "some-basic-auth-pass"
+		)
+
+		BeforeEach(func() {
+			uaaTestServer = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+				body, _ := ioutil.ReadAll(req.Body)
+				req.Body.Close()
+				uaaRequests <- &request{Request: req, Body: body}
+
+				writer.WriteHeader(http.StatusOK)
+				writer.Write([]byte(<-uaaResponseBodies))
+			}))
+			client, _ = uaago.NewClient(uaaTestServer.URL)
+		})
+
+		AfterEach(func() {
+			uaaTestServer.Close()
+		})
+
+		It("talks to UAA", func() {
+			uaaResponseBodies <- "some client_id"
+			client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "some client_id")
+			var req *request
+			Eventually(uaaRequests).Should(Receive(&req))
+
+			Expect(req.Request.Method).To(Equal("POST"))
+			Expect(req.Request.URL).To(ContainSubstring("/check_token"))
+
+			Expect(string(req.Body)).To(ContainSubstring("some token"))
+
+			authUser, authPass, ok := req.Request.BasicAuth()
+			Expect(ok).To(BeTrue())
+			Expect(authUser).To(Equal(basicAuthUser))
+			Expect(authPass).To(Equal(basicAuthPass))
+		})
+
+		Context("valid: client_id=ingestor", func() {
+			It("returns true", func() {
+				uaaResponseBodies <- "ingestor"
+				isValid := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor")
+
+				Expect(isValid).To(BeTrue())
+			})
+		})
+
+		Context("invalid: client_id=foo", func() {
+			It("returns false", func() {
+				uaaResponseBodies <- "foo"
+				isValid := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor")
+
+				Expect(isValid).To(BeFalse())
 			})
 		})
 	})

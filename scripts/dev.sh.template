@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 
-# NOZZLE_UAA_URL is /v2/info -> "token_endpoint"
-export NOZZLE_UAA_URL=https://uaa.bosh-lite.com
-export NOZZLE_USERNAME=<username>
-export NOZZLE_PASSWORD=<password>
-# NOZZLE_TRAFFIC_CONTROLLER_URL is /v2/info -> "logging_endpoint"
-export NOZZLE_TRAFFIC_CONTROLLER_URL=wss://doppler.bosh-lite.com:4443
-# subscription-id unique to nozzle; firehose balances across sockets having same id
-export NOZZLE_FIREHOSE_SUBSCRIPTION_ID=splunk-firehose-subscription-id
-export NOZZLE_INSECURE_SKIP_VERIFY=true
-export NOZZLE_SELECTED_EVENTS=ValueMetric,CounterEvent
+# UAA_ENDPOINT is /v2/info -> 'token_endpoint'
+export UAA_ENDPOINT=https://uaa.bosh-lite.com
+export FIREHOSE_UAA_USER=<client>
+export FIREHOSE_UAA_SECRET=<secret>
+export SKIP_SSL_VALIDATION=true
 
-export NOZZLE_SPLUNK_HOST=<host, something like https://example.cloud.splunk.com:8088>
-export NOZZLE_SPLUNK_TOKEN=<hec_token>
-export NOZZLE_SPLUNK_INDEX=<index>
+export ADD_APP_INFO=true
+export API_ENDPOINT=https://api.bosh-lite.com
+export FIREHOSE_USER=admin
+export FIREHOSE_PASSWORD=admin
+
+# DOPPLER_ENDPOINT is /v2/info -> "logging_endpoint"
+export DOPPLER_ENDPOINT=wss://doppler.bosh-lite.com:4443
+# possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+export EVENTS=ValueMetric,CounterEvent
+
+export SPLUNK_TOKEN=<token>
+export SPLUNK_HOST=<hec host, something like https://example.cloud.splunk.com:8088>
+export SPLUNK_INDEX=<index>
 
 go run main.go
