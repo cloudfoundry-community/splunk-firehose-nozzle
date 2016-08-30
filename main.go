@@ -33,11 +33,11 @@ var (
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
 			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
 	apiEndpoint = kingpin.Flag("api-endpoint", "API endpoint address").
-			OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
+			OverrideDefaultFromEnvar("API_ENDPOINT").String()
 	user = kingpin.Flag("user", "Admin user.").
-		OverrideDefaultFromEnvar("FIREHOSE_USER").String()
+		OverrideDefaultFromEnvar("API_USER").String()
 	password = kingpin.Flag("password", "Admin password.").
-			OverrideDefaultFromEnvar("FIREHOSE_PASSWORD").String()
+			OverrideDefaultFromEnvar("API_PASSWORD").String()
 	boltDBPath = kingpin.Flag("boltdb-path", "Bolt Database path ").
 			Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
 
@@ -123,6 +123,9 @@ func setupCache(logger lager.Logger) caching.Caching {
 		}
 		if *password == "" {
 			logger.Fatal("Unable to setup cache", errors.New("Password is required when add-app-info is true"))
+		}
+		if *apiEndpoint == "" {
+			logger.Fatal("Unable to setup cache", errors.New("ApiEndpoint is required when add-app-info is true"))
 		}
 
 		logger.Info("Connecting to Cloud Foundry")
