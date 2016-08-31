@@ -11,4 +11,4 @@ export ADMIN_UAA_SECRET=<secret>
 export FIREHOSE_UAA_USER=<client>
 export FIREHOSE_UAA_SECRET=<secret>
 
-go run provision.go
+go run provision/provision.go

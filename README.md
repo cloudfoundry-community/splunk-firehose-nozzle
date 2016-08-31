@@ -5,7 +5,7 @@
 The Nozzle requires a uaa user with the scope `doppler.firehose`. You can
 * Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
 * Add a new client to the deployment manifest; see [uaa.clients](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
-* Run `provision.go`; see `./scripts/provision.sh.template`
+* Run `provision/provision.go`; see `./scripts/provision.sh.template`
 
 Full client details
 ```
