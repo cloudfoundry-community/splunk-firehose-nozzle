@@ -2,24 +2,20 @@
 
 ### Setup
 
-The Nozzle requires a uaa user with the scope `doppler.firehose`. One way to create this user
-is to add them via the
-[uaa.clients](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
-property in the deployment manifest.
+The Nozzle requires a uaa user with the scope `doppler.firehose`. You can
+* Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
+* Add a new client to the deployment manifest; see [uaa.clients](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
+* Run `provision.go`; see `./scripts/provision.sh.template`
 
-For example:
-
+Full client details
 ```
-properties:
-  uaa:
-    clients:
-      splunk-firehose-nozzle:
-        access-token-validity: 1209600
-        authorized-grant-types: authorization_code,client_credentials,refresh_token
-        override: true
-        secret: <password>
-        scope: openid,oauth.approvals,doppler.firehose
-        authorities: oauth.login,doppler.firehose
+splunk-firehose-nozzle
+  scope: openid oauth.approvals doppler.firehose
+  resource_ids: none
+  authorized_grant_types: client_credentials
+  autoapprove: 
+  action: none
+  authorities: oauth.login doppler.firehose
 ```
 
 ### Development
@@ -39,13 +35,13 @@ $ cd <REPO_ROOT_DIRECTORY>
 $ glide install
 ```
 
-#### Setup
+#### Environment
 
 For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
-copy `scripts/dev.sh.template` to `scripts/dev.sh` and supply missing values:
+copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
 ```
-$ cp script/dev.sh.template scripts/dev.sh
-$ chmod +x scripts/dev.sh
+$ cp script/dev.sh.template scripts/nozzle.sh
+$ chmod +x scripts/nozzle.sh
 ```
 
 Build project:
@@ -74,22 +70,22 @@ Run app
 $ ./scripts/dev.sh
 ```
 
-##### CI
+#### CI
 
 https://ci.run-01.haas-26.pez.pivotal.io/pipelines/splunk-firehose-nozzle
 
 ### Exploring Events
 
-Here are a few splunk queries to show the events you might want to dashboard
+Here are a few Splunk queries to show the events you might want to dashboard
 
 ```
-index="sandbox" eventType=ValueMetric
+eventType=ValueMetric
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
 
 ```
-index="sandbox" eventType=CounterEvent
+eventType=CounterEvent
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```

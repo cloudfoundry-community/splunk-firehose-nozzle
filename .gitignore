@@ -1,7 +1,10 @@
 .idea
 
-scripts/dev*.sh
+scripts/*
+!scripts/*.template
+
+cache.db
 
 main
-cache.db
+provision
 splunk-firehose-nozzle

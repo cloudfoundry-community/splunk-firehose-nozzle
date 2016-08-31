@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/cloudfoundry-incubator/uaago"
+	"github.com/cloudfoundry/noaa/consumer"
 )
 
 type uaaTokenFetcher struct {
@@ -11,7 +12,7 @@ type uaaTokenFetcher struct {
 	insecureSSLSkipVerify bool
 }
 
-func NewUAATokenFetcher(url string, username string, password string, sslSkipVerify bool) *uaaTokenFetcher {
+func NewUAATokenFetcher(url string, username string, password string, sslSkipVerify bool) consumer.TokenRefresher {
 	return &uaaTokenFetcher{
 		uaaUrl:                url,
 		username:              username,

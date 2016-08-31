@@ -21,14 +21,17 @@ import (
 )
 
 var (
+	debug = kingpin.Flag("debug", "Enable debug mode: forward to standard out intead of splunk").
+		OverrideDefaultFromEnvar("DEBUG").Default("false").Bool()
+	skipSSL = kingpin.Flag("skip-ssl-validation", "Skip cert validation (for dev environments").
+		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").Bool()
+
 	uaaEndpoint = kingpin.Flag("uaa-endpoint", "UAA endpoint address").
 			OverrideDefaultFromEnvar("UAA_ENDPOINT").Required().String()
-	uaaUser = kingpin.Flag("uaa-user", "Admin user.").
+	uaaUser = kingpin.Flag("firehose-uaa-user", "Firehose user.").
 		OverrideDefaultFromEnvar("FIREHOSE_UAA_USER").Required().String()
-	uaaSecret = kingpin.Flag("uaa-secret", "Admin password.").
+	uaaSecret = kingpin.Flag("firehose-uaa-secret", "Firehose password.").
 			OverrideDefaultFromEnvar("FIREHOSE_UAA_SECRET").Required().String()
-	skipSSL = kingpin.Flag("skip-ssl-validation", "Please don't").
-		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").Bool()
 
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
 			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
@@ -41,8 +44,6 @@ var (
 	boltDBPath = kingpin.Flag("boltdb-path", "Bolt Database path ").
 			Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
 
-	debug = kingpin.Flag("debug", "Enable debug mode: forward to standard out intead of splunk").
-		OverrideDefaultFromEnvar("DEBUG").Default("false").Bool()
 	dopplerEndpoint = kingpin.Flag("doppler-endpoint", "doppler endpoint, logging_endpoint in /v2/info").
 			OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").Required().String()
 	wantedEvents = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).
@@ -62,15 +63,13 @@ var (
 			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
 )
 
-var (
-	version = "0.0.1"
-)
+var version = "0.0.1"
 
 func main() {
 	cflager.AddFlags(flag.CommandLine)
 	flag.Parse()
 
-	logger, _ := cflager.New("splunk-logger")
+	logger, _ := cflager.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
 	kingpin.Version(version)
