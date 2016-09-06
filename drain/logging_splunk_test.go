@@ -8,10 +8,12 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
+
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/testing"
 )
 
 var _ = Describe("LoggingSplunk", func() {
@@ -29,10 +31,10 @@ var _ = Describe("LoggingSplunk", func() {
 		loggingMemory *drain.LoggingMemory
 		logging       *drain.LoggingSplunk
 
-		event          map[string]interface{}
-		logger         lager.Logger
-		capturedEvents []map[string]interface{}
-		routing        *eventRouting.EventRouting
+		event      map[string]interface{}
+		logger     lager.Logger
+		mockClient *testing.MockSplunkClient
+		routing    *eventRouting.EventRouting
 	)
 
 	BeforeEach(func() {
@@ -55,13 +57,7 @@ var _ = Describe("LoggingSplunk", func() {
 		routing = eventRouting.NewEventRouting(caching.NewCachingEmpty(), loggingMemory)
 		routing.SetupEventRouting("HttpStartStop,LogMessage,ValueMetric,CounterEvent,ContainerMetric,Error")
 
-		capturedEvents = nil
-		mockClient := &MockClient{
-			PostBatchFn: func(events []map[string]interface{}) error {
-				capturedEvents = events
-				return nil
-			},
-		}
+		mockClient = &testing.MockSplunkClient{}
 
 		logger = lager.NewLogger("test")
 		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond)
@@ -75,7 +71,7 @@ var _ = Describe("LoggingSplunk", func() {
 		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 		Eventually(func() []map[string]interface{} {
-			return capturedEvents
+			return mockClient.CapturedEvents
 		}).Should(HaveLen(1))
 	})
 
@@ -155,10 +151,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -219,10 +215,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -278,10 +274,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -333,10 +329,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -388,10 +384,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -454,10 +450,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return capturedEvents
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = capturedEvents[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -481,14 +477,3 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 	})
 })
-
-type MockClient struct {
-	PostBatchFn func(events []map[string]interface{}) error
-}
-
-func (m *MockClient) Post(events []map[string]interface{}) error {
-	if m.PostBatchFn != nil {
-		return m.PostBatchFn(events)
-	}
-	return nil
-}

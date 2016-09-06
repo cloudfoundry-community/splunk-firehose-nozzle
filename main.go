@@ -17,6 +17,7 @@ import (
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/firehoseclient"
+	"github.com/cf-platform-eng/splunk-firehose-nozzle/sink"
 	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
 )
 
@@ -25,6 +26,12 @@ var (
 		OverrideDefaultFromEnvar("DEBUG").Default("false").Bool()
 	skipSSL = kingpin.Flag("skip-ssl-validation", "Skip cert validation (for dev environments").
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").Bool()
+	jobName = kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
+		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").String()
+	jobIndex = kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
+			OverrideDefaultFromEnvar("JOB_INDEx").Default("-1").Int()
+	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
+		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
 
 	uaaEndpoint = kingpin.Flag("uaa-endpoint", "UAA endpoint address").
 			OverrideDefaultFromEnvar("UAA_ENDPOINT").Required().String()
@@ -81,6 +88,7 @@ func main() {
 	} else {
 		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, *skipSSL, logger)
 		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
+		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
 
 	logger.Info("Setting up caching")
