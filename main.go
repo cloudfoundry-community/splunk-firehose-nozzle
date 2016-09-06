@@ -29,7 +29,7 @@ var (
 	jobName = kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").String()
 	jobIndex = kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
-			OverrideDefaultFromEnvar("JOB_INDEx").Default("-1").Int()
+			OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").Int()
 	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
 
