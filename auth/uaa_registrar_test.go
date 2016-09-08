@@ -52,13 +52,12 @@ var _ = Describe("uaa_registrar", func() {
 			response := responses[0]
 			responses = responses[1:]
 
+			if response.code != 0 {
+				writer.WriteHeader(response.code)
+			}
 			if response.body != nil {
 				writer.Write(response.body)
 			}
-			if response.code != 200 {
-				writer.WriteHeader(response.code)
-			}
-
 		}))
 
 		logger = lager.NewLogger("test")
@@ -106,115 +105,256 @@ var _ = Describe("uaa_registrar", func() {
 			)
 		})
 
-		It("exist correctly calls endpoint", func() {
-			responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 200})
+		Context("client", func() {
+			It("exist correctly calls endpoint", func() {
+				responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 200})
 
-			registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
+				registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
 
-			request := capturedRequests[0]
-			Expect(request.request.Method).To(Equal("GET"))
-			Expect(request.request.URL.Path).To(Equal("/oauth/clients/my-firehose-user"))
-			Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
-		})
-
-		It("returns error when unable to determine if client exists", func() {
-			responses = append(responses, testServerResponse{
-				code: 301, //301 w/o location header forces error
-			})
-
-			err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-
-			Expect(err).NotTo(BeNil())
-		})
-
-		Context("client not present", func() {
-			It("correctly calls create client", func() {
-				responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 201})
-
-				err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-				Expect(err).To(BeNil())
-
-				request := capturedRequests[1]
-				Expect(request.request.Method).To(Equal("POST"))
-				Expect(request.request.URL.Path).To(Equal("/oauth/clients"))
-				Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
-				Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
-
-				var payload map[string]interface{}
-				err = json.Unmarshal(request.body, &payload)
-				Expect(err).To(BeNil())
-
-				Expect(payload["client_id"]).To(Equal("my-firehose-user"))
-				Expect(payload["client_secret"]).To(Equal("my-firehose-secret"))
-				Expect(payload["scope"]).To(Equal([]interface{}{"openid", "oauth.approvals", "doppler.firehose"}))
-				Expect(payload["authorized_grant_types"]).To(Equal([]interface{}{"client_credentials"}))
-			})
-
-			It("returns error if create client fails", func() {
-				responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 500})
-
-				err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-				Expect(err).NotTo(BeNil())
-			})
-		})
-
-		Context("client present", func() {
-			It("correctly calls update client", func() {
-				responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 200})
-
-				err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-				Expect(err).To(BeNil())
-				Expect(capturedRequests).To(HaveLen(3))
-
-				request := capturedRequests[1]
-				Expect(request.request.Method).To(Equal("PUT"))
+				request := capturedRequests[0]
+				Expect(request.request.Method).To(Equal("GET"))
 				Expect(request.request.URL.Path).To(Equal("/oauth/clients/my-firehose-user"))
 				Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
-				Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
-
-				var payload map[string]interface{}
-				err = json.Unmarshal(request.body, &payload)
-				Expect(err).To(BeNil())
-
-				Expect(payload["client_id"]).To(Equal("my-firehose-user"))
-				Expect(payload["scope"]).To(Equal([]interface{}{"openid", "oauth.approvals", "doppler.firehose"}))
-				Expect(payload["authorized_grant_types"]).To(Equal([]interface{}{"client_credentials"}))
 			})
 
-			It("returns error if update client fails", func() {
-				responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 500})
+			It("returns error when unable to determine if client exists", func() {
+				responses = append(responses, testServerResponse{
+					code: 301, //301 w/o location header forces error
+				})
 
-				err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-				Expect(capturedRequests).To(HaveLen(2))
+				err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+
 				Expect(err).NotTo(BeNil())
 			})
 
-			It("updates client secret", func() {
-				responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 200})
+			Context("client not present", func() {
+				It("correctly calls create client", func() {
+					responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 201})
 
-				err := registrar.RegisterFirehose("my-firehose-user", "my-new-firehose-secret")
-				Expect(err).To(BeNil())
-				Expect(capturedRequests).To(HaveLen(3))
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+					Expect(err).To(BeNil())
 
-				request := capturedRequests[2]
-				Expect(request.request.Method).To(Equal("PUT"))
-				Expect(request.request.URL.Path).To(Equal("/oauth/clients/my-firehose-user/secret"))
-				Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
-				Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
+					request := capturedRequests[1]
+					Expect(request.request.Method).To(Equal("POST"))
+					Expect(request.request.URL.Path).To(Equal("/oauth/clients"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+					Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
 
-				var payload map[string]interface{}
-				err = json.Unmarshal(request.body, &payload)
-				Expect(err).To(BeNil())
+					var payload map[string]interface{}
+					err = json.Unmarshal(request.body, &payload)
+					Expect(err).To(BeNil())
 
-				Expect(payload["secret"]).To(Equal("my-new-firehose-secret"))
+					Expect(payload["client_id"]).To(Equal("my-firehose-user"))
+					Expect(payload["client_secret"]).To(Equal("my-firehose-secret"))
+					Expect(payload["scope"]).To(Equal([]interface{}{"openid", "oauth.approvals", "doppler.firehose"}))
+					Expect(payload["authorized_grant_types"]).To(Equal([]interface{}{"client_credentials"}))
+				})
+
+				It("returns error if create client fails", func() {
+					responses = append(responses, testServerResponse{code: 404}, testServerResponse{code: 500})
+
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+					Expect(err).NotTo(BeNil())
+				})
 			})
 
-			It("returns error if update client secret fails", func() {
-				responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 500})
+			Context("client present", func() {
+				It("correctly calls update client", func() {
+					responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 200})
 
-				err := registrar.RegisterFirehose("my-firehose-user", "my-firehose-secret")
-				Expect(capturedRequests).To(HaveLen(3))
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+					Expect(err).To(BeNil())
+					Expect(capturedRequests).To(HaveLen(3))
+
+					request := capturedRequests[1]
+					Expect(request.request.Method).To(Equal("PUT"))
+					Expect(request.request.URL.Path).To(Equal("/oauth/clients/my-firehose-user"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+					Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
+
+					var payload map[string]interface{}
+					err = json.Unmarshal(request.body, &payload)
+					Expect(err).To(BeNil())
+
+					Expect(payload["client_id"]).To(Equal("my-firehose-user"))
+					Expect(payload["scope"]).To(Equal([]interface{}{"openid", "oauth.approvals", "doppler.firehose"}))
+					Expect(payload["authorized_grant_types"]).To(Equal([]interface{}{"client_credentials"}))
+				})
+
+				It("returns error if update client fails", func() {
+					responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 500})
+
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+					Expect(capturedRequests).To(HaveLen(2))
+					Expect(err).NotTo(BeNil())
+				})
+
+				It("updates client secret", func() {
+					responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 200})
+
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-new-firehose-secret")
+					Expect(err).To(BeNil())
+					Expect(capturedRequests).To(HaveLen(3))
+
+					request := capturedRequests[2]
+					Expect(request.request.Method).To(Equal("PUT"))
+					Expect(request.request.URL.Path).To(Equal("/oauth/clients/my-firehose-user/secret"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+					Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
+
+					var payload map[string]interface{}
+					err = json.Unmarshal(request.body, &payload)
+					Expect(err).To(BeNil())
+
+					Expect(payload["secret"]).To(Equal("my-new-firehose-secret"))
+				})
+
+				It("returns error if update client secret fails", func() {
+					responses = append(responses, testServerResponse{code: 200}, testServerResponse{code: 200}, testServerResponse{code: 500})
+
+					err := registrar.RegisterFirehoseClient("my-firehose-user", "my-firehose-secret")
+					Expect(capturedRequests).To(HaveLen(3))
+					Expect(err).NotTo(BeNil())
+				})
+			})
+		})
+
+		FContext("user", func() {
+			setPasswordResponse := testServerResponse{code: 200}
+
+			It("returns err when unable to list users", func() {
+				responses = append(responses, testServerResponse{code: 500})
+
+				err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
 				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("500"))
+			})
+
+			It("error when finding user responds with incorrect doe", func() {
+				responses = append(responses, testServerResponse{code: 500})
+
+				err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("500"))
+			})
+
+			Context("user exists", func() {
+				BeforeEach(func() {
+					responses = append(responses, testServerResponse{
+						code: 200,
+						body: []byte(`{
+	"resources": [
+		{"id": "5c2b3e19-bf76-441a-bfd9-6b499259d646"}
+	],
+	"startIndex": 1,
+	"itemsPerPage": 100,
+	"totalResults": 1
+}`),
+					})
+				})
+
+				It("correctly calls endpoint", func() {
+					responses = append(responses, setPasswordResponse)
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+
+					request := capturedRequests[0]
+					Expect(request.request.Method).To(Equal("GET"))
+					Expect(request.request.URL.Path).To(Equal("/Users"))
+					Expect(request.request.URL.RawQuery).To(Equal(`filter=userName+eq+"my-firehose-user"`))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+				})
+
+				It("correctly sets password", func() {
+					responses = append(responses, setPasswordResponse)
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+
+					request := capturedRequests[1]
+					Expect(request.request.Method).To(Equal("PUT"))
+					Expect(request.request.URL.Path).To(Equal("/Users/5c2b3e19-bf76-441a-bfd9-6b499259d646/password"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+				})
+
+				It("returns error when set password returns incorrect code", func() {
+					responses = append(responses, testServerResponse{code: 500})
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("500"))
+				})
+			})
+
+			Context("user doesn't exist", func() {
+				BeforeEach(func() {
+					responses = append(responses, testServerResponse{
+						code: 200,
+						body: []byte(`{
+	"resources": [],
+	"startIndex": 1,
+	"itemsPerPage": 100,
+	"totalResults": 0
+}`),
+					})
+				})
+
+				It("correctly creates user", func() {
+					responses = append(responses, testServerResponse{
+						code: 201,
+						body: []byte(`{
+	"id": "6c840ccf-550d-489e-992c-629acd53500e"
+}`),
+					})
+					responses = append(responses, setPasswordResponse)
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+
+					request := capturedRequests[1]
+					Expect(request.request.Method).To(Equal("POST"))
+					Expect(request.request.URL.Path).To(Equal("/Users"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+					Expect(request.request.Header.Get("Content-type")).To(Equal("application/json"))
+				})
+
+				It("error when create responds with incorrect status code", func() {
+					responses = append(responses, testServerResponse{code: 500})
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("500"))
+				})
+
+				It("error when create responds with incorrect body", func() {
+					responses = append(responses, testServerResponse{
+						code: 201,
+						body: []byte(`{"foo": "5c840ccfbar"}`),
+					})
+					responses = append(responses, setPasswordResponse)
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("foo"))
+				})
+
+				It("correctly sets password", func() {
+					responses = append(responses, testServerResponse{
+						code: 201,
+						body: []byte(`{
+	"id": "6c840ccf-550d-489e-992c-629acd53500e"
+}`),
+					}, setPasswordResponse)
+
+					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+
+					request := capturedRequests[2]
+					Expect(request.request.Method).To(Equal("PUT"))
+					Expect(request.request.URL.Path).To(Equal("/Users/6c840ccf-550d-489e-992c-629acd53500e/password"))
+					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+				})
 			})
 		})
 	})
