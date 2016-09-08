@@ -46,7 +46,7 @@ func main() {
 		logger.Fatal("Unable to initialize registrar", err)
 	}
 
-	//err = registrar.RegisterFirehoseClient(*firehoseUaaUser, *firehoseUaaSecret)
+	err = registrar.RegisterFirehoseClient(*firehoseUaaUser, *firehoseUaaSecret)
 	if err != nil {
 		logger.Fatal("Unable to create client", err)
 	}

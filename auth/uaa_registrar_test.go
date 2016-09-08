@@ -219,7 +219,7 @@ var _ = Describe("uaa_registrar", func() {
 			})
 		})
 
-		FContext("user", func() {
+		Context("user", func() {
 			setPasswordResponse := testServerResponse{code: 200}
 
 			It("returns err when unable to list users", func() {

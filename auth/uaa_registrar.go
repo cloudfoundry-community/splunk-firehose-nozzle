@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -109,39 +110,20 @@ func (p *uaaRegistrar) RegisterAdminUser(uaaFirehoseUser string, uaaFirehoseSecr
 		return err
 	}
 
+	p.logger.Info("Adding to admin group")
+	/*err = */ p.setAdmin(id)
+	/*
+		if err != nil {
+			return err
+		}
+	*/
+
 	return nil
-}
-
-func (p *uaaRegistrar) clientExists(uaaFirehoseClient string) (bool, error) {
-	url := fmt.Sprintf("%s/oauth/clients/%s", p.uaaUrl, uaaFirehoseClient)
-	reqUser, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
-	reqUser.Header.Add("Authorization", p.authToken)
-	resp, err := p.httpClient.Do(reqUser)
-	if err != nil {
-		return false, err
-	}
-
-	code := resp.StatusCode
-	if code == 200 {
-		return true, nil
-	} else if code == 404 {
-		return false, nil
-	} else {
-		return false, errors.New(fmt.Sprintf("Checking if client exists responded incorrectly: %+v", resp))
-	}
 }
 
 func (p *uaaRegistrar) getUserId(uaaFirehoseUser string) (string, error) {
 	url := fmt.Sprintf(`%s/Users?filter=userName+eq+"%s"`, p.uaaUrl, uaaFirehoseUser)
-	reqUser, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-	reqUser.Header.Add("Authorization", p.authToken)
-	resp, err := p.httpClient.Do(reqUser)
+	resp, err := p.makeUaaRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -169,24 +151,14 @@ func (p *uaaRegistrar) getUserId(uaaFirehoseUser string) (string, error) {
 
 func (p *uaaRegistrar) createUser(uaaFirehoseUser string, uaaFirehosePassword string) (string, error) {
 	url := fmt.Sprintf(`%s/Users`, p.uaaUrl)
-	requestBody, err := json.Marshal(user{
+	user := user{
 		UserName: uaaFirehoseUser,
 		Origin:   "uaa",
 		Emails: []email{
 			{Value: uaaFirehoseUser},
 		},
-	})
-	if err != nil {
-		return "", err
 	}
-
-	reqUser, err := http.NewRequest("POST", url, bytes.NewReader(requestBody))
-	if err != nil {
-		return "", err
-	}
-	reqUser.Header.Add("Authorization", p.authToken)
-	reqUser.Header.Add("Content-Type", "application/json")
-	resp, err := p.httpClient.Do(reqUser)
+	resp, err := p.makeUaaRequest("POST", url, user)
 	if err != nil {
 		return "", err
 	}
@@ -213,36 +185,47 @@ func (p *uaaRegistrar) createUser(uaaFirehoseUser string, uaaFirehosePassword st
 
 func (p *uaaRegistrar) setPassword(uaaFirehoseUserId string, uaaFirehosePassword string) error {
 	url := fmt.Sprintf("%s/Users/%s/password", p.uaaUrl, uaaFirehoseUserId)
-	body, err := json.Marshal(map[string]string{
+	password := map[string]string{
 		"password": uaaFirehosePassword,
-	})
-	if err != nil {
-		return err
 	}
-	req, err := http.NewRequest("PUT", url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Authorization", p.authToken)
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := p.httpClient.Do(req)
+	resp, err := p.makeUaaRequest("PUT", url, password)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
+	//Undocumented response code 422 when submit same password
+	if resp.StatusCode != 200 && resp.StatusCode != 422 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(
-			fmt.Sprintf("Update user password responded with [%d]: %+v", resp.StatusCode, body),
+			fmt.Sprintf("Update user password responded with [%d]: %+v", resp.StatusCode, string(body)),
 		)
 	} else {
 		return nil
 	}
 }
 
-func (p *uaaRegistrar) setAdmin(uaaFirehoseUser string) error {
-	panic("Todo")
+func (p *uaaRegistrar) setAdmin(uaaFirehoseUserId string) error {
+	//filter groups by name to get id and members
+	//put group with new member added
+
 	return nil
+}
+
+func (p *uaaRegistrar) clientExists(uaaFirehoseClient string) (bool, error) {
+	url := fmt.Sprintf("%s/oauth/clients/%s", p.uaaUrl, uaaFirehoseClient)
+	resp, err := p.makeUaaRequest("GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+
+	code := resp.StatusCode
+	if code == 200 {
+		return true, nil
+	} else if code == 404 {
+		return false, nil
+	} else {
+		return false, errors.New(fmt.Sprintf("Checking if client exists responded incorrectly: %+v", resp))
+	}
 }
 
 func (p *uaaRegistrar) createClient(uaaFirehoseUser string, uaaFirehoseSecret string) error {
@@ -250,22 +233,14 @@ func (p *uaaRegistrar) createClient(uaaFirehoseUser string, uaaFirehoseSecret st
 	client := p.getFirehoseClient()
 	client.ClientId = uaaFirehoseUser
 	client.ClientSecret = uaaFirehoseSecret
-	body, err := json.Marshal(client)
+	resp, err := p.makeUaaRequest("POST", url, client)
 	if err != nil {
 		return err
 	}
-
-	reqUser, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	reqUser.Header.Add("Authorization", p.authToken)
-	reqUser.Header.Add("Content-Type", "application/json")
-
-	resp, err := p.httpClient.Do(reqUser)
 
 	if resp.StatusCode != 201 {
-		return errors.New(fmt.Sprintf("Create client responded incorrectly: %+v", resp))
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errors.New(fmt.Sprintf("Create client responded incorrectly [%d]: %s", resp.StatusCode, body))
 	} else {
 		return nil
 	}
@@ -275,49 +250,27 @@ func (p *uaaRegistrar) updateClient(uaaFirehoseUser string, uaaFirehoseSecret st
 	reqUserUrl := fmt.Sprintf("%s/oauth/clients/%s", p.uaaUrl, uaaFirehoseUser)
 	client := p.getFirehoseClient()
 	client.ClientId = uaaFirehoseUser
-	body, err := json.Marshal(client)
+	resp, err := p.makeUaaRequest("PUT", reqUserUrl, client)
 	if err != nil {
 		return err
 	}
-
-	reqUser, err := http.NewRequest("PUT", reqUserUrl, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	reqUser.Header.Add("Authorization", p.authToken)
-	reqUser.Header.Add("Content-Type", "application/json")
-
-	resp, err := p.httpClient.Do(reqUser)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("Update client responded incorrectly: %+v", resp))
-	}
-
 	p.logger.Info(fmt.Sprintf("Update resp: %d", resp.StatusCode))
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errors.New(fmt.Sprintf("Update client responded incorrectly [%d]: %s", resp.StatusCode, body))
+	}
 
 	reqSecretUrl := fmt.Sprintf("%s/oauth/clients/%s/secret", p.uaaUrl, uaaFirehoseUser)
-	body, err = json.Marshal(map[string]string{
+	secret := map[string]string{
 		"secret": uaaFirehoseSecret,
-	})
-	if err != nil {
-		return err
 	}
-
-	reqSecret, err := http.NewRequest("PUT", reqSecretUrl, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	reqSecret.Header.Add("Authorization", p.authToken)
-	reqSecret.Header.Add("Content-Type", "application/json")
-
-	resp, err = p.httpClient.Do(reqSecret)
+	resp, err = p.makeUaaRequest("PUT", reqSecretUrl, secret)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("Update client secret responded incorrectly: %+v", resp))
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errors.New(fmt.Sprintf("Update client secret responded incorrectly [%d]: %s", resp.StatusCode, body))
 	} else {
 		return nil
 	}
@@ -335,6 +288,33 @@ func (p *uaaRegistrar) readAndUnmarshall(resp *http.Response, target interface{}
 	} else {
 		return string(rawResponse), nil
 	}
+}
+
+func (p *uaaRegistrar) makeUaaRequest(method string, url string, body interface{}) (*http.Response, error) {
+	var requestBody io.Reader
+	if body != nil {
+		requestBodyJson, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		requestBody = bytes.NewReader(requestBodyJson)
+	}
+	req, err := http.NewRequest(method, url, requestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", p.authToken)
+	if body != nil {
+		req.Header.Add("Content-Type", "application/json")
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (p *uaaRegistrar) getFirehoseClient() *client {
