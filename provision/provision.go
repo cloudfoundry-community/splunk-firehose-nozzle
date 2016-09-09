@@ -51,8 +51,13 @@ func main() {
 		logger.Fatal("Unable to create client", err)
 	}
 
-	err = registrar.RegisterAdminUser(*firehoseUaaUser, *firehoseUaaSecret)
+	id, err := registrar.RegisterUser(*firehoseUaaUser, *firehoseUaaSecret)
 	if err != nil {
 		logger.Fatal("Unable to create user", err)
+	}
+
+	err = registrar.AddUserToGroup(id, auth.GROUP_CLOUD_CONTROLLER_ADMIN)
+	if err != nil {
+		logger.Fatal("Unable to add user to admin group", err)
 	}
 }

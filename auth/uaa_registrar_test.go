@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 
 	"code.cloudfoundry.org/lager"
 
@@ -225,7 +226,7 @@ var _ = Describe("uaa_registrar", func() {
 			It("returns err when unable to list users", func() {
 				responses = append(responses, testServerResponse{code: 500})
 
-				err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+				_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("500"))
 			})
@@ -233,7 +234,7 @@ var _ = Describe("uaa_registrar", func() {
 			It("error when finding user responds with incorrect doe", func() {
 				responses = append(responses, testServerResponse{code: 500})
 
-				err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+				_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("500"))
 			})
@@ -256,7 +257,7 @@ var _ = Describe("uaa_registrar", func() {
 				It("correctly calls endpoint", func() {
 					responses = append(responses, setPasswordResponse)
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).To(BeNil())
 
 					request := capturedRequests[0]
@@ -269,7 +270,7 @@ var _ = Describe("uaa_registrar", func() {
 				It("correctly sets password", func() {
 					responses = append(responses, setPasswordResponse)
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).To(BeNil())
 
 					request := capturedRequests[1]
@@ -278,10 +279,18 @@ var _ = Describe("uaa_registrar", func() {
 					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
 				})
 
+				It("returns user id", func() {
+					responses = append(responses, setPasswordResponse)
+
+					id, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+					Expect(id).To(Equal("5c2b3e19-bf76-441a-bfd9-6b499259d646"))
+				})
+
 				It("returns error when set password returns incorrect code", func() {
 					responses = append(responses, testServerResponse{code: 500})
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).NotTo(BeNil())
 					Expect(err.Error()).To(ContainSubstring("500"))
 				})
@@ -309,7 +318,7 @@ var _ = Describe("uaa_registrar", func() {
 					})
 					responses = append(responses, setPasswordResponse)
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).To(BeNil())
 
 					request := capturedRequests[1]
@@ -322,7 +331,7 @@ var _ = Describe("uaa_registrar", func() {
 				It("error when create responds with incorrect status code", func() {
 					responses = append(responses, testServerResponse{code: 500})
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).NotTo(BeNil())
 					Expect(err.Error()).To(ContainSubstring("500"))
 				})
@@ -334,7 +343,7 @@ var _ = Describe("uaa_registrar", func() {
 					})
 					responses = append(responses, setPasswordResponse)
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).NotTo(BeNil())
 					Expect(err.Error()).To(ContainSubstring("foo"))
 				})
@@ -347,7 +356,7 @@ var _ = Describe("uaa_registrar", func() {
 }`),
 					}, setPasswordResponse)
 
-					err := registrar.RegisterAdminUser("my-firehose-user", "my-firehose-password")
+					_, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
 					Expect(err).To(BeNil())
 
 					request := capturedRequests[2]
@@ -355,6 +364,177 @@ var _ = Describe("uaa_registrar", func() {
 					Expect(request.request.URL.Path).To(Equal("/Users/6c840ccf-550d-489e-992c-629acd53500e/password"))
 					Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
 				})
+
+				It("returns user id", func() {
+					responses = append(responses, testServerResponse{
+						code: 201,
+						body: []byte(`{
+	"id": "6c840ccf-550d-489e-992c-629acd53500e"
+}`),
+					}, setPasswordResponse)
+
+					id, err := registrar.RegisterUser("my-firehose-user", "my-firehose-password")
+					Expect(err).To(BeNil())
+					Expect(id).To(Equal("6c840ccf-550d-489e-992c-629acd53500e"))
+				})
+			})
+		})
+
+		Context("group", func() {
+			var groupsResourceJson []byte
+
+			BeforeEach(func() {
+				groupsResourceJson = []byte(`{
+    "resources": [{
+            "meta": {
+                "version": 4,
+                "created": "2016-09-05T21:38:29.822Z",
+                "lastModified": "2016-09-08T17:49:39.079Z"
+            },
+            "displayName": "cloud_controller.admin",
+            "schemas": ["urn:scim:schemas:core:1.0"],
+            "members": [{
+                "origin": "uaa",
+                "type": "USER",
+                "value": "5c2b3e19-bf76-441a-bfd9-6b499259d646"
+            }],
+            "zoneId": "uaa",
+            "id": "93aefed3-b30a-4a62-85b5-f3664b1dfe82"
+        }
+    ],
+    "startIndex": 1,
+    "totalResults": 1
+}
+`)
+				r, _ := regexp.Compile(`\s`)
+				groupsResourceJson = r.ReplaceAll(groupsResourceJson, []byte(""))
+			})
+
+			It("returns err when unable to list groups", func() {
+				responses = append(responses, testServerResponse{code: 500})
+
+				err := registrar.AddUserToGroup("user-id", "cloud_controller.admin")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("500"))
+			})
+
+			It("returns error if no group matching display name", func() {
+				responses = append(responses, testServerResponse{
+					code: 200,
+					body: []byte(`{
+	"resources": [],
+	"totalResults": 0
+}`),
+				})
+
+				err := registrar.AddUserToGroup("user-id", "non-existant-group")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("non-existant-group"))
+			})
+
+			It("error if json serialization doesn't match", func() {
+				responses = append(responses, testServerResponse{
+					code: 200,
+					body: []byte(`{
+    "resources": [{
+            "meta": {
+                "version": 4,
+                "created": "2016-09-05T21:38:29.822Z",
+                "lastModified": "2016-09-08T17:49:39.079Z"
+            },
+            "displayName": "cloud_controller.admin",
+            "schemas": ["urn:scim:schemas:core:1.0"],
+            "members": [{
+				"origin": "uaa",
+				"type": "USER",
+				"value": "5c2b3e19-bf76-441a-bfd9-6b499259d646"
+			}],
+            "zoneId": "uaa",
+            "id": "93aefed3-b30a-4a62-85b5-f3664b1dfe82",
+            "key": "unexpected key"
+        }
+    ],
+    "startIndex": 1,
+    "totalResults": 1
+}
+`),
+				})
+				err := registrar.AddUserToGroup("user-id", "cloud_controller.admin")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("schema"))
+			})
+
+			It("no action when already member", func() {
+				responses = append(responses, testServerResponse{
+					code: 200,
+					body: groupsResourceJson,
+				})
+				err := registrar.AddUserToGroup("5c2b3e19-bf76-441a-bfd9-6b499259d646", "cloud_controller.admin")
+				Expect(err).To(BeNil())
+
+				Expect(capturedRequests).To(HaveLen(1))
+			})
+
+			It("correctly calls update group", func() {
+				responses = append(responses,
+					testServerResponse{
+						code: 200,
+						body: groupsResourceJson,
+					},
+					testServerResponse{code: 200},
+				)
+				err := registrar.AddUserToGroup("84587184-2698-4eb4-89d6-ab275ab4d01e", "cloud_controller.admin")
+				Expect(err).To(BeNil())
+
+				Expect(capturedRequests).To(HaveLen(2))
+
+				request := capturedRequests[1]
+				Expect(request.request.Method).To(Equal("PUT"))
+				Expect(request.request.URL.Path).To(Equal("/Groups/93aefed3-b30a-4a62-85b5-f3664b1dfe82"))
+				Expect(request.request.Header.Get("Authorization")).To(Equal("my-token"))
+			})
+
+			It("correct update group payload", func() {
+				responses = append(responses,
+					testServerResponse{
+						code: 200,
+						body: groupsResourceJson,
+					},
+					testServerResponse{code: 200},
+				)
+				err := registrar.AddUserToGroup("84587184-2698-4eb4-89d6-ab275ab4d01e", "cloud_controller.admin")
+				Expect(err).To(BeNil())
+
+				Expect(capturedRequests).To(HaveLen(2))
+
+				request := capturedRequests[1]
+
+				expectedPayload := []byte(`{
+					"meta": {
+						"version": 4,
+						"created": "2016-09-05T21:38:29.822Z",
+						"lastModified": "2016-09-08T17:49:39.079Z"
+					},
+					"displayName": "cloud_controller.admin",
+					"schemas": ["urn:scim:schemas:core:1.0"],
+					"members": [
+						{
+							"origin": "uaa",
+							"type": "USER",
+							"value": "5c2b3e19-bf76-441a-bfd9-6b499259d646"
+						},
+						{
+							"origin": "uaa",
+							"type": "USER",
+							"value": "84587184-2698-4eb4-89d6-ab275ab4d01e"
+						}
+					],
+					"zoneId": "uaa",
+					"id": "93aefed3-b30a-4a62-85b5-f3664b1dfe82"
+				}`)
+				r, _ := regexp.Compile(`\s`)
+				expectedPayload = r.ReplaceAll(expectedPayload, []byte(""))
+				Expect(request.body).To(Equal(expectedPayload))
 			})
 		})
 	})
