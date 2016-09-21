@@ -2,11 +2,6 @@
 
 export SKIP_SSL_VALIDATION=true
 
-# UAA_ENDPOINT is /v2/info -> 'token_endpoint'
-export UAA_ENDPOINT=https://uaa.bosh-lite.com
-export FIREHOSE_UAA_USER=<client>
-export FIREHOSE_UAA_SECRET=<secret>
-
 export ADD_APP_INFO=true
 export API_ENDPOINT=https://api.bosh-lite.com
 export API_USER=admin

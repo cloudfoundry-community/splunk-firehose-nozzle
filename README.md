@@ -2,20 +2,18 @@
 
 ### Setup
 
-The Nozzle requires a uaa user with the scope `doppler.firehose`. You can
+The Nozzle requires a user with the scope `doppler.firehose` and 
+`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). 
+You can either
 * Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
-* Add a new client to the deployment manifest; see [uaa.clients](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
-* Run `provision/provision.go`; see `./scripts/provision.sh.template`
+* Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
 
-Full client details
+Manifest example:
 ```
-splunk-firehose-nozzle
-  scope: openid oauth.approvals doppler.firehose
-  resource_ids: none
-  authorized_grant_types: client_credentials
-  autoapprove: 
-  action: none
-  authorities: oauth.login doppler.firehose
+uaa:
+  scim:
+    users:
+      - splunk-firehose|password123|cloud_controller.admin_read_only,doppler.firehose
 ```
 
 ### Development
@@ -67,7 +65,7 @@ $ ginkgo -r
 Run app
 ```
 # this will run: go run main.go
-$ ./scripts/dev.sh
+$ ./scripts/nozzle.sh
 ```
 
 #### CI
@@ -76,16 +74,16 @@ https://ci.run-01.haas-26.pez.pivotal.io/pipelines/splunk-firehose-nozzle
 
 ### Exploring Events
 
-Here are a few Splunk queries to show the events you might want to dashboard
+Here are a few Splunk queries to explore some the events for making a  dashboard
 
 ```
-eventType=ValueMetric
+event_type=ValueMetric
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
 
 ```
-eventType=CounterEvent
+event_type=CounterEvent
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
