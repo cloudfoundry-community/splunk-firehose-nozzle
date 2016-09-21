@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"code.cloudfoundry.org/cflager"
-	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
@@ -33,21 +32,14 @@ var (
 	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
 
-	uaaEndpoint = kingpin.Flag("uaa-endpoint", "UAA endpoint address").
-			OverrideDefaultFromEnvar("UAA_ENDPOINT").Required().String()
-	uaaUser = kingpin.Flag("firehose-uaa-user", "Firehose user.").
-		OverrideDefaultFromEnvar("FIREHOSE_UAA_USER").Required().String()
-	uaaSecret = kingpin.Flag("firehose-uaa-secret", "Firehose password.").
-			OverrideDefaultFromEnvar("FIREHOSE_UAA_SECRET").Required().String()
-
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
 			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
 	apiEndpoint = kingpin.Flag("api-endpoint", "API endpoint address").
-			OverrideDefaultFromEnvar("API_ENDPOINT").String()
+			OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
 	user = kingpin.Flag("user", "Admin user.").
-		OverrideDefaultFromEnvar("API_USER").String()
+		OverrideDefaultFromEnvar("API_USER").Required().String()
 	password = kingpin.Flag("password", "Admin password.").
-			OverrideDefaultFromEnvar("API_PASSWORD").String()
+			OverrideDefaultFromEnvar("API_PASSWORD").Required().String()
 	boltDBPath = kingpin.Flag("boltdb-path", "Bolt Database path ").
 			Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
 
@@ -91,8 +83,23 @@ func main() {
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
 
+	logger.Info("Connecting to Cloud Foundry")
+	cfConfig := &cfclient.Config{
+		ApiAddress:        *apiEndpoint,
+		Username:          *user,
+		Password:          *password,
+		SkipSslValidation: *skipSSL,
+	}
+	cfClient := cfclient.NewClient(cfConfig)
+
 	logger.Info("Setting up caching")
-	cache := setupCache(logger)
+	var cache caching.Caching
+	if *addAppInfo {
+		cache = caching.NewCachingBolt(cfClient, *boltDBPath)
+		cache.CreateBucket()
+	} else {
+		cache = caching.NewCachingEmpty()
+	}
 
 	logger.Info("Setting up event routing")
 	events := eventRouting.NewEventRouting(cache, loggingClient)
@@ -101,7 +108,7 @@ func main() {
 		log.Fatal("Error setting up event routing: ", err)
 	}
 
-	tokenRefresher := auth.NewUAATokenFetcher(*uaaEndpoint, *uaaUser, *uaaSecret, *skipSSL)
+	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   *dopplerEndpoint,
 		InsecureSSLSkipVerify:  *skipSSL,
@@ -120,35 +127,5 @@ func main() {
 		}
 	} else {
 		logger.Fatal("Failed connecting to Splunk", errors.New(""))
-	}
-}
-
-func setupCache(logger lager.Logger) caching.Caching {
-	if *addAppInfo {
-		if *user == "" {
-			logger.Fatal("Unable to setup cache", errors.New("User is required when add-app-info is true"))
-		}
-		if *password == "" {
-			logger.Fatal("Unable to setup cache", errors.New("Password is required when add-app-info is true"))
-		}
-		if *apiEndpoint == "" {
-			logger.Fatal("Unable to setup cache", errors.New("ApiEndpoint is required when add-app-info is true"))
-		}
-
-		logger.Info("Connecting to Cloud Foundry")
-		cfConfig := &cfclient.Config{
-			ApiAddress:        *apiEndpoint,
-			Username:          *user,
-			Password:          *password,
-			SkipSslValidation: *skipSSL,
-		}
-		cfClient := cfclient.NewClient(cfConfig)
-
-		cache := caching.NewCachingBolt(cfClient, *boltDBPath)
-		cache.CreateBucket()
-
-		return cache
-	} else {
-		return caching.NewCachingEmpty()
 	}
 }

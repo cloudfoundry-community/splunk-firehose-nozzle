@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
-	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
@@ -26,10 +25,6 @@ type FirehoseConfig struct {
 	InsecureSSLSkipVerify  bool
 	IdleTimeoutSeconds     time.Duration
 	FirehoseSubscriptionID string
-}
-
-type CfClientTokenRefresh struct {
-	cfClient *cfclient.Client
 }
 
 func NewFirehoseNozzle(tokenRefresher consumer.TokenRefresher, eventRouting *eventRouting.EventRouting, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
@@ -87,8 +82,4 @@ func (f *FirehoseNozzle) handleError(err error) {
 
 	logging.LogError("Closing connection with traffic controller due to %v", err)
 	f.consumer.Close()
-}
-
-func (ct *CfClientTokenRefresh) RefreshAuthToken() (string, error) {
-	return ct.cfClient.GetToken(), nil
 }
