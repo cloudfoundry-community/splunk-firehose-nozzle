@@ -58,6 +58,9 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 	if len(msg) > 0 {
 		fields["msg"] = msg
 	}
+	fields["job_index"] = fields["index"]
+	delete(fields, "index")
+
 	event := map[string]interface{}{}
 
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)

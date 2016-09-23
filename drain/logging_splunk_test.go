@@ -1,11 +1,10 @@
 package drain_test
 
 import (
-	"strconv"
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
@@ -73,6 +72,27 @@ var _ = Describe("LoggingSplunk", func() {
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents
 		}).Should(HaveLen(1))
+	})
+
+	It("translates renames index key", func() {
+		eventType = events.Envelope_Error
+		routing.RouteEvent(envelope)
+
+		logging.Connect()
+		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents
+		}).Should(HaveLen(1))
+
+		event = mockClient.CapturedEvents[0]
+
+		data := event["event"].(map[string]interface{})
+		_, present := data["index"]
+		Expect(present).To(BeFalse())
+
+		index := data["job_index"]
+		Expect(index).To(Equal(jobIndex))
 	})
 
 	Context("envelope HttpStartStop", func() {

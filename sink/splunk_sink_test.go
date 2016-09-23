@@ -97,7 +97,8 @@ var _ = Describe("LoggingSplunk", func() {
 		Expect(envelope["source"]).To(Equal("splunk-nozzle_z1"))
 
 		event := envelope["event"].(map[string]interface{})
-		Expect(event["index"]).To(Equal(0))
+		Expect(event["index"]).To(BeNil())
+		Expect(event["job_index"]).To(Equal(0))
 		Expect(event["job"]).To(Equal("splunk-nozzle_z1"))
 		Expect(event["ip"]).To(Equal("127.0.0.1"))
 		Expect(event["origin"]).To(Equal("splunk_nozzle"))

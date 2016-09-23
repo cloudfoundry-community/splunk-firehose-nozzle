@@ -24,7 +24,7 @@ func NewSplunkSink(name string, index int, host string, splunkClient splunk.Splu
 
 func (s *SplunkSink) Log(message lager.LogFormat) {
 	event := map[string]interface{}{
-		"index":         s.index,
+		"job_index":     s.index,
 		"job":           s.name,
 		"ip":            s.host,
 		"origin":        "splunk_nozzle",
