@@ -1,5 +1,7 @@
 ## Splunk Nozzle
 
+Cloud Foundry Firehose-to-Splunk Nozzle
+
 ### Setup
 
 The Nozzle requires a user with the scope `doppler.firehose` and 
