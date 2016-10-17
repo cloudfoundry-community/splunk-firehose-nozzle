@@ -73,34 +73,34 @@ func (c *Client) GetAuthTokenWithExpiresIn(username, password string, insecureSk
 	return fmt.Sprintf("%s %s", jsonData["token_type"], jsonData["access_token"]), expiresIn, err
 }
 
-func (c *Client) TokenIsAuthorized(username, password, token, client_id string, insecureSkipVerify bool) bool {
+func (c *Client) TokenIsAuthorized(username, password, token, client_id string, insecureSkipVerify bool) (bool, error) {
 
 	request, err := http.NewRequest("POST", fmt.Sprintf("%s/check_token", c.uaaUrl.String()), strings.NewReader("token="+token))
 	if err != nil {
-		return false
+		return false, err
 	}
 	request.SetBasicAuth(username, password)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient(insecureSkipVerify).Do(request)
 	if err != nil {
-		return false
+		return false, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return false
+		return false, fmt.Errorf("Received a status code %v", resp.Status)
 	}
+	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if strings.Contains(string(responseBody), client_id) {
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }
 
 func (c *Client) httpClient(insecureSkipVerify bool) *http.Client {

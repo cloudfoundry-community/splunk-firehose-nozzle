@@ -1,68 +1,67 @@
 hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
-updated: 2016-08-24T07:59:17.98713742-07:00
+updated: 2016-10-17T09:12:49.755228004-07:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
   subpackages:
   - unix_transport
 - name: code.cloudfoundry.org/cflager
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
 - name: code.cloudfoundry.org/lager
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
 - name: github.com/alecthomas/template
-  version: a0175ee3bccc567396460bf5acd36800cb10c49c
+  version: b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0
   subpackages:
   - parse
 - name: github.com/alecthomas/units
-  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+  version: 6b4e7dc5e3143b85ea77909c72caf89416fc2915
 - name: github.com/boltdb/bolt
-  version: 583e8937c61f1af6513608ccc75c97b6abdf4ff9
+  version: 4d30731e9122988d2012a9574c43f80f054a0d3b
 - name: github.com/cloudfoundry-community/firehose-to-syslog
-  version: 53d69c5013bd83c4c879c5858aa916f02e04b716
+  version: 2f0289cc7945c4cb44a27c4514c5d5cdcbee790a
   subpackages:
   - caching
   - eventRouting
-  - firehoseclient
-  - logging
   - events
   - extrafields
+  - logging
   - utils
 - name: github.com/cloudfoundry-community/go-cfclient
   version: 113da20ed641ca3d56d09feec2ee37bda591f820
 - name: github.com/cloudfoundry-incubator/uaago
-  version: 486f017f435dd1151a4cf25acd834d97454f8915
+  version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 0ca0d30d65c7422750132450593d402428dd2273
   subpackages:
   - consumer
   - consumer/internal
   - errors
 - name: github.com/cloudfoundry/sonde-go
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 81c3f6be579cf4337477a8b0d03852d0760b5801
   subpackages:
   - events
 - name: github.com/gogo/protobuf
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: a4cceea7a401a73fefafd1a21fedbd4694124a82
   subpackages:
   - gogoproto
   - proto
   - protoc-gen-gogo/descriptor
 - name: github.com/golang/protobuf
-  version: 888eb0692c857ec880338addf316bd662d5e630e
+  version: 98fa357170587e470c5f27d3c3ea0947b71eb455
   subpackages:
   - proto
 - name: github.com/gorilla/websocket
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: a69d25be2fe2923a97c2af6849b2f52426f68fc0
 - name: github.com/kelseyhightower/envconfig
-  version: c3c795fcb49ee3f8be6ece445e3c88c24a2167f5
+  version: 13674b2d056fb658a00ba3f36e78043ced07c924
 - name: github.com/mailru/easyjson
-  version: 34560e358dc05e2c28f6fda2f5c9e7494a4b9b19
+  version: 3d7eb5818bd515e07588ded25d0d501516a0309d
   subpackages:
+  - buffer
   - jlexer
   - jwriter
-  - buffer
 - name: github.com/Sirupsen/logrus
-  version: 08a8a7c27e3d058a8989316a850daad1c10bf4ab
+  version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
   subpackages:
   - hooks/syslog
 - name: golang.org/x/net
@@ -74,19 +73,51 @@ imports:
   subpackages:
   - internal
 - name: golang.org/x/sys
-  version: a646d33e2ee3172a661fc09bca23bb4889a41bc8
+  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
   subpackages:
   - unix
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 5b8c3b819891014a2d12354528f7d046dd53c89e
   subpackages:
-  - urlfetch
   - internal
-  - internal/urlfetch
   - internal/base
   - internal/datastore
   - internal/log
   - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: gopkg.in/alecthomas/kingpin.v2
-  version: e5900212cbf65b181d3d8e08308ef06a01d117cf
-testImports: []
+  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
+testImports:
+- name: github.com/onsi/ginkgo
+  version: 39549e585f5005ce588e6217d4538a4c99a472c9
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - reporters/stenographer/support/go-colorable
+  - reporters/stenographer/support/go-isatty
+  - types
+- name: github.com/onsi/gomega
+  version: 4dfabf7db2e4147ec99a86db32b2f2a3484cfee8
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types

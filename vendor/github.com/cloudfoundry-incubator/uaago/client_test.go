@@ -276,7 +276,7 @@ var _ = Describe("Client", func() {
 
 		It("talks to UAA", func() {
 			uaaResponseBodies <- "some client_id"
-			client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "some client_id")
+			client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "some client_id", false)
 			var req *request
 			Eventually(uaaRequests).Should(Receive(&req))
 
@@ -291,11 +291,23 @@ var _ = Describe("Client", func() {
 			Expect(authPass).To(Equal(basicAuthPass))
 		})
 
+		It("returns an error for non-200 http responses", func() {
+			unauthServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(401)
+			}))
+			client, _ = uaago.NewClient(unauthServer.URL)
+			defer unauthServer.Close()
+
+			_, err := client.TokenIsAuthorized("some-user", "some-password", "some-token", "some-client-id", false)
+			Expect(err).To(HaveOccurred())
+		})
+
 		Context("valid: client_id=ingestor", func() {
 			It("returns true", func() {
 				uaaResponseBodies <- "ingestor"
-				isValid := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor")
+				isValid, err := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor", false)
 
+				Expect(err).ToNot(HaveOccurred())
 				Expect(isValid).To(BeTrue())
 			})
 		})
@@ -303,8 +315,9 @@ var _ = Describe("Client", func() {
 		Context("invalid: client_id=foo", func() {
 			It("returns false", func() {
 				uaaResponseBodies <- "foo"
-				isValid := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor")
+				isValid, err := client.TokenIsAuthorized(basicAuthUser, basicAuthPass, "some token", "ingestor", false)
 
+				Expect(err).ToNot(HaveOccurred())
 				Expect(isValid).To(BeFalse())
 			})
 		})

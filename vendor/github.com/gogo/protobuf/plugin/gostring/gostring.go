@@ -108,7 +108,6 @@ type gostring struct {
 	generator.PluginImports
 	atleastOne bool
 	localName  string
-	overwrite  bool
 }
 
 func NewGoString() *gostring {
@@ -117,10 +116,6 @@ func NewGoString() *gostring {
 
 func (p *gostring) Name() string {
 	return "gostring"
-}
-
-func (p *gostring) Overwrite() {
-	p.overwrite = true
 }
 
 func (p *gostring) Init(g *generator.Generator) {
@@ -146,7 +141,7 @@ func (p *gostring) Generate(file *generator.FileDescriptor) {
 	sortKeysPkg := p.NewImport("github.com/gogo/protobuf/sortkeys")
 
 	for _, message := range file.Messages() {
-		if !p.overwrite && !gogoproto.HasGoString(file.FileDescriptorProto, message.DescriptorProto) {
+		if !gogoproto.HasGoString(file.FileDescriptorProto, message.DescriptorProto) {
 			continue
 		}
 		if message.DescriptorProto.GetOptions().GetMapEntry() {

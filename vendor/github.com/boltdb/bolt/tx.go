@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strings"
 	"time"
 	"unsafe"
 )
@@ -30,14 +29,6 @@ type Tx struct {
 	pages          map[pgid]*page
 	stats          TxStats
 	commitHandlers []func()
-
-	// WriteFlag specifies the flag for write-related methods like WriteTo().
-	// Tx opens the database file with the specified flag to copy the data.
-	//
-	// By default, the flag is unset, which works well for mostly in-memory
-	// workloads. For databases that are much larger than available RAM,
-	// set the flag to syscall.O_DIRECT to avoid trashing the page cache.
-	WriteFlag int
 }
 
 // init initializes the transaction.
@@ -96,21 +87,18 @@ func (tx *Tx) Stats() TxStats {
 
 // Bucket retrieves a bucket by name.
 // Returns nil if the bucket does not exist.
-// The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) Bucket(name []byte) *Bucket {
 	return tx.root.Bucket(name)
 }
 
 // CreateBucket creates a new bucket.
 // Returns an error if the bucket already exists, if the bucket name is blank, or if the bucket name is too long.
-// The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) CreateBucket(name []byte) (*Bucket, error) {
 	return tx.root.CreateBucket(name)
 }
 
 // CreateBucketIfNotExists creates a new bucket if it doesn't already exist.
 // Returns an error if the bucket name is blank, or if the bucket name is too long.
-// The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) CreateBucketIfNotExists(name []byte) (*Bucket, error) {
 	return tx.root.CreateBucketIfNotExists(name)
 }
@@ -139,8 +127,7 @@ func (tx *Tx) OnCommit(fn func()) {
 }
 
 // Commit writes all changes to disk and updates the meta page.
-// Returns an error if a disk write error occurs, or if Commit is
-// called on a read-only transaction.
+// Returns an error if a disk write error occurs.
 func (tx *Tx) Commit() error {
 	_assert(!tx.managed, "managed tx commit not allowed")
 	if tx.db == nil {
@@ -169,8 +156,6 @@ func (tx *Tx) Commit() error {
 	// Free the old root bucket.
 	tx.meta.root.root = tx.root.root
 
-	opgid := tx.meta.pgid
-
 	// Free the freelist and allocate new pages for it. This will overestimate
 	// the size of the freelist but not underestimate the size (which would be bad).
 	tx.db.freelist.free(tx.meta.txid, tx.db.page(tx.meta.freelist))
@@ -185,14 +170,6 @@ func (tx *Tx) Commit() error {
 	}
 	tx.meta.freelist = p.id
 
-	// If the high water mark has moved up then attempt to grow the database.
-	if tx.meta.pgid > opgid {
-		if err := tx.db.grow(int(tx.meta.pgid+1) * tx.db.pageSize); err != nil {
-			tx.rollback()
-			return err
-		}
-	}
-
 	// Write dirty pages to disk.
 	startTime = time.Now()
 	if err := tx.write(); err != nil {
@@ -203,17 +180,8 @@ func (tx *Tx) Commit() error {
 	// If strict mode is enabled then perform a consistency check.
 	// Only the first consistency error is reported in the panic.
 	if tx.db.StrictMode {
-		ch := tx.Check()
-		var errs []string
-		for {
-			err, ok := <-ch
-			if !ok {
-				break
-			}
-			errs = append(errs, err.Error())
-		}
-		if len(errs) > 0 {
-			panic("check fail: " + strings.Join(errs, "\n"))
+		if err, ok := <-tx.Check(); ok {
+			panic("check fail: " + err.Error())
 		}
 	}
 
@@ -235,8 +203,7 @@ func (tx *Tx) Commit() error {
 	return nil
 }
 
-// Rollback closes the transaction and ignores all previous updates. Read-only
-// transactions must be rolled back and not committed.
+// Rollback closes the transaction and ignores all previous updates.
 func (tx *Tx) Rollback() error {
 	_assert(!tx.managed, "managed tx rollback not allowed")
 	if tx.db == nil {
@@ -267,8 +234,7 @@ func (tx *Tx) close() {
 		var freelistPendingN = tx.db.freelist.pending_count()
 		var freelistAlloc = tx.db.freelist.size()
 
-		// Remove transaction ref & writer lock.
-		tx.db.rwtx = nil
+		// Remove writer lock.
 		tx.db.rwlock.Unlock()
 
 		// Merge statistics.
@@ -282,69 +248,41 @@ func (tx *Tx) close() {
 	} else {
 		tx.db.removeTx(tx)
 	}
-
-	// Clear all references.
 	tx.db = nil
-	tx.meta = nil
-	tx.root = Bucket{tx: tx}
-	tx.pages = nil
 }
 
 // Copy writes the entire database to a writer.
-// This function exists for backwards compatibility. Use WriteTo() instead.
+// A reader transaction is maintained during the copy so it is safe to continue
+// using the database while a copy is in progress.
+// Copy will write exactly tx.Size() bytes into the writer.
 func (tx *Tx) Copy(w io.Writer) error {
-	_, err := tx.WriteTo(w)
-	return err
-}
+	var f *os.File
+	var err error
 
-// WriteTo writes the entire database to a writer.
-// If err == nil then exactly tx.Size() bytes will be written into the writer.
-func (tx *Tx) WriteTo(w io.Writer) (n int64, err error) {
-	// Attempt to open reader with WriteFlag
-	f, err := os.OpenFile(tx.db.path, os.O_RDONLY|tx.WriteFlag, 0)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { _ = f.Close() }()
-
-	// Generate a meta page. We use the same page data for both meta pages.
-	buf := make([]byte, tx.db.pageSize)
-	page := (*page)(unsafe.Pointer(&buf[0]))
-	page.flags = metaPageFlag
-	*page.meta() = *tx.meta
-
-	// Write meta 0.
-	page.id = 0
-	page.meta().checksum = page.meta().sum64()
-	nn, err := w.Write(buf)
-	n += int64(nn)
-	if err != nil {
-		return n, fmt.Errorf("meta 0 copy: %s", err)
+	// Attempt to open reader directly.
+	if f, err = os.OpenFile(tx.db.path, os.O_RDONLY|odirect, 0); err != nil {
+		// Fallback to a regular open if that doesn't work.
+		if f, err = os.OpenFile(tx.db.path, os.O_RDONLY, 0); err != nil {
+			return err
+		}
 	}
 
-	// Write meta 1 with a lower transaction id.
-	page.id = 1
-	page.meta().txid -= 1
-	page.meta().checksum = page.meta().sum64()
-	nn, err = w.Write(buf)
-	n += int64(nn)
+	// Copy the meta pages.
+	tx.db.metalock.Lock()
+	_, err = io.CopyN(w, f, int64(tx.db.pageSize*2))
+	tx.db.metalock.Unlock()
 	if err != nil {
-		return n, fmt.Errorf("meta 1 copy: %s", err)
-	}
-
-	// Move past the meta pages in the file.
-	if _, err := f.Seek(int64(tx.db.pageSize*2), os.SEEK_SET); err != nil {
-		return n, fmt.Errorf("seek: %s", err)
+		_ = f.Close()
+		return fmt.Errorf("meta copy: %s", err)
 	}
 
 	// Copy data pages.
-	wn, err := io.CopyN(w, f, tx.Size()-int64(tx.db.pageSize*2))
-	n += wn
-	if err != nil {
-		return n, err
+	if _, err := io.CopyN(w, f, tx.Size()-int64(tx.db.pageSize*2)); err != nil {
+		_ = f.Close()
+		return err
 	}
 
-	return n, f.Close()
+	return f.Close()
 }
 
 // CopyFile copies the entire database to file at the given path.
@@ -473,68 +411,28 @@ func (tx *Tx) write() error {
 	for _, p := range tx.pages {
 		pages = append(pages, p)
 	}
-	// Clear out page cache early.
-	tx.pages = make(map[pgid]*page)
 	sort.Sort(pages)
 
 	// Write pages to disk in order.
 	for _, p := range pages {
 		size := (int(p.overflow) + 1) * tx.db.pageSize
+		buf := (*[maxAllocSize]byte)(unsafe.Pointer(p))[:size]
 		offset := int64(p.id) * int64(tx.db.pageSize)
-
-		// Write out page in "max allocation" sized chunks.
-		ptr := (*[maxAllocSize]byte)(unsafe.Pointer(p))
-		for {
-			// Limit our write to our max allocation size.
-			sz := size
-			if sz > maxAllocSize-1 {
-				sz = maxAllocSize - 1
-			}
-
-			// Write chunk to disk.
-			buf := ptr[:sz]
-			if _, err := tx.db.ops.writeAt(buf, offset); err != nil {
-				return err
-			}
-
-			// Update statistics.
-			tx.stats.Write++
-
-			// Exit inner for loop if we've written all the chunks.
-			size -= sz
-			if size == 0 {
-				break
-			}
-
-			// Otherwise move offset forward and move pointer to next chunk.
-			offset += int64(sz)
-			ptr = (*[maxAllocSize]byte)(unsafe.Pointer(&ptr[sz]))
+		if _, err := tx.db.ops.writeAt(buf, offset); err != nil {
+			return err
 		}
-	}
 
-	// Ignore file sync if flag is set on DB.
+		// Update statistics.
+		tx.stats.Write++
+	}
 	if !tx.db.NoSync || IgnoreNoSync {
 		if err := fdatasync(tx.db); err != nil {
 			return err
 		}
 	}
 
-	// Put small pages back to page pool.
-	for _, p := range pages {
-		// Ignore page sizes over 1 page.
-		// These are allocated using make() instead of the page pool.
-		if int(p.overflow) != 0 {
-			continue
-		}
-
-		buf := (*[maxAllocSize]byte)(unsafe.Pointer(p))[:tx.db.pageSize]
-
-		// See https://go.googlesource.com/go/+/f03c9202c43e0abb130669852082117ca50aa9b1
-		for i := range buf {
-			buf[i] = 0
-		}
-		tx.db.pagePool.Put(buf)
-	}
+	// Clear out page cache.
+	tx.pages = make(map[pgid]*page)
 
 	return nil
 }
@@ -563,7 +461,7 @@ func (tx *Tx) writeMeta() error {
 }
 
 // page returns a reference to the page with a given id.
-// If page has been written to then a temporary buffered page is returned.
+// If page has been written to then a temporary bufferred page is returned.
 func (tx *Tx) page(id pgid) *page {
 	// Check the dirty pages first.
 	if tx.pages != nil {

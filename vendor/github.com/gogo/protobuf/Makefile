@@ -41,7 +41,6 @@ install:
 	go install ./protoc-gen-gogofast
 	go install ./protoc-gen-gogofaster
 	go install ./protoc-gen-gogoslick
-	go install ./protoc-gen-gostring
 	go install ./protoc-min-version
 	go install ./protoc-gen-combo
 
@@ -107,7 +106,7 @@ vet:
 	go tool vet --shadow .
 
 errcheck:
-	go get github.com/kisielk/errcheck
+	go get -u github.com/kisielk/errcheck
 	errcheck ./test/...
 
 drone:

@@ -1,9 +1,7 @@
 package bolt
 
 import (
-	"math/rand"
 	"reflect"
-	"sort"
 	"testing"
 	"unsafe"
 )
@@ -117,9 +115,7 @@ func TestFreelist_write(t *testing.T) {
 	f.pending[100] = []pgid{28, 11}
 	f.pending[101] = []pgid{3}
 	p := (*page)(unsafe.Pointer(&buf[0]))
-	if err := f.write(p); err != nil {
-		t.Fatal(err)
-	}
+	f.write(p)
 
 	// Read the page back out.
 	f2 := newFreelist()
@@ -130,29 +126,4 @@ func TestFreelist_write(t *testing.T) {
 	if exp := []pgid{3, 11, 12, 28, 39}; !reflect.DeepEqual(exp, f2.ids) {
 		t.Fatalf("exp=%v; got=%v", exp, f2.ids)
 	}
-}
-
-func Benchmark_FreelistRelease10K(b *testing.B)    { benchmark_FreelistRelease(b, 10000) }
-func Benchmark_FreelistRelease100K(b *testing.B)   { benchmark_FreelistRelease(b, 100000) }
-func Benchmark_FreelistRelease1000K(b *testing.B)  { benchmark_FreelistRelease(b, 1000000) }
-func Benchmark_FreelistRelease10000K(b *testing.B) { benchmark_FreelistRelease(b, 10000000) }
-
-func benchmark_FreelistRelease(b *testing.B, size int) {
-	ids := randomPgids(size)
-	pending := randomPgids(len(ids) / 400)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		f := &freelist{ids: ids, pending: map[txid][]pgid{1: pending}}
-		f.release(1)
-	}
-}
-
-func randomPgids(n int) []pgid {
-	rand.Seed(42)
-	pgids := make(pgids, n)
-	for i := range pgids {
-		pgids[i] = pgid(rand.Int63())
-	}
-	sort.Sort(pgids)
-	return pgids
 }
