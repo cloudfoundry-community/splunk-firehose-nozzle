@@ -74,7 +74,7 @@ var _ = Describe("LoggingSplunk", func() {
 		}).Should(HaveLen(1))
 	})
 
-	It("translates renames index key", func() {
+	It("job_index is present, index is not", func() {
 		eventType = events.Envelope_Error
 		routing.RouteEvent(envelope)
 
@@ -88,8 +88,7 @@ var _ = Describe("LoggingSplunk", func() {
 		event = mockClient.CapturedEvents[0]
 
 		data := event["event"].(map[string]interface{})
-		_, present := data["index"]
-		Expect(present).To(BeFalse())
+		Expect(data).NotTo(HaveKey("index"))
 
 		index := data["job_index"]
 		Expect(index).To(Equal(jobIndex))
