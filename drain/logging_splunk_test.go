@@ -189,7 +189,6 @@ var _ = Describe("LoggingSplunk", func() {
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
 		})
 
-		//todo: manual test around start/stop time: number of digits?
 		It("adds fields to payload.event", func() {
 			eventContents := event["event"].(map[string]interface{})
 
