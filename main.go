@@ -43,8 +43,6 @@ var (
 	boltDBPath = kingpin.Flag("boltdb-path", "Bolt Database path ").
 			Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
 
-	dopplerEndpoint = kingpin.Flag("doppler-endpoint", "doppler endpoint, logging_endpoint in /v2/info").
-			OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").Required().String()
 	wantedEvents = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).
 			OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
 	keepAlive = kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
@@ -109,8 +107,9 @@ func main() {
 	}
 
 	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
+	dopplerEndpoint := cfClient.Endpoint.DopplerEndpoint
 	firehoseConfig := &firehoseclient.FirehoseConfig{
-		TrafficControllerURL:   *dopplerEndpoint,
+		TrafficControllerURL:   dopplerEndpoint,
 		InsecureSSLSkipVerify:  *skipSSL,
 		IdleTimeoutSeconds:     *keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
