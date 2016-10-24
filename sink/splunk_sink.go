@@ -8,12 +8,12 @@ import (
 
 type SplunkSink struct {
 	name         string
-	index        int
+	index        string
 	host         string
 	splunkClient splunk.SplunkClient
 }
 
-func NewSplunkSink(name string, index int, host string, splunkClient splunk.SplunkClient) *SplunkSink {
+func NewSplunkSink(name string, index string, host string, splunkClient splunk.SplunkClient) *SplunkSink {
 	return &SplunkSink{
 		name:         name,
 		index:        index,
