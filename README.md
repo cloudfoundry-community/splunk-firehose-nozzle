@@ -89,3 +89,4 @@ event_type=CounterEvent
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
+
