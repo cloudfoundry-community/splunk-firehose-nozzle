@@ -26,8 +26,8 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.6.x
-| glide | 0.11.x
+| go | go1.7.x
+| glide | 0.12.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
 ```
@@ -72,7 +72,7 @@ $ ./scripts/nozzle.sh
 
 #### CI
 
-https://ci.run-01.haas-26.pez.pivotal.io/pipelines/splunk-firehose-nozzle
+https://concourse.run-03.haas-71.pez.pivotal.io/teams/splunk/pipelines/splunk-firehose-tile-build
 
 ### Exploring Events
 
