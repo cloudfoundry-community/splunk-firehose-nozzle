@@ -1,6 +1,8 @@
 package auth_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -13,9 +15,9 @@ var _ = Describe("uaa_token_fetcher", func() {
 	It("refresh requests and returns token", func() {
 		called := false
 		tokenGetter := &testing.MockTokenGetter{
-			GetTokenFn: func() string {
+			GetTokenFn: func() (string, error) {
 				called = true
-				return "my-token"
+				return "my-token", nil
 			},
 		}
 
@@ -30,9 +32,8 @@ var _ = Describe("uaa_token_fetcher", func() {
 
 	It("returns error when no token", func() {
 		tokenGetter := &testing.MockTokenGetter{
-			GetTokenFn: func() string {
-				//cfclient.client swallows error and returns empty, conform to that failure mode
-				return ""
+			GetTokenFn: func() (string, error) {
+				return "", nil
 			},
 		}
 
@@ -40,6 +41,21 @@ var _ = Describe("uaa_token_fetcher", func() {
 		token, err := fetcher.RefreshAuthToken()
 
 		Expect(err).NotTo(BeNil())
+		Expect(token).To(Equal(""))
+	})
+
+	It("returns getToken's error", func() {
+		tokenGetter := &testing.MockTokenGetter{
+			GetTokenFn: func() (string, error) {
+				return "", errors.New("Failed to get token")
+			},
+		}
+
+		fetcher := NewTokenRefreshAdapter(tokenGetter)
+		token, err := fetcher.RefreshAuthToken()
+
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Failed to get token"))
 		Expect(token).To(Equal(""))
 	})
 })

@@ -15,13 +15,13 @@ func (m *MockSplunkClient) Post(events []map[string]interface{}) error {
 }
 
 type MockTokenGetter struct {
-	GetTokenFn func() string
+	GetTokenFn func() (string, error)
 }
 
-func (m *MockTokenGetter) GetToken() string {
+func (m *MockTokenGetter) GetToken() (string, error) {
 	if m.GetTokenFn != nil {
 		return m.GetTokenFn()
 	} else {
-		return ""
+		return "", nil
 	}
 }

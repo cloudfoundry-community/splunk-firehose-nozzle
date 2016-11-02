@@ -1,11 +1,12 @@
 package cfclient
 
 import (
-	"github.com/go-martini/martini"
-	"github.com/martini-contrib/render"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+
+	"github.com/go-martini/martini"
+	"github.com/martini-contrib/render"
 )
 
 var (
@@ -42,6 +43,10 @@ func setupMultiple(mockEndpoints []MockRoute) {
 		} else if method == "POST" {
 			r.Post(endpoint, func() string {
 				return output
+			})
+		} else if method == "DELETE" {
+			r.Delete(endpoint, func() (int, string) {
+				return 204, output
 			})
 		}
 	}

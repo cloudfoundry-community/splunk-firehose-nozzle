@@ -7,7 +7,7 @@ import (
 )
 
 type TokenGetter interface {
-	GetToken() string
+	GetToken() (string, error)
 }
 
 type TokenRefreshAdapter struct {
@@ -21,8 +21,10 @@ func NewTokenRefreshAdapter(tokenGetter TokenGetter) consumer.TokenRefresher {
 }
 
 func (t *TokenRefreshAdapter) RefreshAuthToken() (string, error) {
-	token := t.tokenGetter.GetToken()
-	if token == "" {
+	token, err := t.tokenGetter.GetToken()
+	if err != nil {
+		return "", err
+	} else if token == "" {
 		return "", errors.New("TokenGetter failed to return a token")
 	} else {
 		return token, nil

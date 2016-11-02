@@ -67,7 +67,7 @@ func main() {
 		Password:          *password,
 		SkipSslValidation: *skipSSLValidation,
 	}
-	cfClient := cfclient.NewClient(&c)
+	cfClient, _ := cfclient.NewClient(&c)
 
 	if len(*dopplerEndpoint) > 0 {
 		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
@@ -95,7 +95,7 @@ func main() {
 
 	//Enable LogsTotalevent
 	if *logEventTotals {
-		logging.LogStd("Logging total events %", true)
+		logging.LogStd("Logging total events", true)
 		events.LogEventTotals(*logEventTotalsTime)
 	}
 
@@ -110,7 +110,7 @@ func main() {
 	cachingClient.PerformPoollingCaching(*tickerTime)
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
-		TrafficControllerURL:   *dopplerEndpoint,
+		TrafficControllerURL:   cfClient.Endpoint.DopplerEndpoint,
 		InsecureSSLSkipVerify:  *skipSSLValidation,
 		IdleTimeoutSeconds:     *keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,

@@ -88,7 +88,10 @@ func main() {
 		Password:          *password,
 		SkipSslValidation: *skipSSL,
 	}
-	cfClient := cfclient.NewClient(cfConfig)
+	cfClient, err := cfclient.NewClient(cfConfig)
+	if err != nil {
+		log.Fatal("Error setting up cf client: ", err)
+	}
 
 	logger.Info("Setting up caching")
 	var cache caching.Caching
@@ -101,7 +104,7 @@ func main() {
 
 	logger.Info("Setting up event routing")
 	events := eventRouting.NewEventRouting(cache, loggingClient)
-	err := events.SetupEventRouting(*wantedEvents)
+	err = events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		log.Fatal("Error setting up event routing: ", err)
 	}

@@ -90,11 +90,19 @@ const orgSpacesPayload = `{
    ]
 }`
 
-const listSpacesPayload = `{
-   "total_results": 8,
+const emptyResources = `{
+   "total_results": 0,
    "total_pages": 1,
    "prev_url": null,
    "next_url": null,
+   "resources": []
+}`
+
+const listSpacesPayload = `{
+   "total_results": 8,
+   "total_pages": 2,
+   "prev_url": null,
+   "next_url": "/v2/spacesPage2",
    "resources": [
       {
          "metadata": {
@@ -142,6 +150,211 @@ const listSpacesPayload = `{
             "app_events_url": "/v2/spaces/657b5923-7de0-486a-9928-b4d78ee24931/app_events",
             "events_url": "/v2/spaces/657b5923-7de0-486a-9928-b4d78ee24931/events",
             "security_groups_url": "/v2/spaces/657b5923-7de0-486a-9928-b4d78ee24931/security_groups"
+         }
+      }
+   ]
+}`
+
+const listSpacesPayloadPage2 = `{
+   "total_results": 8,
+   "total_pages": 2,
+   "prev_url": null,
+   "next_url": null,
+   "resources": [
+      {
+         "metadata": {
+            "guid": "9ffd7c5c-d83c-4786-b399-b7bd54883977",
+            "url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977",
+            "created_at": "2014-09-24T13:54:54+00:00",
+            "updated_at": null
+         },
+         "entity": {
+            "name": "test",
+            "organization_guid": "a537761f-9d93-4b30-af17-3d73dbca181b",
+            "space_quota_definition_guid": null,
+            "organization_url": "/v2/organizations/b737761f-9d93-4b30-af17-3d73dbca18aa",
+            "developers_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/developers",
+            "managers_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/managers",
+            "auditors_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/auditors",
+            "apps_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/apps",
+            "routes_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/routes",
+            "domains_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/domains",
+            "service_instances_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/service_inst2ances",
+            "app_events_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/app_events",
+            "events_url": "/v2/spaces/9ffd7c5c-d83c-4786-b399-b7bd54883977/events",
+            "security_groups_url": "/v2/spaces/8efd7c5c-d83c-4786-b399-b7bd548839e1/security_groups"
+         }
+      },
+      {
+         "metadata": {
+            "guid": "329b5923-7de0-486a-9928-b4d78ee24982",
+            "url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982",
+            "created_at": "2014-09-26T13:37:31+00:00",
+            "updated_at": null
+         },
+         "entity": {
+            "name": "prod",
+            "organization_guid": "da0dba14-6064-4f7a-b15a-ff9e677e49b2",
+            "space_quota_definition_guid": null,
+            "organization_url": "/v2/organizations/ad0dba14-6064-4f7a-b15a-ff9e677e492b",
+            "developers_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/developers",
+            "managers_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/managers",
+            "auditors_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/auditors",
+            "apps_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/apps",
+            "routes_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/routes",
+            "domains_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/domains",
+            "service_instances_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/service_instances",
+            "app_events_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/app_events",
+            "events_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/events",
+            "security_groups_url": "/v2/spaces/329b5923-7de0-486a-9928-b4d78ee24982/security_groups"
+         }
+      }
+   ]
+}`
+
+const listSecGroupsPayload = `{
+   "total_results": 28,
+   "total_pages": 1,
+   "prev_url": null,
+   "next_url": "/v2/security_groupsPage2",
+   "resources": [
+      {
+         "metadata": {
+            "guid": "af15c29a-6bde-4a9b-8cdf-43aa0d4b7e3c",
+            "url": "/v2/security_groups/af15c29a-6bde-4a9b-8cdf-43aa0d4b7e3c",
+            "created_at": "2015-12-04T11:15:55Z",
+            "updated_at": null
+         },
+         "entity": {
+            "name": "secgroup-test",
+            "rules": [
+               {
+                  "destination": "1.1.1.1",
+                  "ports": "443,4443",
+                  "protocol": "tcp"
+               },
+               {
+                  "destination": "1.2.3.4",
+                  "ports": "1111",
+                  "protocol": "udp"
+               }
+            ],
+            "running_default": true,
+            "staging_default": true,
+            "spaces_url": "/v2/security_groups/af15c29a-6bde-4a9b-8cdf-43aa0d4b7e3c/spaces",
+            "spaces": []
+         }
+      }
+   ]
+}`
+
+const listSecGroupsPayloadPage2 = `{
+   "total_results": 28,
+   "total_pages": 1,
+   "prev_url": null,
+   "next_url": null,
+   "resources": [
+      {
+         "metadata": {
+            "guid": "f9ad202b-76dd-44ec-b7c2-fd2417a561e8",
+            "url": "/v2/security_groups/f9ad202b-76dd-44ec-b7c2-fd2417a561e8",
+            "created_at": "2015-12-04T11:15:55Z",
+            "updated_at": null
+         },
+         "entity": {
+            "name": "secgroup-test2",
+            "rules": [
+               {
+                  "destination": "2.2.2.2",
+                  "ports": "2222",
+                  "protocol": "udp"
+               },
+               {
+                  "destination": "4.3.2.1",
+                  "ports": "443,4443",
+                  "protocol": "tcp"
+               }
+            ],
+            "running_default": false,
+            "staging_default": false,
+            "spaces_url": "/v2/security_groups/f9ad202b-76dd-44ec-b7c2-fd2417a561e8/spaces",
+            "spaces": [
+               {
+                  "metadata": {
+                     "guid": "e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4",
+                     "url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4",
+                     "created_at": "2014-10-27T10:49:37Z",
+                     "updated_at": "2015-01-21T15:30:52Z"
+                  },
+                  "entity": {
+                     "name": "space-test",
+                     "organization_guid": "82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "space_quota_definition_guid": null,
+                     "allow_ssh": true,
+                     "organization_url": "/v2/organizations/82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "developers_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/developers",
+                     "managers_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/managers",
+                     "auditors_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/auditors",
+                     "apps_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/apps",
+                     "routes_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/routes",
+                     "domains_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/domains",
+                     "service_instances_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/service_instances",
+                     "app_events_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/app_events",
+                     "events_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/events",
+                     "security_groups_url": "/v2/spaces/e0a0d1bf-ad74-4b3c-8f4a-0c33859a54e4/security_groups"
+                  }
+               },
+               {
+                  "metadata": {
+                     "guid": "a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333",
+                     "url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333",
+                     "created_at": "2014-10-27T10:49:37Z",
+                     "updated_at": "2015-01-21T15:30:52Z"
+                  },
+                  "entity": {
+                     "name": "space-test2",
+                     "organization_guid": "82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "space_quota_definition_guid": null,
+                     "allow_ssh": true,
+                     "organization_url": "/v2/organizations/82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "developers_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/developers",
+                     "managers_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/managers",
+                     "auditors_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/auditors",
+                     "apps_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/apps",
+                     "routes_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/routes",
+                     "domains_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/domains",
+                     "service_instances_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/service_instances",
+                     "app_events_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/app_events",
+                     "events_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/events",
+                     "security_groups_url": "/v2/spaces/a2a0d1bf-ad74-4b3c-8f4a-0c33859a5333/security_groups"
+                  }
+               },
+               {
+                  "metadata": {
+                     "guid": "c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1",
+                     "url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1",
+                     "created_at": "2014-10-27T10:49:37Z",
+                     "updated_at": "2015-01-21T15:30:52Z"
+                  },
+                  "entity": {
+                     "name": "space-test3",
+                     "organization_guid": "82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "space_quota_definition_guid": null,
+                     "allow_ssh": true,
+                     "organization_url": "/v2/organizations/82338ba1-bc08-4576-aad1-9a5b4693b386",
+                     "developers_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/developers",
+                     "managers_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/managers",
+                     "auditors_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/auditors",
+                     "apps_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/apps",
+                     "routes_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/routes",
+                     "domains_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/domains",
+                     "service_instances_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/service_instances",
+                     "app_events_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/app_events",
+                     "events_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/events",
+                     "security_groups_url": "/v2/spaces/c7a0d1bf-ad74-4b3c-8f4a-0c33859adsa1/security_groups"
+                  }
+               }
+            ]
          }
       }
    ]
@@ -289,6 +502,44 @@ const appPayloadWithEnvironment_json = `{
    }
 }`
 
+const appInstancePayload = `{
+   "0": {
+      "state": "RUNNING",
+      "since": 1455210430.5104606,
+      "debug_ip": null,
+      "debug_port": null,
+      "console_ip": null,
+      "console_port": null
+   },
+   "1": {
+      "state": "RUNNING",
+      "since": 1455210430.3912115,
+      "debug_ip": null,
+      "debug_port": null,
+      "console_ip": null,
+      "console_port": null
+   }
+}`
+
+const appInstanceUnhealthyPayload = `{
+   "0": {
+      "state": "RUNNING",
+      "since": 1455210430.5104606,
+      "debug_ip": null,
+      "debug_port": null,
+      "console_ip": null,
+      "console_port": null
+   },
+   "1": {
+      "state": "STARTING",
+      "since": 1455210430.3912115,
+      "debug_ip": null,
+      "debug_port": null,
+      "console_ip": null,
+      "console_port": null
+   }
+}`
+
 const spacePayload = `{
    "metadata": {
       "guid": "a72fa1e8-c694-47b3-85f2-55f61fd00d73",
@@ -409,3 +660,64 @@ const listServicePayload = `{
       }
    ]
 }`
+const listAppsCreatedEventPayload = `{
+   "total_results": 2,
+   "total_pages": 1,
+   "prev_url": null,
+   "next_url": "/v2/events?order-direction=asc&page=2&q=type:audit.app.update",
+   "resources": [
+      {
+         "metadata": {
+            "guid": "49ab122b-82b9-4623-8a13-24e585e32e66",
+            "url": "/v2/events/49ab122b-82b9-4623-8a13-24e585e32e66",
+            "created_at": "2016-02-26T13:00:21Z",
+            "updated_at": null
+         },
+         "entity": {
+            "type": "audit.app.update",
+            "actor": "fbf30c43-436e-40e4-8ace-31970b52ce89",
+            "actor_type": "user",
+            "actor_name": "team-toad@sap.com",
+            "actee": "3ca436ff-67a8-468a-8c7d-27ec68a6cfe5",
+            "actee_type": "app",
+            "actee_name": "authentication-v1-pre-blue",
+            "timestamp": "2016-02-26T13:00:21Z",
+            "metadata": {
+               "request": {
+                  "state": "STOPPED"
+               }
+            },
+            "space_guid": "08582a96-cbef-463c-822e-bda8d4284cc7",
+            "organization_guid": "bfdcdf09-a3b8-46f4-ab74-d494efefe5b4"
+         }
+      },
+      {
+         "metadata": {
+            "guid": "8e8f83c7-3fc3-4127-9359-ae391380b971",
+            "url": "/v2/events/8e8f83c7-3fc3-4127-9359-ae391380b971",
+            "created_at": "2016-02-26T13:00:21Z",
+            "updated_at": null
+         },
+         "entity": {
+            "type": "audit.app.update",
+            "actor": "fbf30c43-436e-40e4-8ace-31970b52ce89",
+            "actor_type": "user",
+            "actor_name": "team-toad@sap.com",
+            "actee": "3ca436ff-67a8-468a-8c7d-27ec68a6cfe5",
+            "actee_type": "app",
+            "actee_name": "authentication-v1-pre-blue",
+            "timestamp": "2016-02-26T13:00:21Z",
+            "metadata": {
+               "request": {
+                  "health_check_timeout": 180,
+                  "buildpack": "nodejs_buildpack",
+                  "command": "PRIVATE DATA HIDDEN",
+                  "state": "STARTED"
+               }
+            },
+            "space_guid": "08582a96-cbef-463c-822e-bda8d4284cc7",
+            "organization_guid": "bfdcdf09-a3b8-46f4-ab74-d494efefe5b4"
+         }
+      }
+    ]
+ }`

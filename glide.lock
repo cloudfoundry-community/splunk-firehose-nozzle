@@ -1,5 +1,5 @@
 hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
-updated: 2016-10-17T09:12:49.755228004-07:00
+updated: 2016-11-02T08:56:04.177492413-07:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -8,7 +8,7 @@ imports:
 - name: code.cloudfoundry.org/cflager
   version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
 - name: code.cloudfoundry.org/lager
-  version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
+  version: b273f19621a28f627423f658e71e014f114dd53e
 - name: github.com/alecthomas/template
   version: b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0
   subpackages:
@@ -18,7 +18,7 @@ imports:
 - name: github.com/boltdb/bolt
   version: 4d30731e9122988d2012a9574c43f80f054a0d3b
 - name: github.com/cloudfoundry-community/firehose-to-syslog
-  version: 2f0289cc7945c4cb44a27c4514c5d5cdcbee790a
+  version: 1ad354225cd7cc0d6b5b07335308fcf3f8869c94
   subpackages:
   - caching
   - eventRouting
@@ -27,7 +27,7 @@ imports:
   - logging
   - utils
 - name: github.com/cloudfoundry-community/go-cfclient
-  version: 113da20ed641ca3d56d09feec2ee37bda591f820
+  version: c783aa0efe78706e9d98ffc4a84f0d42cd322ac8
 - name: github.com/cloudfoundry-incubator/uaago
   version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
@@ -53,7 +53,7 @@ imports:
 - name: github.com/gorilla/websocket
   version: a69d25be2fe2923a97c2af6849b2f52426f68fc0
 - name: github.com/kelseyhightower/envconfig
-  version: 13674b2d056fb658a00ba3f36e78043ced07c924
+  version: 9aca109c9aec4633fced9717c4a09ecab3d33111
 - name: github.com/mailru/easyjson
   version: 3d7eb5818bd515e07588ded25d0d501516a0309d
   subpackages:
@@ -77,7 +77,7 @@ imports:
   subpackages:
   - unix
 - name: google.golang.org/appengine
-  version: 5b8c3b819891014a2d12354528f7d046dd53c89e
+  version: 46239ca616842c00f41b8cbc6bbf2bd6ffbfcdad
   subpackages:
   - internal
   - internal/base
@@ -90,7 +90,7 @@ imports:
   version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 testImports:
 - name: github.com/onsi/ginkgo
-  version: 39549e585f5005ce588e6217d4538a4c99a472c9
+  version: a8ccd817611666211fdf6e6a752174a0db8374a8
   subpackages:
   - config
   - internal/codelocation

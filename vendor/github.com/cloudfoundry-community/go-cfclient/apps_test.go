@@ -15,12 +15,15 @@ func TestListApps(t *testing.T) {
 		setupMultiple(mocks)
 		defer teardown()
 		c := &Config{
-			ApiAddress:   server.URL,
-			LoginAddress: fakeUAAServer.URL,
-			Token:        "foobar",
+			ApiAddress: server.URL,
+			Token:      "foobar",
 		}
-		client := NewClient(c)
-		apps := client.ListApps()
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		apps, err := client.ListApps()
+		So(err, ShouldBeNil)
+
 		So(len(apps), ShouldEqual, 2)
 		So(apps[0].Guid, ShouldEqual, "af15c29a-6bde-4a9b-8cdf-43aa0d4b7e3c")
 		So(apps[0].Name, ShouldEqual, "app-test")
@@ -35,12 +38,15 @@ func TestAppByGuid(t *testing.T) {
 		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayload})
 		defer teardown()
 		c := &Config{
-			ApiAddress:   server.URL,
-			LoginAddress: fakeUAAServer.URL,
-			Token:        "foobar",
+			ApiAddress: server.URL,
+			Token:      "foobar",
 		}
-		client := NewClient(c)
-		app := client.AppByGuid("9902530c-c634-4864-a189-71d763cb12e2")
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		app, err := client.AppByGuid("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+
 		So(app.Guid, ShouldEqual, "9902530c-c634-4864-a189-71d763cb12e2")
 		So(app.Name, ShouldEqual, "test-env")
 	})
@@ -49,14 +55,68 @@ func TestAppByGuid(t *testing.T) {
 		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayloadWithEnvironment_json})
 		defer teardown()
 		c := &Config{
-			ApiAddress:   server.URL,
-			LoginAddress: fakeUAAServer.URL,
-			Token:        "foobar",
+			ApiAddress: server.URL,
+			Token:      "foobar",
 		}
-		client := NewClient(c)
-		app := client.AppByGuid("9902530c-c634-4864-a189-71d763cb12e2")
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		app, err := client.AppByGuid("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+
 		So(app.Environment["string"], ShouldEqual, "string")
 		So(app.Environment["int"], ShouldEqual, 1)
+	})
+}
+
+func TestGetAppInstances(t *testing.T) {
+	Convey("App completely running", t, func() {
+		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/instances", appInstancePayload})
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		appInstances, err := client.GetAppInstances("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+
+		So(appInstances["0"].State, ShouldEqual, "RUNNING")
+		So(appInstances["1"].State, ShouldEqual, "RUNNING")
+	})
+
+	Convey("App partially running", t, func() {
+		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/instances", appInstanceUnhealthyPayload})
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		appInstances, err := client.GetAppInstances("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+
+		So(appInstances["0"].State, ShouldEqual, "RUNNING")
+		So(appInstances["1"].State, ShouldEqual, "STARTING")
+	})
+}
+
+func TestKillAppInstance(t *testing.T) {
+	Convey("Kills an app instance", t, func() {
+		setup(MockRoute{"DELETE", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/instances/0", ""})
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		So(client.KillAppInstance("9902530c-c634-4864-a189-71d763cb12e2", "0"), ShouldBeNil)
 	})
 }
 
@@ -65,18 +125,21 @@ func TestAppSpace(t *testing.T) {
 		setup(MockRoute{"GET", "/v2/spaces/foobar", spacePayload})
 		defer teardown()
 		c := &Config{
-			ApiAddress:   server.URL,
-			LoginAddress: fakeUAAServer.URL,
-			Token:        "foobar",
+			ApiAddress: server.URL,
+			Token:      "foobar",
 		}
-		client := NewClient(c)
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
 		app := &App{
 			Guid:     "123",
 			Name:     "test app",
 			SpaceURL: "/v2/spaces/foobar",
 			c:        client,
 		}
-		space := app.Space()
+		space, err := app.Space()
+		So(err, ShouldBeNil)
+
 		So(space.Name, ShouldEqual, "test-space")
 		So(space.Guid, ShouldEqual, "a72fa1e8-c694-47b3-85f2-55f61fd00d73")
 	})
