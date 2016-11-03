@@ -1,0 +1,22 @@
+---
+
+applications:
+  - name: splunk-firehose-nozzle
+    memory: 64M
+    instances: 2
+    buildpack: https://github.com/cloudfoundry/go-buildpack#v1.7.14
+    health-check-type: none
+    no-route: true
+    command: splunk-firehose-nozzle
+    env:
+      GOPACKAGENAME: github.com/cf-platform-eng/splunk-firehose-nozzle
+      SKIP_SSL_VALIDATION: false
+      ADD_APP_INFO: true
+      API_ENDPOINT: <replace me>
+      API_USER: <replace me>
+      API_PASSWORD: <replace me>
+      # Valid values include ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+      EVENTS: LogMessage
+      SPLUNK_TOKEN: <replace me>
+      SPLUNK_HOST: <replace me>
+      SPLUNK_INDEX: main

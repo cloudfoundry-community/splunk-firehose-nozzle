@@ -7,8 +7,6 @@ export API_ENDPOINT=https://api.bosh-lite.com
 export API_USER=admin
 export API_PASSWORD=admin
 
-# DOPPLER_ENDPOINT is /v2/info -> "logging_endpoint"
-export DOPPLER_ENDPOINT=wss://doppler.bosh-lite.com:4443
 # possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 export EVENTS=ValueMetric,CounterEvent
 
