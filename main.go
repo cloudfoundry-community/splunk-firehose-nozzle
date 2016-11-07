@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/cflager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
+	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -45,6 +46,8 @@ var (
 
 	wantedEvents = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).
 			OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
+	extraFields = kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
+			OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").String()
 	keepAlive = kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 			OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").Duration()
 	subscriptionId = kingpin.Flag("subscription-id", "Id for the subscription.").
@@ -72,11 +75,16 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
+	parsedExtraFields, err := extrafields.ParseExtraFields(*extraFields)
+	if err != nil {
+		log.Fatal("Error parsing etra fields: ", err)
+	}
+
 	var loggingClient logging.Logging
 	if *debug {
 		loggingClient = &drain.LoggingStd{}
 	} else {
-		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, *skipSSL, logger)
+		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
 		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
