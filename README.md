@@ -72,7 +72,7 @@ $ ./scripts/nozzle.sh
 
 #### CI
 
-https://concourse.run-03.haas-71.pez.pivotal.io/teams/splunk/pipelines/splunk-firehose-tile-build
+https://concourse.cfplatformeng.com/teams/splunk/pipelines/splunk-firehose-tile-build
 
 ### Exploring Events
 
