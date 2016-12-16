@@ -6,9 +6,9 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/testing"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
-	. "github.com/cf-platform-eng/splunk-firehose-nozzle/sink"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
 )
 
 var _ = Describe("LoggingSplunk", func() {

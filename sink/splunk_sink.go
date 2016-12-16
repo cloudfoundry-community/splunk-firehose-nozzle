@@ -3,7 +3,7 @@ package sink
 import (
 	"code.cloudfoundry.org/lager"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 type SplunkSink struct {

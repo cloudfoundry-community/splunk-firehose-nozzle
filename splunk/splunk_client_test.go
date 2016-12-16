@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 var _ = Describe("SplunkClient", func() {

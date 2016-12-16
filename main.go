@@ -14,11 +14,11 @@ import (
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/firehoseclient"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/sink"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/splunk"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 var (
