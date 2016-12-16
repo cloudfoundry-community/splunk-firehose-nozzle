@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/testing"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
-	. "github.com/cf-platform-eng/splunk-firehose-nozzle/auth"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
 )
 
 var _ = Describe("uaa_token_fetcher", func() {

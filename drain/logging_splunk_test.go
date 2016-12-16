@@ -11,8 +11,8 @@ import (
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
 
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/drain"
-	"github.com/cf-platform-eng/splunk-firehose-nozzle/testing"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
 var _ = Describe("LoggingSplunk", func() {
