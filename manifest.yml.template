@@ -9,7 +9,7 @@ applications:
     no-route: true
     command: splunk-firehose-nozzle
     env:
-      GOPACKAGENAME: github.com/cf-platform-eng/splunk-firehose-nozzle
+      GOPACKAGENAME: github.com/cloudfoundry-community/splunk-firehose-nozzle
       SKIP_SSL_VALIDATION: false
       ADD_APP_INFO: true
       API_ENDPOINT: <replace me>

@@ -1,4 +1,4 @@
-package: github.com/cf-platform-eng/splunk-firehose-nozzle
+package: github.com/cloudfoundry-community/splunk-firehose-nozzle
 import:
 - package: code.cloudfoundry.org/cfhttp
 - package: code.cloudfoundry.org/cflager
