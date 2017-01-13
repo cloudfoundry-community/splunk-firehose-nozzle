@@ -11,12 +11,24 @@ You can either
 * Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
 
 Manifest example:
-```
+```yaml
 uaa:
   scim:
     users:
       - splunk-firehose|password123|cloud_controller.admin_read_only,doppler.firehose
 ```
+
+`uaac` example:
+```shell
+uaac target https://uaa.[system domain url]
+uaac token client get admin -s [admin client credentials secret]
+uaac -t user add splunk-nozzle --password password123 --emails na
+uaac -t member add cloud_controller.admin_read_only splunk-nozzle
+uaac -t member add doppler.firehose splunk-nozzle
+```
+
+`cloud_controller.admin_read_only` will work for cf v241 
+or later. Earlier versions should use `cloud_controller.admin` instead.
 
 ### Development
 
@@ -74,9 +86,44 @@ $ ./scripts/nozzle.sh
 
 https://concourse.cfplatformeng.com/teams/splunk/pipelines/splunk-firehose-tile-build
 
-### Exploring Events
+### Push as an App to Cloud Foundry
 
-Here are a few Splunk queries to explore some the events for making a  dashboard
+[splunk-firehose-nozzle-release](https://github.com/cloudfoundry-community/splunk-firehose-nozzle-release)
+packages this code into a
+[BOSH](https://bosh.io) release for deployment. The code could also be run on
+Cloud Foundry as an application. See the **Setup** section for details
+on making a user and credentials.
+
+1. Download the latest release
+    
+    ```shell
+    git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle-release.git
+    cd splunk-firehose-nozzle-release
+    ```
+    
+1. Authenticate to Cloud Foundruy
+    
+    ```shell
+    cf login -a https://api.[your cf system domain] -u [your id]
+    ```
+
+1. Copy the manifest template and fill in needed values (using the credentials created during setup)
+
+    ```shell
+    cp manifest.yml.template manifest.yml 
+    vim manifest.yml
+    ```
+
+1. Push the nozzle
+
+    ```shell
+    cf push
+    ```
+
+
+#### Exploring Events
+
+Here are two short Splunk queries to start exploring some of the events
 
 ```
 event_type=ValueMetric

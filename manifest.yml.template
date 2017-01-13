@@ -19,4 +19,4 @@ applications:
       EVENTS: LogMessage
       SPLUNK_TOKEN: <replace me>
       SPLUNK_HOST: <replace me>
-      SPLUNK_INDEX: main
+      SPLUNK_INDEX: <replace me>
