@@ -97,8 +97,8 @@ on making a user and credentials.
 1. Download the latest release
     
     ```shell
-    git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle-release.git
-    cd splunk-firehose-nozzle-release
+    git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git
+    cd splunk-firehose-nozzle
     ```
     
 1. Authenticate to Cloud Foundruy
