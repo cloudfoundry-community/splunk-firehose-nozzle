@@ -11,3 +11,4 @@ import:
   subpackages:
   - events
 - package: github.com/kelseyhightower/envconfig
+- package: github.com/cloudfoundry-community/splunk-firehose-nozzle
