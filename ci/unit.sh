@@ -1,4 +1,6 @@
-#!/usr/bin/env bash -ex
+#!/usr/bin/env bash
+
+set -ex
 
 echo "Fiddle with the go path"
 export GOPATH=`pwd`
