@@ -75,7 +75,7 @@ func (m *MappingList) UnmarshalText(text []byte) error {
 
 	for _, split := range strings.Split(string(text), ",") {
 		mapping := Mapping{}
-		err := mapping.UnmarshalText([]byte(split))
+		err := mapping.UnmarshalText([]byte(strings.Trim(split, " ")))
 		if err != nil {
 			return err
 		}
