@@ -6,9 +6,8 @@ echo "Fiddle with the go path"
 export GOPATH=`pwd`
 export PATH=$GOPATH/bin:$PATH
 
-cp -r source-repo/src/splunk-firehose-nozzle splunk-firehose-nozzle
 mkdir -p src/github.com/cloudfoundry-community
-mv splunk-firehose-nozzle src/github.com/cloudfoundry-community
+cp -r source-repo src/github.com/cloudfoundry-community/splunk-firehose-nozzle
 
 cd src/github.com/cloudfoundry-community/splunk-firehose-nozzle
 
