@@ -11,9 +11,9 @@ import (
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
 
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/config"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/config"
 )
 
 var _ = Describe("LoggingSplunk", func() {
@@ -97,10 +97,32 @@ var _ = Describe("LoggingSplunk", func() {
 	It("mapping values override default index", func() {
 		mappings := []config.Mapping{
 			{
-				Key: "event_type",
+				Key:   "event_type",
 				Value: "Error",
 				Index: "offworld",
 			},
+		}
+		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond, defaultIndex, mappings)
+
+		eventType = events.Envelope_Error
+		routing.RouteEvent(envelope)
+
+		logging.Connect()
+		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents
+		}).Should(HaveLen(1))
+
+		event = mockClient.CapturedEvents[0]
+
+		Expect(event["index"]).To(Equal("offworld"))
+	})
+
+	It("mapping first match wins", func() {
+		mappings := []config.Mapping{
+			{Key: "event_type", Value: "Error", Index: "offworld"},
+			{Key: "deployment", Value: "cf-warden", Index: "warden"},
 		}
 		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond, defaultIndex, mappings)
 

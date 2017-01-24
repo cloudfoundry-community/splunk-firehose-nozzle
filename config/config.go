@@ -13,7 +13,7 @@ import (
 var mappingPattern *regexp.Regexp
 
 func init() {
-	mappingPattern = regexp.MustCompile("(?P<key>\\w+):(?P<value>.+):(?P<index>\\w+)")
+	mappingPattern = regexp.MustCompile("(?P<key>\\w+):(?P<value>.+)->(?P<index>\\w+)")
 }
 
 type config struct {

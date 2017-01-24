@@ -93,7 +93,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses single mapping", func() {
-			os.Setenv("MAPPINGS", "deployment:cf:main")
+			os.Setenv("MAPPINGS", "deployment:cf->main")
 
 			c, err := Parse()
 
@@ -108,7 +108,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses single mapping", func() {
-			os.Setenv("MAPPINGS", "deployment:cf:main,cf_org_id:some-guid:whatever")
+			os.Setenv("MAPPINGS", "deployment:cf->main,cf_org_id:some-guid->whatever")
 
 			c, err := Parse()
 
@@ -132,7 +132,7 @@ var _ = Describe("Config", func() {
 		It("unmarshals", func() {
 			mappingList := &MappingList{}
 
-			err := mappingList.UnmarshalText([]byte("deployment:cf:main,cf_org_id:some-guid:whatever"))
+			err := mappingList.UnmarshalText([]byte("deployment:cf->main,cf_org_id:some-guid->whatever"))
 
 			Expect(err).To(BeNil())
 
@@ -148,7 +148,7 @@ var _ = Describe("Config", func() {
 		It("errors on bad mapping", func() {
 			mappingList := &MappingList{}
 
-			err := mappingList.UnmarshalText([]byte("deployment:cf:main,cf_org_id::whatever"))
+			err := mappingList.UnmarshalText([]byte("deployment:cf->main,cf_org_id:->whatever"))
 
 			Expect(err).NotTo(BeNil())
 		})
@@ -158,7 +158,7 @@ var _ = Describe("Config", func() {
 		It("mapping unmarshals with value input", func() {
 			mapping := &Mapping{}
 
-			err := mapping.UnmarshalText([]byte("deployment:cf:main"))
+			err := mapping.UnmarshalText([]byte("deployment:cf->main"))
 
 			Expect(err).To(BeNil())
 
@@ -170,7 +170,7 @@ var _ = Describe("Config", func() {
 		It("value can containt :", func() {
 			mapping := &Mapping{}
 
-			err := mapping.UnmarshalText([]byte("cf_app_name:foo:bar:random"))
+			err := mapping.UnmarshalText([]byte("cf_app_name:foo:bar->random"))
 
 			Expect(err).To(BeNil())
 
@@ -182,21 +182,21 @@ var _ = Describe("Config", func() {
 		It("key is required", func() {
 			mapping := &Mapping{}
 
-			err := mapping.UnmarshalText([]byte(":cf:main"))
+			err := mapping.UnmarshalText([]byte(":cf->main"))
 
 			Expect(err).NotTo(BeNil())
 		})
 		It("value is required", func() {
 			mapping := &Mapping{}
 
-			err := mapping.UnmarshalText([]byte("deployment::main"))
+			err := mapping.UnmarshalText([]byte("deployment:->main"))
 
 			Expect(err).NotTo(BeNil())
 		})
 		It("index is required", func() {
 			mapping := &Mapping{}
 
-			err := mapping.UnmarshalText([]byte("deployment:cf:"))
+			err := mapping.UnmarshalText([]byte("deployment:cf->"))
 
 			Expect(err).NotTo(BeNil())
 		})

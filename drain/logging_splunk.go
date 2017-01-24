@@ -89,6 +89,7 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 				event["index"] = mapping.Index
 			}
 		}
+		break
 	}
 
 	return event
