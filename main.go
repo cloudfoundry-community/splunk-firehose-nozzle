@@ -23,44 +23,44 @@ import (
 
 var (
 	debug = kingpin.Flag("debug", "Enable debug mode: forward to standard out intead of splunk").
-		OverrideDefaultFromEnvar("DEBUG").Default("false").Bool()
+		Envar("DEBUG").Default("false").Bool()
 	skipSSL = kingpin.Flag("skip-ssl-validation", "Skip cert validation (for dev environments").
-		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").Bool()
+		Envar("SKIP_SSL_VALIDATION").Default("false").Bool()
 	jobName = kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").String()
+		Envar("JOB_NAME").Default("splunk-nozzle").String()
 	jobIndex = kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
-			OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").String()
+			Envar("JOB_INDEX").Default("-1").String()
 	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
+		Envar("JOB_HOST").Default("localhost").String()
 
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
-			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
+			Envar("ADD_APP_INFO").Default("false").Bool()
 	apiEndpoint = kingpin.Flag("api-endpoint", "API endpoint address").
-			OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
+			Envar("API_ENDPOINT").Required().String()
 	user = kingpin.Flag("user", "Admin user.").
-		OverrideDefaultFromEnvar("API_USER").Required().String()
+		Envar("API_USER").Required().String()
 	password = kingpin.Flag("password", "Admin password.").
-			OverrideDefaultFromEnvar("API_PASSWORD").Required().String()
+			Envar("API_PASSWORD").Required().String()
 	boltDBPath = kingpin.Flag("boltdb-path", "Bolt Database path ").
-			Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
+			Default("cache.db").Envar("BOLTDB_PATH").String()
 
 	wantedEvents = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).
-			OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
+			Envar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
 	extraFields = kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
-			OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").String()
+			Envar("EXTRA_FIELDS").Default("").String()
 	keepAlive = kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
-			OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").Duration()
+			Envar("FIREHOSE_KEEP_ALIVE").Default("25s").Duration()
 	subscriptionId = kingpin.Flag("subscription-id", "Id for the subscription.").
-			OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").String()
+			Envar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").String()
 
 	splunkToken = kingpin.Flag("splunk-token", "Splunk HTTP event collector token").
-			OverrideDefaultFromEnvar("SPLUNK_TOKEN").Required().String()
+			Envar("SPLUNK_TOKEN").Required().String()
 	splunkHost = kingpin.Flag("splunk-host", "Splunk HTTP event collector host").
-			OverrideDefaultFromEnvar("SPLUNK_HOST").Required().String()
+			Envar("SPLUNK_HOST").Required().String()
 	splunkIndex = kingpin.Flag("splunk-index", "Splunk index").
-			OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().String()
+			Envar("SPLUNK_INDEX").Required().String()
 	flushInterval = kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every ").
-			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
+			Envar("FLUSH_INTERVAL").Default("5s").Duration()
 )
 
 var version = "0.0.1"
