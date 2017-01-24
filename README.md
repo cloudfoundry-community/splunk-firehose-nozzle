@@ -71,6 +71,11 @@ Update dependencies (without `strip-vcs` you'll end up with submodules):
 glide install --strip-vendor --strip-vcs --update-vendored
 ```
 
+Add a new dependency:
+```
+glide get github.com/kelseyhightower/envconfig --strip-vendor
+```
+
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
 ```
 $ ginkgo -r
