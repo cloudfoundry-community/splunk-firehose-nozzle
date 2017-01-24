@@ -38,8 +38,8 @@ func main() {
 	if c.Debug {
 		loggingClient = &drain.LoggingStd{}
 	} else {
-		splunkCLient := splunk.NewSplunkClient(c.SplunkToken, c.SplunkHost, c.SplunkIndex, parsedExtraFields, c.SkipSSL, logger)
-		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, c.FlushInterval)
+		splunkCLient := splunk.NewSplunkClient(c.SplunkToken, c.SplunkHost, parsedExtraFields, c.SkipSSL, logger)
+		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, c.FlushInterval, c.SplunkIndex, c.MappingList.Mappings)
 		logger.RegisterSink(sink.NewSplunkSink(c.JobName, c.JobIndex, c.JobHost, splunkCLient))
 	}
 
