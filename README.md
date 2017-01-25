@@ -125,19 +125,26 @@ on making a user and credentials.
     cf push
     ```
 
+#### Troubleshooting
+In most cases, you would only need to troubleshoot from Splunk which include not only firehose data but also this nozzle internal logs. However, if the nozzle is still not forwarding any data, a good place to start is to get app internal logs directly:
 
-#### Exploring Events
+```shell
+cf logs splunk-firehose-nozzle
+```
+
+A common mis-configuration occurs when having invalid or unsigned certificate for Cloud Foundry API endpoint. In that case, for non-production environments, you can set `SKIP_SSL_VALIDATION` to `true` in above manifest.yml before re-deploying the app.
+
+#### Searching Events
 
 Here are two short Splunk queries to start exploring some of the events
 
 ```
-event_type=ValueMetric
-    | eval job_and_name=source+"-"+name
-    | stats values(job_and_name)
+sourcetype="cf:valuemetric"
+    | stats avg(value) by job_instance, name
 ```
 
 ```
-event_type=CounterEvent
+sourcetype="cf:counterevent"
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
