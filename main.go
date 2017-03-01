@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 
 	"code.cloudfoundry.org/cflager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
@@ -77,7 +76,7 @@ func main() {
 
 	parsedExtraFields, err := extrafields.ParseExtraFields(*extraFields)
 	if err != nil {
-		log.Fatal("Error parsing etra fields: ", err)
+		logger.Fatal("Error parsing extra fields: ", err)
 	}
 
 	var loggingClient logging.Logging
@@ -98,7 +97,7 @@ func main() {
 	}
 	cfClient, err := cfclient.NewClient(cfConfig)
 	if err != nil {
-		log.Fatal("Error setting up cf client: ", err)
+		logger.Fatal("Error setting up cf client: ", err)
 	}
 
 	logger.Info("Setting up caching")
@@ -114,7 +113,7 @@ func main() {
 	events := eventRouting.NewEventRouting(cache, loggingClient)
 	err = events.SetupEventRouting(*wantedEvents)
 	if err != nil {
-		log.Fatal("Error setting up event routing: ", err)
+		logger.Fatal("Error setting up event routing: ", err)
 	}
 
 	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
