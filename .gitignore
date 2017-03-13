@@ -7,4 +7,4 @@ cache.db
 
 main
 splunk-firehose-nozzle
-manifest.yml
+manifest*.yml
