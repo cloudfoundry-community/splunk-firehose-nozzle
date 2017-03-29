@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/config"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
@@ -16,14 +17,19 @@ type LoggingSplunk struct {
 	client      splunk.SplunkClient
 	flushWindow time.Duration
 
+	defaultIndex  string
+	indexMappings []config.Mapping
+
 	batch []map[string]interface{}
 }
 
-func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration) *LoggingSplunk {
+func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration, defaultIndex string, indexMappings []config.Mapping) *LoggingSplunk {
 	return &LoggingSplunk{
-		logger:      logger,
-		client:      splunkClient,
-		flushWindow: flushWindow,
+		logger:        logger,
+		client:        splunkClient,
+		flushWindow:   flushWindow,
+		defaultIndex:  defaultIndex,
+		indexMappings: indexMappings,
 	}
 }
 
@@ -73,6 +79,18 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 	event["sourcetype"] = fmt.Sprintf("cf:%s", eventType)
 
 	event["event"] = fields
+
+	if l.defaultIndex != "" {
+		event["index"] = l.defaultIndex
+	}
+	for _, mapping := range l.indexMappings {
+		if val, ok := fields[mapping.Key]; ok {
+			if val == mapping.Value {
+				event["index"] = mapping.Index
+			}
+		}
+		break
+	}
 
 	return event
 }

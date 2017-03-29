@@ -1,5 +1,5 @@
-hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
-updated: 2016-11-02T08:56:04.177492413-07:00
+hash: 3ccae128ded21713306dd3074af8574140f3a82652d5fc625635d799fdd0842f
+updated: 2017-01-24T09:53:07.429741215-08:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -9,12 +9,6 @@ imports:
   version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
 - name: code.cloudfoundry.org/lager
   version: b273f19621a28f627423f658e71e014f114dd53e
-- name: github.com/alecthomas/template
-  version: b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0
-  subpackages:
-  - parse
-- name: github.com/alecthomas/units
-  version: 6b4e7dc5e3143b85ea77909c72caf89416fc2915
 - name: github.com/boltdb/bolt
   version: 4d30731e9122988d2012a9574c43f80f054a0d3b
 - name: github.com/cloudfoundry-community/firehose-to-syslog
@@ -28,6 +22,8 @@ imports:
   - utils
 - name: github.com/cloudfoundry-community/go-cfclient
   version: c783aa0efe78706e9d98ffc4a84f0d42cd322ac8
+- name: github.com/cloudfoundry-community/splunk-firehose-nozzle
+  version: f2aa66a72abe9faca6f174a9aee2454cf9ab4961
 - name: github.com/cloudfoundry-incubator/uaago
   version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
@@ -86,8 +82,6 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
-- name: gopkg.in/alecthomas/kingpin.v2
-  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 testImports:
 - name: github.com/onsi/ginkgo
   version: a8ccd817611666211fdf6e6a752174a0db8374a8

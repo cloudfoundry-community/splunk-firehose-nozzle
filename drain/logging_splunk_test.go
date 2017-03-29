@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
 
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/config"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
@@ -34,9 +35,12 @@ var _ = Describe("LoggingSplunk", func() {
 		logger     lager.Logger
 		mockClient *testing.MockSplunkClient
 		routing    *eventRouting.EventRouting
+
+		defaultIndex string
 	)
 
 	BeforeEach(func() {
+		defaultIndex = "cf_index"
 		timestampNano = 1467040874046121775
 		deployment = "cf-warden"
 		jobIndex = "85c9ff80-e99b-470b-a194-b397a6e73913"
@@ -59,7 +63,7 @@ var _ = Describe("LoggingSplunk", func() {
 		mockClient = &testing.MockSplunkClient{}
 
 		logger = lager.NewLogger("test")
-		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond)
+		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond, defaultIndex, []config.Mapping{})
 	})
 
 	It("sends events to client", func() {
@@ -74,7 +78,70 @@ var _ = Describe("LoggingSplunk", func() {
 		}).Should(HaveLen(1))
 	})
 
-	It("job_index is present, index is not", func() {
+	It("sets the default index", func() {
+		eventType = events.Envelope_Error
+		routing.RouteEvent(envelope)
+
+		logging.Connect()
+		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents
+		}).Should(HaveLen(1))
+
+		event = mockClient.CapturedEvents[0]
+
+		Expect(event["index"]).To(Equal("cf_index"))
+	})
+
+	It("mapping values override default index", func() {
+		mappings := []config.Mapping{
+			{
+				Key:   "event_type",
+				Value: "Error",
+				Index: "offworld",
+			},
+		}
+		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond, defaultIndex, mappings)
+
+		eventType = events.Envelope_Error
+		routing.RouteEvent(envelope)
+
+		logging.Connect()
+		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents
+		}).Should(HaveLen(1))
+
+		event = mockClient.CapturedEvents[0]
+
+		Expect(event["index"]).To(Equal("offworld"))
+	})
+
+	It("mapping first match wins", func() {
+		mappings := []config.Mapping{
+			{Key: "event_type", Value: "Error", Index: "offworld"},
+			{Key: "deployment", Value: "cf-warden", Index: "warden"},
+		}
+		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond, defaultIndex, mappings)
+
+		eventType = events.Envelope_Error
+		routing.RouteEvent(envelope)
+
+		logging.Connect()
+		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents
+		}).Should(HaveLen(1))
+
+		event = mockClient.CapturedEvents[0]
+
+		Expect(event["index"]).To(Equal("offworld"))
+	})
+
+	It("index becomes job_index", func() {
 		eventType = events.Envelope_Error
 		routing.RouteEvent(envelope)
 
@@ -88,10 +155,7 @@ var _ = Describe("LoggingSplunk", func() {
 		event = mockClient.CapturedEvents[0]
 
 		data := event["event"].(map[string]interface{})
-		Expect(data).NotTo(HaveKey("index"))
-
-		index := data["job_index"]
-		Expect(index).To(Equal(jobIndex))
+		Expect(data["job_index"]).To(Equal(jobIndex))
 	})
 
 	Context("envelope HttpStartStop", func() {
