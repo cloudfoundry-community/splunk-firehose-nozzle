@@ -13,7 +13,5 @@ export EVENTS=ValueMetric,CounterEvent
 export SPLUNK_TOKEN=<token>
 export SPLUNK_HOST=<hec host, something like https://example.cloud.splunk.com:8088>
 export SPLUNK_INDEX=<index>
-# optional overrides to default index, first match wins
-# export MAPPINGS="cf_org_id:924bb269-98b0-406c-9b5a-9ca261622dac->special,cf_org_id:924bb269-98b0-406c-9b5a-9ca261622dad->special2"
 
 go run main.go

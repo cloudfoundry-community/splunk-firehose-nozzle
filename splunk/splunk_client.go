@@ -21,11 +21,12 @@ type splunkClient struct {
 	httpClient  *http.Client
 	splunkToken string
 	splunkHost  string
+	index       string
 	fields      map[string]string
 	logger      lager.Logger
 }
 
-func NewSplunkClient(splunkToken string, splunkHost string, fields map[string]string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
+func NewSplunkClient(splunkToken string, splunkHost string, index string, fields map[string]string, insecureSkipVerify bool, logger lager.Logger) SplunkClient {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
@@ -36,6 +37,7 @@ func NewSplunkClient(splunkToken string, splunkHost string, fields map[string]st
 		httpClient:  httpClient,
 		splunkToken: splunkToken,
 		splunkHost:  splunkHost,
+		index:       index,
 		logger:      logger,
 		fields:      fields,
 	}
@@ -44,6 +46,10 @@ func NewSplunkClient(splunkToken string, splunkHost string, fields map[string]st
 func (s *splunkClient) Post(events []map[string]interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
+		if s.index != "" {
+			event["index"] = s.index
+		}
+
 		if len(s.fields) > 0 {
 			event["fields"] = s.fields
 		}
