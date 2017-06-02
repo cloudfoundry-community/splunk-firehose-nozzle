@@ -37,9 +37,9 @@ build-linux:
 build: build-nozzle
 
 build-nozzle: fmt
-	go build -o ./main.go -ldflags \
+	go build -o splunk-firehose-nozzle  -ldflags \
 		"-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH)" \
-		splunk-firehose-nozzle
+		./main.go
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 
