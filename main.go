@@ -72,7 +72,7 @@ var (
 
 func main() {
 	cflager.AddFlags(flag.CommandLine)
-	// flag.Parse()
+	flag.Parse()
 
 	logger, _ := cflager.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
