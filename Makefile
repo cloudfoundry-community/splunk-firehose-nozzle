@@ -1,7 +1,6 @@
 UNAME := $(shell sh -c 'uname')
 COMMIT := $(shell sh -c 'git rev-parse HEAD')
 BRANCH := $(shell sh -c 'git rev-parse --abbrev-ref HEAD')
-VERSION := "0.1"
 
 ifdef GOBIN
 PATH := $(GOBIN):$(PATH)
@@ -38,7 +37,7 @@ build: build-nozzle
 
 build-nozzle: fmt
 	go build -o splunk-firehose-nozzle  -ldflags \
-		"-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH)" \
+		"-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildos=$(UNAME)" \
 		./main.go
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")

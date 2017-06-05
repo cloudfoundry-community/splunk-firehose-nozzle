@@ -25,6 +25,7 @@ You can either
 * Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
 
 Manifest example:
+
 ```yaml
 uaa:
   scim:
@@ -56,46 +57,62 @@ Make sure you have the following installed on your workstation:
 | glide | 0.12.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
+
 ```
 $ cd <REPO_ROOT_DIRECTORY>
-$ glide install
+$ make installdeps
 ```
 
 #### Environment
 
 For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
+
 ```
 $ cp script/dev.sh.template scripts/nozzle.sh
 $ chmod +x scripts/nozzle.sh
 ```
 
 Build project:
+
 ```
-$ go build main.go
+$ make VERSION=1.0 build
 ```
 
 Reinstall dependencies:
+
 ```
-glide update
+$ make updatedeps
 ```
 
 Update dependencies (without `strip-vcs` you'll end up with submodules):
+
 ```
 glide install --strip-vendor --strip-vcs --update-vendored
 ```
 
 Add a new dependency:
+
 ```
 glide get github.com/kelseyhightower/envconfig --strip-vendor
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
+
 ```
 $ ginkgo -r
 ```
 
+Run all kinds of testing
+
+```
+$ make test # run all unittest
+$ make race # test if there is race condition in the code
+$ make vet  # examine GoLang code
+```
+
 Run app
+
 ```
 # this will run: go run main.go
 $ ./scripts/nozzle.sh

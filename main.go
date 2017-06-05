@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cflager"
+	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
@@ -62,11 +63,16 @@ var (
 			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
 )
 
-var version = "0.0.1"
+var (
+	version string
+	branch  string
+	commit  string
+	buildos string
+)
 
 func main() {
 	cflager.AddFlags(flag.CommandLine)
-	flag.Parse()
+	// flag.Parse()
 
 	logger, _ := cflager.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
@@ -88,7 +94,14 @@ func main() {
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
 
-	logger.Info("Connecting to Cloud Foundry")
+	versionInfo := lager.Data{
+		"version": version,
+		"branch":  branch,
+		"commit":  commit,
+		"buildos": buildos,
+	}
+
+	logger.Info("Connecting to Cloud Foundry. splunk-firehose-nozzle runs", versionInfo)
 	cfConfig := &cfclient.Config{
 		ApiAddress:        *apiEndpoint,
 		Username:          *user,
