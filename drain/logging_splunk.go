@@ -15,8 +15,7 @@ type LoggingSplunk struct {
 	logger      lager.Logger
 	client      splunk.SplunkClient
 	flushWindow time.Duration
-
-	batch []map[string]interface{}
+	events      chan map[string]interface{}
 }
 
 func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration) *LoggingSplunk {
@@ -24,6 +23,8 @@ func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flu
 		logger:      logger,
 		client:      splunkClient,
 		flushWindow: flushWindow,
+		// FIXME, make buffer size 100 configurable
+		events: make(chan map[string]interface{}, 100),
 	}
 }
 
@@ -34,24 +35,47 @@ func (l *LoggingSplunk) Connect() bool {
 }
 
 func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
-	l.batch = append(l.batch, l.buildEvent(fields, msg))
+	event := l.buildEvent(fields, msg)
+	l.events <- event
 }
 
 func (l *LoggingSplunk) consume() {
-	ticker := time.Tick(l.flushWindow)
-	for range ticker {
-		if len(l.batch) > 0 {
-			l.logger.Info(fmt.Sprintf("Posting %d events", len(l.batch)))
-			err := l.client.Post(l.batch)
-			if err != nil {
-				l.logger.Fatal("Unable to talk to Splunk", err)
-			}
+	var batch []map[string]interface{}
+	// FIXME, make batchSize configurable
+	batchSize := 50
+	tickChan := time.NewTicker(l.flushWindow).C
 
-			l.batch = make([]map[string]interface{}, 0)
-		} else {
-			l.logger.Debug("No events to post")
+	// Either flush window or batch size reach limits, we flush
+	for {
+		select {
+		case event := <-l.events:
+			batch = append(batch, event)
+			if len(batch) >= batchSize {
+				batch = l.indexEvents(batch)
+			}
+		case <-tickChan:
+			batch = l.indexEvents(batch)
 		}
 	}
+}
+
+// indexEvents indexes events to Splunk
+// return nil when sucessful which clears all outstanding events
+// return what the batch has if there is an error for next retry cycle
+func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string]interface{} {
+	if len(batch) == 0 {
+		return batch
+	}
+
+	l.logger.Info(fmt.Sprintf("Posting %d events", len(batch)))
+	err := l.client.Post(batch)
+	if err != nil {
+		l.logger.Error("Unable to talk to Splunk, error=%+v", err)
+		// return back the batch for next retry
+		return batch
+	}
+
+	return nil
 }
 
 func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
