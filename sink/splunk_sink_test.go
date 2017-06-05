@@ -29,12 +29,12 @@ var _ = Describe("LoggingSplunk", func() {
 	It("posts to splunk", func() {
 		message := lager.LogFormat{}
 
-		Expect(mockClient.CapturedEvents).To(BeNil())
+		Expect(mockClient.CapturedEvents()).To(BeNil())
 
 		sink.Log(message)
 		sink.Log(message)
 
-		Expect(mockClient.CapturedEvents).To(HaveLen(2))
+		Expect(mockClient.CapturedEvents()).To(HaveLen(2))
 	})
 
 	It("translates log message metadata to splunk format", func() {
@@ -47,8 +47,8 @@ var _ = Describe("LoggingSplunk", func() {
 
 		sink.Log(message)
 
-		Expect(mockClient.CapturedEvents).To(HaveLen(1))
-		envelope := mockClient.CapturedEvents[0]
+		Expect(mockClient.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient.CapturedEvents()[0]
 
 		Expect(envelope["time"]).To(Equal("1473180363"))
 
@@ -71,8 +71,8 @@ var _ = Describe("LoggingSplunk", func() {
 
 		sink.Log(message)
 
-		Expect(mockClient.CapturedEvents).To(HaveLen(1))
-		envelope := mockClient.CapturedEvents[0]
+		Expect(mockClient.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient.CapturedEvents()[0]
 
 		Expect(envelope["time"]).To(Equal("1473180363"))
 
@@ -89,8 +89,8 @@ var _ = Describe("LoggingSplunk", func() {
 
 		sink.Log(message)
 
-		Expect(mockClient.CapturedEvents).To(HaveLen(1))
-		envelope := mockClient.CapturedEvents[0]
+		Expect(mockClient.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient.CapturedEvents()[0]
 
 		Expect(envelope["sourcetype"]).To(Equal("cf:splunknozzle"))
 		Expect(envelope["host"]).To(Equal("127.0.0.1"))
