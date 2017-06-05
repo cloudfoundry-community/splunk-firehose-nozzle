@@ -70,7 +70,7 @@ var _ = Describe("LoggingSplunk", func() {
 		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 		Eventually(func() []map[string]interface{} {
-			return mockClient.CapturedEvents()
+			return mockClient.CapturedEvents
 		}).Should(HaveLen(1))
 	})
 
@@ -82,10 +82,10 @@ var _ = Describe("LoggingSplunk", func() {
 		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 		Eventually(func() []map[string]interface{} {
-			return mockClient.CapturedEvents()
+			return mockClient.CapturedEvents
 		}).Should(HaveLen(1))
 
-		event = mockClient.CapturedEvents()[0]
+		event = mockClient.CapturedEvents[0]
 
 		data := event["event"].(map[string]interface{})
 		Expect(data).NotTo(HaveKey("index"))
@@ -170,10 +170,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -233,10 +233,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -292,10 +292,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -347,10 +347,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -402,10 +402,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {
@@ -468,10 +468,10 @@ var _ = Describe("LoggingSplunk", func() {
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
-				return mockClient.CapturedEvents()
+				return mockClient.CapturedEvents
 			}).Should(HaveLen(1))
 
-			event = mockClient.CapturedEvents()[0]
+			event = mockClient.CapturedEvents[0]
 		})
 
 		It("metadata", func() {

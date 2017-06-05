@@ -1,12 +1,7 @@
 package testing
 
-import (
-	"sync"
-)
-
 type MockSplunkClient struct {
-	lock           sync.Mutex
-	capturedEvents []map[string]interface{}
+	CapturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
 }
 
@@ -14,22 +9,9 @@ func (m *MockSplunkClient) Post(events []map[string]interface{}) error {
 	if m.PostBatchFn != nil {
 		return m.PostBatchFn(events)
 	} else {
-		m.lock.Lock()
-		m.capturedEvents = append(m.capturedEvents, events...)
-		m.lock.Unlock()
+		m.CapturedEvents = append(m.CapturedEvents, events...)
 	}
 	return nil
-}
-
-func (m *MockSplunkClient) CapturedEvents() []map[string]interface{} {
-	m.lock.Lock()
-	var events []map[string]interface{}
-	for _, event := range m.capturedEvents {
-		events = append(events, event)
-	}
-	m.lock.Unlock()
-
-	return events
 }
 
 type MockTokenGetter struct {
