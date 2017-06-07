@@ -11,6 +11,11 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
+//LoggingSplunk
+//logger: 	 Logging client as implemented in lager
+//client:	 Splunk Client as implemented in splunk/splunk_client
+//flushWindow: 	 time in nanoseconds representing flush window
+//events: 	 channel implementation of map[strings] to store events for Splunk to index
 type LoggingSplunk struct {
 	logger      lager.Logger
 	client      splunk.SplunkClient
@@ -18,6 +23,7 @@ type LoggingSplunk struct {
 	events      chan map[string]interface{}
 }
 
+//"constructor" for NewLoggingSplunk
 func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration) *LoggingSplunk {
 	return &LoggingSplunk{
 		logger:      logger,
@@ -28,17 +34,23 @@ func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flu
 	}
 }
 
+//Connect implements "firehose-to-syslog.logging.logging" by calling LoggingSplunk.consume() on LoggingSplunk object
 func (l *LoggingSplunk) Connect() bool {
 	go l.consume()
 
 	return true
 }
 
+//ShipEvents implements "firehose-to-syslog.logging.logging" by buildingEvents and sending them to LoggingSplunk.events
 func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
 	event := l.buildEvent(fields, msg)
 	l.events <- event
 }
 
+//consume function will send events through to indexEvents method.
+// trigger on 2 scenarios:
+// 1: BatchSize count reached
+// 2: flushWindow Ticker timer reached
 func (l *LoggingSplunk) consume() {
 	var batch []map[string]interface{}
 	// FIXME, make batchSize configurable
@@ -48,6 +60,8 @@ func (l *LoggingSplunk) consume() {
 	// Either flush window or batch size reach limits, we flush
 	for {
 		select {
+		// FIXME, ensure indexEvents isn't triggered in succession. Reset flushWindow after indexEvents
+
 		case event := <-l.events:
 			batch = append(batch, event)
 			if len(batch) >= batchSize {
@@ -60,7 +74,7 @@ func (l *LoggingSplunk) consume() {
 }
 
 // indexEvents indexes events to Splunk
-// return nil when sucessful which clears all outstanding events
+// return nil when successful which clears all outstanding events
 // return what the batch has if there is an error for next retry cycle
 func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string]interface{} {
 	if len(batch) == 0 {
@@ -78,6 +92,8 @@ func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string
 	return nil
 }
 
+// buildEvent constructs a splunk event from fields and msg parameter
+// returns constructed event in event variable
 func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
 	if len(msg) > 0 {
 		fields["msg"] = msg
@@ -101,6 +117,7 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 	return event
 }
 
+// nanoSecondsToSeconds is a simple helper function to convert nanoSeconds to Seconds
 func (l *LoggingSplunk) nanoSecondsToSeconds(nanoseconds int64) string {
 	seconds := float64(nanoseconds) * math.Pow(1000, -3)
 	return fmt.Sprintf("%.3f", seconds)
