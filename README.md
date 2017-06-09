@@ -45,6 +45,68 @@ uaac -t member add doppler.firehose splunk-nozzle
 `cloud_controller.admin_read_only` will work for cf v241 
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
+Cloud Foundry configuration parameters:
+```
+debug 
+Enable debug mode (forward to standard out intead of Splunk).
+
+skipSSL
+Skip cert validation (for dev environments).
+
+jobName
+Job name to tag nozzle's own log events with.
+
+jobIndex
+Job index to tag nozzle's own log events with.
+
+jobHost
+Job host to tag nozzle's own log events with.
+
+addAppInfo
+Query API to fetch app details.
+
+apiEndpoint
+API endpoint address.
+
+user
+Cloud Foundry admin user name.
+
+password
+Cloud Foundry admin password.
+
+boltDBPath
+Bolt Database path.
+
+wantedEvents
+Comma separated list of events to include.
+
+extraFields
+Extra fields you want to annotate your events with. 
+
+keepAlive
+Keep Alive duration for the firehose consumer. Default is 25 seconds.
+    
+subscriptionId
+Id for the firehose subscription.
+```
+
+Splunk configuration parameters:
+```
+splunkToken
+Splunk HTTP event collector token
+http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
+
+splunkHost
+Splunk HTTP event collector host.
+
+splunkIndex
+The Splunk index evnets will be sent to. 
+Warning: Setting an invalid index will cause events to be lost.
+
+flushInterval
+Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
+```
+
 ### Development
 
 #### Software Requirements
