@@ -63,8 +63,8 @@ func (l *LoggingSplunk) consume() {
 			batch = append(batch, event)
 			if len(batch) >= batchSize {
 				l.logger.Info("Index Events triggered by Batch Limit")
-				\\reset channel timer
-                tickChan = time.NewTicker(l.flushWindow).C
+				//reset channel timer
+				tickChan = time.NewTicker(l.flushWindow).C
 				batch = l.indexEvents(batch)
 			}
 		case <-tickChan:
@@ -72,7 +72,6 @@ func (l *LoggingSplunk) consume() {
 			batch = l.indexEvents(batch)
 		}
 	}
-
 }
 
 // indexEvents indexes events to Splunk
