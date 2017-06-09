@@ -71,7 +71,7 @@ func (l *LoggingSplunk) consume() {
 			}
 		case <-tickChan:
 			//Checking if index has happened within 90% of the flush window. Allowing for a small delay
-			if time.Now().Sub(lastIndex).Seconds() >= 0.9 * l.flushWindow.Seconds() {
+			if time.Now().Sub(lastIndex).Seconds() >= 0.9*l.flushWindow.Seconds() {
 				lastIndex = time.Now()
 				l.logger.Info("Index Events triggered by Flush Window Time Expiry")
 				batch = l.indexEvents(batch)
