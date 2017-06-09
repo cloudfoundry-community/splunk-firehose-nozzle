@@ -54,30 +54,25 @@ func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
 func (l *LoggingSplunk) consume() {
 	var batch []map[string]interface{}
 	// FIXME, make batchSize configurable
-	batchSize := 50
+	batchSize := 270
 	tickChan := time.NewTicker(l.flushWindow).C
-	lastIndex := time.Now()
-
 	// Either flush window or batch size reach limits, we flush
 	for {
 		select {
 		case event := <-l.events:
 			batch = append(batch, event)
 			if len(batch) >= batchSize {
-				lastIndex = time.Now()
 				l.logger.Info("Index Events triggered by Batch Limit")
+				tickChan = time.NewTicker(l.flushWindow).C
 				batch = l.indexEvents(batch)
 
 			}
 		case <-tickChan:
-			//Checking if index has happened within 90% of the flush window. Allowing for a small delay
-			if time.Now().Sub(lastIndex).Seconds() >= 0.9*l.flushWindow.Seconds() {
-				lastIndex = time.Now()
-				l.logger.Info("Index Events triggered by Flush Window Time Expiry")
-				batch = l.indexEvents(batch)
-			}
+			l.logger.Info("Index Events triggered by Flush Window Time Expiry")
+			batch = l.indexEvents(batch)
 		}
 	}
+
 }
 
 // indexEvents indexes events to Splunk
