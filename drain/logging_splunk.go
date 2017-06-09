@@ -12,10 +12,10 @@ import (
 )
 
 //LoggingSplunk
-//logger: 	 Logging client as implemented in lager
-//client:	 Splunk Client as implemented in splunk/splunk_client
-//flushWindow: 	 time in nanoseconds representing flush window
-//events: 	 channel implementation of map[strings] to store events for Splunk to index
+//logger:        Logging client as implemented in lager
+//client:        Splunk Client as implemented in splunk/splunk_client
+//flushWindow:   time in nanoseconds representing flush window
+//events:        channel implementation of map[strings] to store events for Splunk to index
 type LoggingSplunk struct {
 	logger      lager.Logger
 	client      splunk.SplunkClient
