@@ -56,19 +56,26 @@ func (l *LoggingSplunk) consume() {
 	// FIXME, make batchSize configurable
 	batchSize := 50
 	tickChan := time.NewTicker(l.flushWindow).C
+	lastIndex := time.Now()
 
 	// Either flush window or batch size reach limits, we flush
 	for {
 		select {
-		// FIXME, ensure indexEvents isn't triggered in succession. Reset flushWindow after indexEvents
-
 		case event := <-l.events:
 			batch = append(batch, event)
 			if len(batch) >= batchSize {
+				lastIndex = time.Now()
+				l.logger.Info("Index Events triggered by Batch Limit")
 				batch = l.indexEvents(batch)
+
 			}
 		case <-tickChan:
-			batch = l.indexEvents(batch)
+			//Checking if index has happened within 90% of the flush window. Allowing for a small delay
+			if time.Now().Sub(lastIndex).Seconds() >= 0.9 * l.flushWindow.Seconds() {
+				lastIndex = time.Now()
+				l.logger.Info("Index Events triggered by Flush Window Time Expiry")
+				batch = l.indexEvents(batch)
+			}
 		}
 	}
 }
