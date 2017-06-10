@@ -55,25 +55,36 @@ func (consumer *MockFirehoseConsumer) publishEvents() {
 	eventSent := int64(0)
 
 	var (
-		origin     = ""
-		deployment = ""
-		job        = ""
-		index      = ""
-		ip         = ""
+		origin     = "DopplerServer"
+		deployment = "cf"
+		job        = "doppler"
+		index      = "5a634d0b-bbc5-47c4-9450-a43f44a7fd30"
+		ip         = "192.168.16.26"
 
-		eventType = events.Envelope_HttpStart
-		timestamp = int64(0)
-		tags      = map[string]string{}
+		eventType    = events.Envelope_ValueMetric
+		timestamp    = int64(0)
+		tags         = map[string]string{}
+		metricName   = "messageRouter.numberOfFirehoseSinks"
+		metricValue  = float64(1)
+		metricUnit   = "sinks"
+		unrecognized = []byte{}
+		metric       = events.ValueMetric{
+			Name:             &metricName,
+			Value:            &metricValue,
+			Unit:             &metricUnit,
+			XXX_unrecognized: unrecognized,
+		}
 	)
 
 	event := &events.Envelope{
-		Origin:     &origin,
-		Deployment: &deployment,
-		Job:        &job,
-		Index:      &index,
-		Ip:         &ip,
-		EventType:  &eventType,
-		Tags:       tags,
+		Origin:      &origin,
+		Deployment:  &deployment,
+		Job:         &job,
+		Index:       &index,
+		Ip:          &ip,
+		EventType:   &eventType,
+		Tags:        tags,
+		ValueMetric: &metric,
 	}
 
 	start := time.Now().UnixNano()
