@@ -14,8 +14,8 @@ import (
 type LoggingSplunk struct {
 	logger      lager.Logger
 	client      splunk.SplunkClient
-	flushWindow time.Duration               //time in nanoseconds representing flush window
-	events      chan map[string]interface{} //data structure to store events for Splunk to index
+	flushWindow time.Duration               // time period before flushing 'LoggingSplunk.events'
+	events      chan map[string]interface{} // data structure to store events for Splunk to index
 }
 
 func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration) *LoggingSplunk {
