@@ -46,11 +46,10 @@ uaac -t member add doppler.firehose splunk-nozzle
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
-Environment Paramaters
-Declare parameters by making a copy of scripts/nozzle.sh.template
+Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh.template)
 
 Cloud Foundry configuration parameters:
-```
+
 DEBUG 
 Enable debug mode (forward to standard out instead of Splunk).
 
@@ -93,12 +92,11 @@ Keep Alive duration for the firehose consumer. Default is 25 seconds.
     
 FIREHOSE_SUBSCRIPTION_ID
 Id for the firehose subscription.
-```
 
 Splunk configuration parameters:
-```
+
 SPLUNK_TOKEN
-Splunk HTTP event collector [token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
+[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
 
 SPLUNK_HOST
 Splunk HTTP event collector host.
@@ -110,7 +108,6 @@ Warning: Setting an invalid index will cause events to be lost.
 
 FLUSH_INTERVAL
 Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
-``` 
 
 
 ### Development
