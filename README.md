@@ -98,7 +98,7 @@ Id for the firehose subscription.
 Splunk configuration parameters:
 ```
 SPLUNK_TOKEN
-[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector)
+[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
 
 SPLUNK_HOST
 Splunk HTTP event collector host.
