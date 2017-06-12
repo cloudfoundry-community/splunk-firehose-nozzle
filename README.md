@@ -109,6 +109,11 @@ Warning: Setting an invalid index will cause events to be lost.
 FLUSH_INTERVAL - 
 Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
 
+CONSUMER_QUEUE_SIZE - 
+Set the internal consumer queue buffer size. 
+
+HEC_BATCH_SIZE - 
+Set the batch size for the events to push to HEC (Splunk HTTP Event Collector)
 
 ### Development
 
