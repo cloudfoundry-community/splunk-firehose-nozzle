@@ -46,67 +46,73 @@ uaac -t member add doppler.firehose splunk-nozzle
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
+Environment Paramaters
+Declare parameters by making a copy of scripts/nozzle.sh.template
+
 Cloud Foundry configuration parameters:
 ```
-debug 
-Enable debug mode (forward to standard out intead of Splunk).
+DEBUG 
+Enable debug mode (forward to standard out instead of Splunk).
 
-skipSSL
+SKIP_SSL_VALIDATION
 Skip cert validation (for dev environments).
 
-jobName
+JOB_NAME
 Job name to tag nozzle's own log events with.
 
-jobIndex
+JOB_INDEX
 Job index to tag nozzle's own log events with.
 
-jobHost
+JOB_HOST
 Job host to tag nozzle's own log events with.
 
-addAppInfo
+ADD_APP_INFO
 Query API to fetch app details.
 
-apiEndpoint
+API_ENDPOINT
 API endpoint address.
 
-user
+API_USER
 Cloud Foundry admin user name.
 
-password
+API_PASSWORD
 Cloud Foundry admin password.
 
-boltDBPath
+BOLTDB_PATH
 Bolt Database path.
 
-wantedEvents
+EVENTS
 Comma separated list of events to include.
+possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 
-extraFields
+EXTRA_FIELDS
 Extra fields you want to annotate your events with. 
 
-keepAlive
+FIREHOSE_KEEP_ALIVE
 Keep Alive duration for the firehose consumer. Default is 25 seconds.
     
-subscriptionId
+FIREHOSE_SUBSCRIPTION_ID
 Id for the firehose subscription.
 ```
 
 Splunk configuration parameters:
 ```
-splunkToken
+SPLUNK_TOKEN
 Splunk HTTP event collector token
-http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
+<a href="http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector">http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector</a>
 
-splunkHost
+SPLUNK_HOST
 Splunk HTTP event collector host.
+example: https://example.cloud.splunk.com:8088
 
-splunkIndex
-The Splunk index evnets will be sent to. 
+SPLUNK_INDEX
+The Splunk index events will be sent to. 
 Warning: Setting an invalid index will cause events to be lost.
 
-flushInterval
+FLUSH_INTERVAL
 Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
-```
+``` 
+
 
 ### Development
 
