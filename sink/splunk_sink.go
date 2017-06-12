@@ -7,6 +7,7 @@ import (
 
 	"os"
 	"net"
+	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 )
 
 type SplunkSink struct {
@@ -22,7 +23,7 @@ func NewSplunkSink(name string, index string, host string, splunkClient splunk.S
 		hostname, err := os.Hostname()
 
 		if err != nil {
-			panic(err)
+			logging.LogError("Unable to get host name, error=%+v", err)
 		}
 		host = hostname
 	}
@@ -41,7 +42,7 @@ func (s *SplunkSink) Log(message lager.LogFormat) {
 
 	if err != nil {
 		// what to do here?
-		panic(err)
+		logging.LogError("Unable to get IP from host name, error=%+v", err)
 	}
 
 
