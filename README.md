@@ -110,10 +110,10 @@ FLUSH_INTERVAL -
 Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
 
 CONSUMER_QUEUE_SIZE - 
-Set the internal consumer queue buffer size. 
+Set the internal consumer queue buffer size. Default is 10000. 
 
 HEC_BATCH_SIZE - 
-Set the batch size for the events to push to HEC (Splunk HTTP Event Collector)
+Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). Default is 1000. 
 
 ### Development
 
