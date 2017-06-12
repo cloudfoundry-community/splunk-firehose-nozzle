@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
+	"time"
 
 	"code.cloudfoundry.org/cflager"
 	"code.cloudfoundry.org/lager"
@@ -12,6 +14,7 @@ import (
 	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
+	"github.com/cloudfoundry/noaa/consumer"
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
@@ -129,8 +132,12 @@ func main() {
 		logger.Fatal("Error setting up event routing: ", err)
 	}
 
-	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
 	dopplerEndpoint := cfClient.Endpoint.DopplerEndpoint
+	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
+	consumer := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: *skipSSL}, nil)
+	consumer.RefreshTokenFrom(tokenRefresher)
+	consumer.SetIdleTimeout(time.Duration(*keepAlive) * time.Second)
+
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   dopplerEndpoint,
 		InsecureSSLSkipVerify:  *skipSSL,
@@ -140,7 +147,7 @@ func main() {
 
 	logger.Info("Connecting logging client")
 	if loggingClient.Connect() {
-		firehoseClient := firehoseclient.NewFirehoseNozzle(tokenRefresher, events, firehoseConfig)
+		firehoseClient := firehoseclient.NewFirehoseNozzle(consumer, events, firehoseConfig)
 		err := firehoseClient.Start()
 		if err != nil {
 			logger.Fatal("Failed connecting to Firehose", err)
