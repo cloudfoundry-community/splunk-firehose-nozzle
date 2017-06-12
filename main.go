@@ -61,6 +61,10 @@ var (
 			OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().String()
 	flushInterval = kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every ").
 			OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").Duration()
+	queueSize = kingpin.Flag("consumer-queue-size", "Consumer queue buffer size").
+			OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").Int()
+	batchSize = kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC  ").
+			OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("1000").Int()
 )
 
 var (
@@ -85,12 +89,18 @@ func main() {
 		logger.Fatal("Error parsing extra fields: ", err)
 	}
 
+	loggingConfig := &drain.LoggingConfig{
+		FlushInterval: *flushInterval,
+		QueueSize:     *queueSize,
+		BatchSize:     *batchSize,
+	}
+
 	var loggingClient logging.Logging
 	if *debug {
 		loggingClient = &drain.LoggingStd{}
 	} else {
 		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
-		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, *flushInterval)
+		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, loggingConfig)
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
 
