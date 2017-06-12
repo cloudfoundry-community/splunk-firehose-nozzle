@@ -50,63 +50,63 @@ Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh
 
 Cloud Foundry configuration parameters:
 
-DEBUG 
+DEBUG - 
 Enable debug mode (forward to standard out instead of Splunk).
 
-SKIP_SSL_VALIDATION
+SKIP_SSL_VALIDATION - 
 Skip cert validation (for dev environments).
 
-JOB_NAME
+JOB_NAME - 
 Job name to tag nozzle's own log events with.
 
-JOB_INDEX
+JOB_INDEX - 
 Job index to tag nozzle's own log events with.
 
-JOB_HOST
+JOB_HOST - 
 Job host to tag nozzle's own log events with.
 
-ADD_APP_INFO
+ADD_APP_INFO - 
 Query API to fetch app details.
 
-API_ENDPOINT
+API_ENDPOINT - 
 API endpoint address.
 
-API_USER
+API_USER - 
 Cloud Foundry admin user name.
 
-API_PASSWORD
+API_PASSWORD - 
 Cloud Foundry admin password.
 
-BOLTDB_PATH
+BOLTDB_PATH - 
 Bolt Database path.
 
-EVENTS
+EVENTS - 
 Comma separated list of events to include.
 possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 
-EXTRA_FIELDS
+EXTRA_FIELDS - 
 Extra fields you want to annotate your events with. 
 
-FIREHOSE_KEEP_ALIVE
+FIREHOSE_KEEP_ALIVE - 
 Keep Alive duration for the firehose consumer. Default is 25 seconds.
     
-FIREHOSE_SUBSCRIPTION_ID
+FIREHOSE_SUBSCRIPTION_ID - 
 Id for the firehose subscription.
 
 Splunk configuration parameters:
 
-SPLUNK_TOKEN
+SPLUNK_TOKEN - 
 [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
 
-SPLUNK_HOST
+SPLUNK_HOST - 
 Splunk HTTP event collector host.
 example: https://example.cloud.splunk.com:8088
 
-SPLUNK_INDEX
+SPLUNK_INDEX - 
 The Splunk index events will be sent to. 
 Warning: Setting an invalid index will cause events to be lost.
 
-FLUSH_INTERVAL
+FLUSH_INTERVAL - 
 Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
 
 
