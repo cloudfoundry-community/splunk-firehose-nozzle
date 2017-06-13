@@ -46,7 +46,7 @@ uaac -t member add doppler.firehose splunk-nozzle
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
-Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh.template)
+#### Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh.template)
 
 Cloud Foundry configuration parameters:
 
