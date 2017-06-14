@@ -88,7 +88,7 @@ EXTRA_FIELDS -
 Extra fields you want to annotate your events with. 
 
 FIREHOSE_KEEP_ALIVE - 
-Keep Alive duration for the firehose consumer. Default is 25 seconds.
+Keep Alive duration for the firehose consumer.
     
 FIREHOSE_SUBSCRIPTION_ID - 
 Id for the firehose subscription.
@@ -107,13 +107,13 @@ The Splunk index events will be sent to.
 Warning: Setting an invalid index will cause events to be lost.
 
 FLUSH_INTERVAL - 
-Set the interval for flushing to the heavy forwarder. Default is 5 seconds.
+Set the interval for flushing to the heavy forwarder.
 
 CONSUMER_QUEUE_SIZE - 
-Set the internal consumer queue buffer size. Default is 10000. 
+Set the internal consumer queue buffer size. 
 
 HEC_BATCH_SIZE - 
-Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). Default is 1000. 
+Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). 
 
 ### Development
 
