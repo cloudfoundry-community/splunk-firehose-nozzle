@@ -2,9 +2,7 @@ package sink
 
 import (
 	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
-
 	"os"
 	"net"
 )
@@ -20,13 +18,11 @@ func NewSplunkSink(name string, index string, host string, splunkClient splunk.S
 
 	if host == "" {
 		hostname, err := os.Hostname()
-
 		if err != nil {
 			panic(err)
 		}
 		host = hostname
 	}
-
 	return &SplunkSink{
 		name:         name,
 		index:        index,
@@ -38,13 +34,10 @@ func NewSplunkSink(name string, index string, host string, splunkClient splunk.S
 func (s *SplunkSink) Log(message lager.LogFormat) {
 
 	host_ip_address, err := net.LookupIP(s.host)
-
 	if err != nil {
 		// what to do here?
 		panic(err)
 	}
-
-
 	event := map[string]interface{}{
 		"job_index":     s.index,
 		"job":           s.name,
