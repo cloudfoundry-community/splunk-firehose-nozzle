@@ -59,7 +59,12 @@ var _ = Describe("LoggingSplunk", func() {
 		mockClient = &testing.MockSplunkClient{}
 
 		logger = lager.NewLogger("test")
-		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond)
+		loggingConfig := &drain.LoggingConfig{
+			FlushInterval: time.Millisecond,
+			QueueSize:     1000,
+			BatchSize:     100,
+		}
+		logging = drain.NewLoggingSplunk(logger, mockClient, loggingConfig)
 	})
 
 	It("sends events to client", func() {

@@ -11,20 +11,25 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
-type LoggingSplunk struct {
-	logger      lager.Logger
-	client      splunk.SplunkClient
-	flushWindow time.Duration
-	events      chan map[string]interface{}
+type LoggingConfig struct {
+	FlushInterval time.Duration
+	QueueSize     int
+	BatchSize     int
 }
 
-func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, flushWindow time.Duration) *LoggingSplunk {
+type LoggingSplunk struct {
+	logger lager.Logger
+	client splunk.SplunkClient
+	config *LoggingConfig
+	events chan map[string]interface{}
+}
+
+func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, config *LoggingConfig) *LoggingSplunk {
 	return &LoggingSplunk{
-		logger:      logger,
-		client:      splunkClient,
-		flushWindow: flushWindow,
-		// FIXME, make buffer size 100 configurable
-		events: make(chan map[string]interface{}, 100),
+		logger: logger,
+		client: splunkClient,
+		config: config,
+		events: make(chan map[string]interface{}, config.QueueSize), //consumer queue buffer size
 	}
 }
 
@@ -41,16 +46,14 @@ func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
 
 func (l *LoggingSplunk) consume() {
 	var batch []map[string]interface{}
-	// FIXME, make batchSize configurable
-	batchSize := 50
-	tickChan := time.NewTicker(l.flushWindow).C
+	tickChan := time.NewTicker(l.config.FlushInterval).C
 
 	// Either flush window or batch size reach limits, we flush
 	for {
 		select {
 		case event := <-l.events:
 			batch = append(batch, event)
-			if len(batch) >= batchSize {
+			if len(batch) >= l.config.BatchSize {
 				batch = l.indexEvents(batch)
 			}
 		case <-tickChan:
