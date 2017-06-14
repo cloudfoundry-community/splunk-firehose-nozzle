@@ -69,13 +69,13 @@ ADD_APP_INFO -
 Query API to fetch app details.
 
 API_ENDPOINT - 
-API endpoint address.
+Cloud Foundry API endpoint address.
 
 API_USER - 
-Cloud Foundry admin user name.
+Cloud Foundry user name. (Must have scope described above)
 
 API_PASSWORD - 
-Cloud Foundry admin password.
+Cloud Foundry user password.
 
 BOLTDB_PATH - 
 Bolt Database path.
