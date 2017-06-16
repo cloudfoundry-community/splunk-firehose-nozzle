@@ -16,9 +16,17 @@ type MockFirehoseConsumer struct {
 	done        chan struct{}
 }
 
+const (
+	maxEPS = 500000
+)
+
+func biggerThanMaxEPS(eps int) bool {
+	return eps <= 0 || eps > maxEPS
+}
+
 func NewMockFirehoseConsumer(eps int, totalEvents int64, errCode int) *MockFirehoseConsumer {
 	consumer := &MockFirehoseConsumer{
-		events:      make(chan *events.Envelope, eps+1),
+		events:      make(chan *events.Envelope, 1000000),
 		errors:      make(chan error, 1),
 		eps:         eps,
 		totalEvents: totalEvents,
@@ -49,11 +57,103 @@ func (consumer *MockFirehoseConsumer) Close() error {
 	return nil
 }
 
-func (consumer *MockFirehoseConsumer) publishEvents() {
-	durationPerEvent := time.Duration(int64(time.Second) / int64(consumer.eps))
-	tickerChan := time.NewTicker(durationPerEvent).C
-	eventSent := int64(0)
+func (consumer *MockFirehoseConsumer) produce(numOfEvents int64) {
+	event := newEvent()
+	for i := int64(0); i < numOfEvents; i++ {
+		t := time.Now().UnixNano()
+		event.Timestamp = &t
+		consumer.events <- event
+	}
+}
 
+func (consumer *MockFirehoseConsumer) publishEvents() {
+	if biggerThanMaxEPS(consumer.eps) {
+		consumer.publishEventsAsFastAsPossible()
+		return
+	}
+
+	// 5 seconds as a window
+	windowEvents := int64(consumer.eps * 5)
+	windowDuration := time.Duration(5) * time.Second
+
+	eventSent := int64(0)
+	start := time.Now().UnixNano()
+
+LOOP:
+	for {
+		produceStart := time.Now().UnixNano()
+		if consumer.totalEvents > 0 && eventSent+windowEvents > consumer.totalEvents {
+			windowEvents = eventSent + windowEvents - consumer.totalEvents
+		}
+		consumer.produce(windowEvents)
+		eventSent += windowEvents
+		duration := time.Duration(time.Now().UnixNano() - produceStart)
+		if duration < windowDuration {
+			fmt.Printf("Too fast, sleep %d nano-seconds\n", int64(windowDuration-duration))
+			time.Sleep(windowDuration - duration)
+		} else {
+			fmt.Printf("Too slow, over committed=%d nano-seconds\n", int64(duration-windowDuration))
+		}
+
+		if eventSent%int64(consumer.eps) == 0 {
+			duration := time.Now().UnixNano() - start
+			fmt.Printf("Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
+				eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+		}
+
+		if consumer.totalEvents > 0 && eventSent >= consumer.totalEvents {
+			break LOOP
+		}
+
+		select {
+		case <-consumer.done:
+			var done struct{}
+			consumer.done <- done
+			break LOOP
+		default:
+		}
+	}
+
+	duration := time.Now().UnixNano() - start
+	fmt.Printf("Done with generation. Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
+		eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+}
+
+func (consumer *MockFirehoseConsumer) publishEventsAsFastAsPossible() {
+	eventSent := int64(0)
+	event := newEvent()
+	start := time.Now().UnixNano()
+
+LOOP:
+	for {
+		timestamp := time.Now().UnixNano()
+		event.Timestamp = &timestamp
+
+		select {
+		case consumer.events <- event:
+			eventSent += 1
+			if consumer.totalEvents > 0 && eventSent >= consumer.totalEvents {
+				break LOOP
+			}
+
+			if eventSent%maxEPS == 0 {
+				duration := time.Now().UnixNano() - start
+				fmt.Printf("Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
+					eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+			}
+		case <-consumer.done:
+			var done struct{}
+			consumer.done <- done
+			break LOOP
+		}
+	}
+
+	duration := time.Now().UnixNano() - start
+	fmt.Printf("Done with generation. Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
+		eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+}
+
+func newEvent() *events.Envelope {
 	var (
 		origin     = "DopplerServer"
 		deployment = "cf"
@@ -62,7 +162,6 @@ func (consumer *MockFirehoseConsumer) publishEvents() {
 		ip         = "192.168.16.26"
 
 		eventType    = events.Envelope_ValueMetric
-		timestamp    = int64(0)
 		tags         = map[string]string{}
 		metricName   = "messageRouter.numberOfFirehoseSinks"
 		metricValue  = float64(1)
@@ -76,6 +175,7 @@ func (consumer *MockFirehoseConsumer) publishEvents() {
 		}
 	)
 
+	t := time.Now().UnixNano()
 	event := &events.Envelope{
 		Origin:      &origin,
 		Deployment:  &deployment,
@@ -85,35 +185,7 @@ func (consumer *MockFirehoseConsumer) publishEvents() {
 		EventType:   &eventType,
 		Tags:        tags,
 		ValueMetric: &metric,
+		Timestamp:   &t,
 	}
-
-	start := time.Now().UnixNano()
-
-LOOP:
-	for {
-		select {
-		case t := <-tickerChan:
-			timestamp = t.UnixNano()
-			event.Timestamp = &timestamp
-			consumer.events <- event
-			eventSent += 1
-			if consumer.totalEvents > 0 && eventSent >= consumer.totalEvents {
-				break LOOP
-			}
-
-			if eventSent%int64(consumer.eps) == 0 {
-				duration := time.Now().UnixNano() - start
-				fmt.Printf("Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-					eventSent, duration, eventSent*1000000000/duration, consumer.eps)
-			}
-		case <-consumer.done:
-			var done struct{}
-			consumer.done <- done
-			break LOOP
-		}
-	}
-
-	duration := time.Now().UnixNano() - start
-	fmt.Printf("Down with generation. Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-		eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+	return event
 }
