@@ -1,23 +1,17 @@
 package firehoseclient
 
 import (
-	"crypto/tls"
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
-	"github.com/cloudfoundry/noaa/consumer"
-	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/gorilla/websocket"
 )
 
 type FirehoseNozzle struct {
-	errs           <-chan error
-	messages       <-chan *events.Envelope
-	consumer       *consumer.Consumer
-	eventRouting   *eventRouting.EventRouting
-	config         *FirehoseConfig
-	tokenRefresher consumer.TokenRefresher
+	consumer     splunknozzle.FirehoseConsumer
+	eventRouting splunknozzle.EventRouter
+	config       *FirehoseConfig
 }
 
 type FirehoseConfig struct {
@@ -27,59 +21,44 @@ type FirehoseConfig struct {
 	FirehoseSubscriptionID string
 }
 
-func NewFirehoseNozzle(tokenRefresher consumer.TokenRefresher, eventRouting *eventRouting.EventRouting, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
+func NewFirehoseNozzle(consumer splunknozzle.FirehoseConsumer, eventRouting splunknozzle.EventRouter, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
 	return &FirehoseNozzle{
-		errs:           make(<-chan error),
-		messages:       make(<-chan *events.Envelope),
-		eventRouting:   eventRouting,
-		config:         firehoseconfig,
-		tokenRefresher: tokenRefresher,
+		eventRouting: eventRouting,
+		consumer:     consumer,
+		config:       firehoseconfig,
 	}
 }
 
 func (f *FirehoseNozzle) Start() error {
-	f.consumeFirehose()
-	err := f.routeEvent()
-	return err
-}
-
-func (f *FirehoseNozzle) consumeFirehose() {
-	f.consumer = consumer.New(
-		f.config.TrafficControllerURL,
-		&tls.Config{
-			InsecureSkipVerify: f.config.InsecureSSLSkipVerify,
-		},
-		nil,
-	)
-	f.consumer.RefreshTokenFrom(f.tokenRefresher)
-	f.consumer.SetIdleTimeout(time.Duration(f.config.IdleTimeoutSeconds) * time.Second)
-	f.messages, f.errs = f.consumer.Firehose(f.config.FirehoseSubscriptionID, "")
+	return f.routeEvent()
 }
 
 func (f *FirehoseNozzle) routeEvent() error {
+	messages, errs := f.consumer.Firehose(f.config.FirehoseSubscriptionID, "")
 	for {
 		select {
-		case envelope := <-f.messages:
+		case envelope := <-messages:
 			f.eventRouting.RouteEvent(envelope)
-		case err := <-f.errs:
+		case err := <-errs:
 			f.handleError(err)
 			return err
 		}
 	}
+	return nil
 }
 
 func (f *FirehoseNozzle) handleError(err error) {
 	switch {
 	case websocket.IsCloseError(err, websocket.CloseNormalClosure):
-		logging.LogError("Normal Websocket Closure: %v", err)
+		logging.LogError("Normal Websocket Closure", err)
 	case websocket.IsCloseError(err, websocket.ClosePolicyViolation):
-		logging.LogError("Error while reading from the firehose: %v", err)
+		logging.LogError("Error while reading from the firehose", err)
 		logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
 
 	default:
-		logging.LogError("Error while reading from the firehose: %v", err)
+		logging.LogError("Error while reading from the firehose", err)
 	}
 
-	logging.LogError("Closing connection with traffic controller due to %v", err)
+	logging.LogError("Closing connection with traffic controller due to", err)
 	f.consumer.Close()
 }
