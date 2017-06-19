@@ -85,7 +85,7 @@ Comma separated list of events to include.
 possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 
 EXTRA_FIELDS - 
-Extra fields you want to annotate your events with. 
+Extra fields you want to annotate your events with (format is key:value,key:value). 
 
 FIREHOSE_KEEP_ALIVE - 
 Keep Alive duration for the firehose consumer.
