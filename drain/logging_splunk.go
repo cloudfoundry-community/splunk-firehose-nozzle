@@ -14,7 +14,7 @@ type LoggingConfig struct {
 	FlushInterval time.Duration
 	QueueSize     int //consumer queue buffer size
 	BatchSize     int
-	Retries       int //retry before dropping events
+	Retries       int //No of retries to post events to HEC before dropping events
 }
 
 type LoggingSplunk struct {
