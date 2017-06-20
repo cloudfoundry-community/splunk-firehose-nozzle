@@ -45,6 +45,76 @@ uaac -t member add doppler.firehose splunk-nozzle
 `cloud_controller.admin_read_only` will work for cf v241 
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
+
+#### Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh.template)
+
+Cloud Foundry configuration parameters:
+
+DEBUG - 
+Enable debug mode (forward to standard out instead of Splunk).
+
+SKIP_SSL_VALIDATION - 
+Skip cert validation (for dev environments).
+
+JOB_NAME - 
+Job name to tag nozzle's own log events with.
+
+JOB_INDEX - 
+Job index to tag nozzle's own log events with.
+
+JOB_HOST - 
+Job host to tag nozzle's own log events with.
+
+ADD_APP_INFO - 
+Query API to fetch app details.
+
+API_ENDPOINT - 
+Cloud Foundry API endpoint address.
+
+API_USER - 
+Cloud Foundry user name. (Must have scope described above)
+
+API_PASSWORD - 
+Cloud Foundry user password.
+
+BOLTDB_PATH - 
+Bolt Database path.
+
+EVENTS - 
+Comma separated list of events to include.
+possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+
+EXTRA_FIELDS - 
+Extra fields you want to annotate your events with (format is key:value,key:value). 
+
+FIREHOSE_KEEP_ALIVE - 
+Keep Alive duration for the firehose consumer.
+    
+FIREHOSE_SUBSCRIPTION_ID - 
+Id for the firehose subscription.
+
+Splunk configuration parameters:
+
+SPLUNK_TOKEN - 
+[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
+
+SPLUNK_HOST - 
+Splunk HTTP event collector host.
+example: https://example.cloud.splunk.com:8088
+
+SPLUNK_INDEX - 
+The Splunk index events will be sent to. 
+Warning: Setting an invalid index will cause events to be lost.
+
+FLUSH_INTERVAL - 
+Set the interval for flushing to the heavy forwarder.
+
+CONSUMER_QUEUE_SIZE - 
+Set the internal consumer queue buffer size. 
+
+HEC_BATCH_SIZE - 
+Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). 
+
 ### Development
 
 #### Software Requirements
