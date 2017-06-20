@@ -1,20 +1,20 @@
 package drain
 
 import (
+	"code.cloudfoundry.org/lager"
 	"fmt"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 type LoggingConfig struct {
 	FlushInterval time.Duration
-	QueueSize     int
+	QueueSize     int //consumer queue buffer size
 	BatchSize     int
+	Retries       int //No of retries to post events to HEC before dropping events
 }
 
 type LoggingSplunk struct {
@@ -29,7 +29,7 @@ func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, con
 		logger: logger,
 		client: splunkClient,
 		config: config,
-		events: make(chan map[string]interface{}, config.QueueSize), //consumer queue buffer size
+		events: make(chan map[string]interface{}, config.QueueSize),
 	}
 }
 
@@ -69,15 +69,17 @@ func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string
 	if len(batch) == 0 {
 		return batch
 	}
-
-	l.logger.Info(fmt.Sprintf("Posting %d events", len(batch)))
-	err := l.client.Post(batch)
-	if err != nil {
-		l.logger.Error("Unable to talk to Splunk, error=%+v", err)
-		// return back the batch for next retry
-		return batch
+	var err error
+	for i := 0; i < l.config.Retries; i++ {
+		l.logger.Info(fmt.Sprintf("Posting %d events", len(batch)))
+		err = l.client.Post(batch)
+		if err == nil {
+			return nil
+		}
+		l.logger.Error("Unable to talk to Splunk", err)
+		time.Sleep(5 * time.Second)
 	}
-
+	l.logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
 	return nil
 }
 

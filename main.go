@@ -68,6 +68,8 @@ var (
 			OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").Int()
 	batchSize = kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC  ").
 			OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("1000").Int()
+	retries = kingpin.Flag("hec-retries", "Number of retries before dropping events").
+		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").Int()
 )
 
 var (
@@ -96,6 +98,7 @@ func main() {
 		FlushInterval: *flushInterval,
 		QueueSize:     *queueSize,
 		BatchSize:     *batchSize,
+		Retries:       *retries,
 	}
 
 	var loggingClient logging.Logging
