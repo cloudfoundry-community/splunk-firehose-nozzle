@@ -20,6 +20,9 @@ updatedeps:
 initdeps:
 	glide --debug create
 
+stripvendor:
+	glide --debug install --strip-vendor
+
 # -gcflags -N -l for debug
 # -ldflags -w for prod
 #
@@ -35,31 +38,41 @@ build-linux:
 
 build: build-nozzle
 
+LDFLAGS="-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildos=$(UNAME)"
+
 build-nozzle: fmt
-	go build -o splunk-firehose-nozzle  -ldflags \
-		"-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildos=$(UNAME)" \
-		./main.go
+	go build -o splunk-firehose-nozzle  -ldflags ${LDFLAGS} ./main.go
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 
+
+testall: test vet race cov
+
 test:
-	go test ${PKGS}
+	@go test ${PKGS}
 
 # Run "short" unit tests
 test-short:
-	go test -short ${PKGS}
+	@go test -short ${PKGS}
 
 vet:
-	go vet ${PKGS}
+	@go vet ${PKGS}
 
 race:
-	go test -race ${PKGS}
+	@go test -race ${PKGS}
 
+cov:
+	@rm -f coverage-all.out
+	@echo "mode: cover" > coverage-all.out
+	$(foreach pkg,$(PKGS),\
+		go test -coverprofile=coverage.out -cover -covermode=count $(pkg);\
+		tail -n +2 coverage.out >> coverage-all.out;)
+	@go tool cover -html=coverage-all.out
 
 SRC_CODE=$(shell find . -type f -name "*.go" -not -path "./vendor/*")
 
 fmt:
-	gofmt -l -w ${SRC_CODE}
+	@gofmt -l -w ${SRC_CODE}
 
 
 .PHONY: test test-short vet build default

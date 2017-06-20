@@ -44,7 +44,6 @@ func (f *FirehoseNozzle) routeEvent() error {
 			return err
 		}
 	}
-	return nil
 }
 
 func (f *FirehoseNozzle) handleError(err error) {
