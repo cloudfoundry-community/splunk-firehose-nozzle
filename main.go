@@ -140,6 +140,7 @@ func main() {
 
 	logger.Info("Setting up event routing")
 	events := eventRouting.NewEventRouting(cache, loggingClient)
+	events.SetExtraFields(*extraFields)
 	err = events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		logger.Fatal("Error setting up event routing: ", err)
