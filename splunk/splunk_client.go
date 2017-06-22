@@ -48,9 +48,6 @@ func (s *splunkClient) Post(events []map[string]interface{}) error {
 			event["index"] = s.index
 		}
 
-		//if len(s.fields) > 0 {
-		//	event["fields"] = s.fields
-		//}
 		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
