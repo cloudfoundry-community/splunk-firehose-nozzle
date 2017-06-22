@@ -72,7 +72,7 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		}
 
 		e.mutex.Lock()
-		e.log.ShipEvents(event.Fields, event.Msg)
+		e.log.ShipEvents(event.Fields, event.Msg, event.ExtraFields)
 		e.selectedEventsCount[eventType.String()]++
 		e.mutex.Unlock()
 	}
@@ -148,7 +148,7 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			startTime = time.Now()
 			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			e.log.ShipEvents(event.Fields, event.Msg)
+			e.log.ShipEvents(event.Fields, event.Msg, nil)
 		}
 	}()
 }

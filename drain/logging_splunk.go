@@ -15,6 +15,7 @@ type LoggingConfig struct {
 	QueueSize     int //consumer queue buffer size
 	BatchSize     int
 	Retries       int //No of retries to post events to HEC before dropping events
+	MetadataMode  string //Add extra fields as metadata or in event payload
 }
 
 type LoggingSplunk struct {
@@ -39,8 +40,8 @@ func (l *LoggingSplunk) Connect() bool {
 	return true
 }
 
-func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
-	event := l.buildEvent(fields, msg)
+func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string, ExtraFields map[string]interface{},) {
+	event := l.buildEvent(fields, msg, ExtraFields)
 	l.events <- event
 }
 
@@ -83,7 +84,7 @@ func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string
 	return nil
 }
 
-func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
+func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string, ExtraFields map[string]interface{}) map[string]interface{} {
 	if len(msg) > 0 {
 		fields["msg"] = msg
 	}
@@ -98,8 +99,15 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 	event["host"] = fields["ip"]
 	event["source"] = fields["job"]
 
-	eventType := strings.ToLower(fields["event_type"].(string))
+	eventType := strings.ToLower(ExtraFields["event_type"].(string))
 	event["sourcetype"] = fmt.Sprintf("cf:%s", eventType)
+
+
+	if l.config.MetadataMode == "modern" {
+		event["fields"] = ExtraFields
+	} else {
+		fields["pcf-metadata"] = ExtraFields
+	}
 
 	event["event"] = fields
 
