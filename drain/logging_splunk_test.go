@@ -1,10 +1,11 @@
 package drain_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"strconv"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
@@ -12,6 +13,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
@@ -65,7 +67,7 @@ var _ = Describe("LoggingSplunk", func() {
 			BatchSize:     100,
 			Retries:       3,
 		}
-		logging = drain.NewLoggingSplunk(logger, mockClient, loggingConfig)
+		logging = drain.NewLoggingSplunk(logger, []splunk.SplunkClient{mockClient}, loggingConfig)
 	})
 
 	It("sends events to client", func() {
