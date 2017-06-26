@@ -70,6 +70,8 @@ var (
 			OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("1000").Int()
 	retries = kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").Int()
+	hecWorkers = kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
+			OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").Int()
 )
 
 var (
@@ -106,15 +108,25 @@ func main() {
 		loggingClient = &drain.LoggingStd{}
 	} else {
 		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
-		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, loggingConfig)
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
+
+		var splunkClients []splunk.SplunkClient
+		for i := 0; i < *hecWorkers; i++ {
+			splunkClient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
+			splunkClients = append(splunkClients, splunkClient)
+		}
+		loggingClient = drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
 	}
 
 	versionInfo := lager.Data{
-		"version": version,
-		"branch":  branch,
-		"commit":  commit,
-		"buildos": buildos,
+		"version":        version,
+		"branch":         branch,
+		"commit":         commit,
+		"buildos":        buildos,
+		"flush-interval": *flushInterval,
+		"queue-size":     *queueSize,
+		"batch-size":     *batchSize,
+		"workers":        *hecWorkers,
 	}
 
 	logger.Info("Connecting to Cloud Foundry. splunk-firehose-nozzle runs", versionInfo)
