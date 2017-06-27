@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
@@ -51,6 +50,8 @@ var (
 			OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").String()
 	extraFields = kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 			OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").String()
+	metadataMode = kingpin.Flag("metadata_mode", "Add metadata fields in event payload of in -fields: '--metadata-mode=modern").
+		OverrideDefaultFromEnvar("METADATA_MODE").Default("modern").String()
 	keepAlive = kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 			OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").Duration()
 	subscriptionId = kingpin.Flag("subscription-id", "Id for the subscription.").
@@ -89,23 +90,19 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	parsedExtraFields, err := extrafields.ParseExtraFields(*extraFields)
-	if err != nil {
-		logger.Fatal("Error parsing extra fields: ", err)
-	}
-
 	loggingConfig := &drain.LoggingConfig{
 		FlushInterval: *flushInterval,
 		QueueSize:     *queueSize,
 		BatchSize:     *batchSize,
 		Retries:       *retries,
+		MetadataMode:  *metadataMode,
 	}
 
 	var loggingClient logging.Logging
 	if *debug {
 		loggingClient = &drain.LoggingStd{}
 	} else {
-		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
+		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, *skipSSL, logger)
 		loggingClient = drain.NewLoggingSplunk(logger, splunkCLient, loggingConfig)
 		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
 	}
@@ -140,6 +137,7 @@ func main() {
 
 	logger.Info("Setting up event routing")
 	events := eventRouting.NewEventRouting(cache, loggingClient)
+	events.SetExtraFields(*extraFields)
 	err = events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		logger.Fatal("Error setting up event routing: ", err)
