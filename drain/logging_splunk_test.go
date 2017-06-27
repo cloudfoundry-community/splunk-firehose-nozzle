@@ -63,6 +63,7 @@ var _ = Describe("LoggingSplunk", func() {
 			FlushInterval: time.Millisecond,
 			QueueSize:     1000,
 			BatchSize:     100,
+			Retries:       3,
 		}
 		logging = drain.NewLoggingSplunk(logger, mockClient, loggingConfig)
 	})
