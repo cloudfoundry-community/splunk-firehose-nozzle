@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"os"
 	"net"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 )
 
 type SplunkSink struct {
