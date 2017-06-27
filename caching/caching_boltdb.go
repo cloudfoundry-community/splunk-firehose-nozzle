@@ -14,7 +14,6 @@ import (
 type CachingBolt struct {
 	GcfClient *cfClient.Client
 	Appdb     *bolt.DB
-	Hostdb	  *bolt.DB
 }
 
 func NewCachingBolt(gcfClientSet *cfClient.Client, boltDatabasePath string) Caching {
