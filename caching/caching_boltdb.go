@@ -3,7 +3,7 @@ package caching
 import (
 	"fmt"
 	"github.com/boltdb/bolt"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	cfClient "github.com/cloudfoundry-community/go-cfclient"
 	json "github.com/mailru/easyjson"
 	"log"
@@ -14,6 +14,7 @@ import (
 type CachingBolt struct {
 	GcfClient *cfClient.Client
 	Appdb     *bolt.DB
+	Hostdb	  *bolt.DB
 }
 
 func NewCachingBolt(gcfClientSet *cfClient.Client, boltDatabasePath string) Caching {

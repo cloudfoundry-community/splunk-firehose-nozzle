@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
