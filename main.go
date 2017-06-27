@@ -34,7 +34,7 @@ var (
 	jobIndex = kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
 			OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").String()
 	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
+		OverrideDefaultFromEnvar("JOB_HOST").Default("").String()
 
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
 			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
