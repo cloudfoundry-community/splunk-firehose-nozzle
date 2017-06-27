@@ -1,5 +1,7 @@
 .idea
 
+nozzle.sh
+
 scripts/*
 !scripts/*.template
 

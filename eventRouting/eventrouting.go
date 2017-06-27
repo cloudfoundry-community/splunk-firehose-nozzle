@@ -3,10 +3,10 @@ package eventRouting
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	fevents "github.com/cloudfoundry-community/firehose-to-syslog/events"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry/sonde-go/events"
 	"os"
 	"sort"
@@ -168,8 +168,8 @@ func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime floa
 	}
 
 	event := &fevents.Event{
-		Type:   "firehose_to_syslog_stats",
-		Msg:    "Statistic for firehose to syslog",
+		Type:   "firehose_to_splunk_stats",
+		Msg:    "Statistic for firehose to splunk",
 		Fields: fields,
 	}
 	event.AnnotateWithMetaData(map[string]string{})

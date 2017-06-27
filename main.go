@@ -9,10 +9,10 @@ import (
 
 	"code.cloudfoundry.org/cflager"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -34,7 +34,7 @@ var (
 	jobIndex = kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
 			OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").String()
 	jobHost = kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_HOST").Default("localhost").String()
+		OverrideDefaultFromEnvar("JOB_HOST").Default("").String()
 
 	addAppInfo = kingpin.Flag("add-app-info", "Query API to fetch app details").
 			OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").Bool()
