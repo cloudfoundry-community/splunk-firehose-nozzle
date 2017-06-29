@@ -1,13 +1,14 @@
 package drain
 
 import (
-	"code.cloudfoundry.org/lager"
 	"fmt"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 type LoggingConfig struct {
@@ -18,23 +19,25 @@ type LoggingConfig struct {
 }
 
 type LoggingSplunk struct {
-	logger lager.Logger
-	client splunk.SplunkClient
-	config *LoggingConfig
-	events chan map[string]interface{}
+	logger  lager.Logger
+	clients []splunk.SplunkClient
+	config  *LoggingConfig
+	events  chan map[string]interface{}
 }
 
-func NewLoggingSplunk(logger lager.Logger, splunkClient splunk.SplunkClient, config *LoggingConfig) *LoggingSplunk {
+func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, config *LoggingConfig) *LoggingSplunk {
 	return &LoggingSplunk{
-		logger: logger,
-		client: splunkClient,
-		config: config,
-		events: make(chan map[string]interface{}, config.QueueSize),
+		logger:  logger,
+		clients: splunkClients,
+		config:  config,
+		events:  make(chan map[string]interface{}, config.QueueSize),
 	}
 }
 
 func (l *LoggingSplunk) Connect() bool {
-	go l.consume()
+	for _, client := range l.clients {
+		go l.consume(client)
+	}
 
 	return true
 }
@@ -44,7 +47,7 @@ func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
 	l.events <- event
 }
 
-func (l *LoggingSplunk) consume() {
+func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
 	var batch []map[string]interface{}
 	tickChan := time.NewTicker(l.config.FlushInterval).C
 
@@ -54,10 +57,10 @@ func (l *LoggingSplunk) consume() {
 		case event := <-l.events:
 			batch = append(batch, event)
 			if len(batch) >= l.config.BatchSize {
-				batch = l.indexEvents(batch)
+				batch = l.indexEvents(client, batch)
 			}
 		case <-tickChan:
-			batch = l.indexEvents(batch)
+			batch = l.indexEvents(client, batch)
 		}
 	}
 }
@@ -65,14 +68,14 @@ func (l *LoggingSplunk) consume() {
 // indexEvents indexes events to Splunk
 // return nil when sucessful which clears all outstanding events
 // return what the batch has if there is an error for next retry cycle
-func (l *LoggingSplunk) indexEvents(batch []map[string]interface{}) []map[string]interface{} {
+func (l *LoggingSplunk) indexEvents(client splunk.SplunkClient, batch []map[string]interface{}) []map[string]interface{} {
 	if len(batch) == 0 {
 		return batch
 	}
 	var err error
 	for i := 0; i < l.config.Retries; i++ {
-		l.logger.Info(fmt.Sprintf("Posting %d events", len(batch)))
-		err = l.client.Post(batch)
+		// l.logger.Info(fmt.Sprintf("Posting %d events", len(batch)))
+		err = client.Post(batch)
 		if err == nil {
 			return nil
 		}
