@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
 )
 
 type FakeCaching struct {

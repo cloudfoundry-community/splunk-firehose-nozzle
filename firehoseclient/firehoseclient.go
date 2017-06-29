@@ -3,7 +3,7 @@ package firehoseclient
 import (
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/gorilla/websocket"
 )
