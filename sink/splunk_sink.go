@@ -70,18 +70,18 @@ func GetHostInfo(host string) (string, string) {
 		fmt.Println("getting host name from os")
 		hostname, err = os.Hostname()
 		if err != nil {
-			logging.LogError("Unable to get host name, error=%+v", err)
+			logging.LogError("Unable to get host name", err)
 		}
 	} else {
 		hostname = host
 	}
 
-	ip_addresses, err := net.LookupIP(hostname)
+	ipAddresses, err := net.LookupIP(hostname)
 	if err != nil {
-		logging.LogError("Unable to get IP from host name, error=%+v", err)
+		logging.LogError("Unable to get IP from host name", err)
 	}
 
-	for _, ia := range ip_addresses {
+	for _, ia := range ipAddresses {
 		return hostname, ia.String()
 	}
 
