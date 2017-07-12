@@ -67,7 +67,6 @@ func GetHostInfo(host string) (string, string) {
 	var hostname string
 	var err error
 	if host == "" {
-		fmt.Println("getting host name from os")
 		hostname, err = os.Hostname()
 		if err != nil {
 			logging.LogError("Unable to get host name", err)
