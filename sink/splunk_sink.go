@@ -2,46 +2,36 @@ package sink
 
 import (
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
-	"os"
-	"net"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
+	"net"
+	"os"
 )
 
 type SplunkSink struct {
 	name         string
 	index        string
 	host         string
+	hostIP       string
 	splunkClient splunk.SplunkClient
 }
 
 func NewSplunkSink(name string, index string, host string, splunkClient splunk.SplunkClient) *SplunkSink {
-
-	if host == "" {
-		hostname, err := os.Hostname()
-		if err != nil {
-			logging.LogError("Unable to get host name, error=%+v", err)
-		}
-		host = hostname
-	}
+	hostname, hostIP := GetHostInfo(host)
 	return &SplunkSink{
 		name:         name,
 		index:        index,
-		host:         host,
+		host:         hostname,
+		hostIP:       hostIP,
 		splunkClient: splunkClient,
 	}
 }
 
 func (s *SplunkSink) Log(message lager.LogFormat) {
-
-	host_ip_address, err := net.LookupIP(s.host)
-	if err != nil {
-		logging.LogError("Unable to get IP from host name, error=%+v", err)
-	}
 	event := map[string]interface{}{
 		"job_index":     s.index,
 		"job":           s.name,
-		"ip":            host_ip_address[0].String(),
+		"ip":            s.hostIP,
 		"origin":        "splunk_nozzle",
 		"logger_source": message.Source,
 		"message":       message.Message,
@@ -66,4 +56,29 @@ func (s *SplunkSink) Log(message lager.LogFormat) {
 	}
 
 	s.splunkClient.Post(events)
+}
+
+// get host details once to avoid costly os calls
+func GetHostInfo(host string) (string, string) {
+	var hostname string
+	var err error
+	if host == "" {
+		hostname, err = os.Hostname()
+		if err != nil {
+			logging.LogError("Unable to get host name", err)
+		}
+	} else {
+		hostname = host
+	}
+
+	ipAddresses, err := net.LookupIP(hostname)
+	if err != nil {
+		logging.LogError("Unable to get IP from host name", err)
+	}
+
+	for _, ia := range ipAddresses {
+		return hostname, ia.String()
+	}
+
+	return hostname, hostname
 }
