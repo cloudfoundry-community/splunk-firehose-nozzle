@@ -2,7 +2,6 @@ package sink
 
 import (
 	"code.cloudfoundry.org/lager"
-	"fmt"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"net"
@@ -18,7 +17,6 @@ type SplunkSink struct {
 }
 
 func NewSplunkSink(name string, index string, host string, splunkClient splunk.SplunkClient) *SplunkSink {
-
 	hostname, hostIP := GetHostInfo(host)
 	return &SplunkSink{
 		name:         name,
@@ -30,7 +28,6 @@ func NewSplunkSink(name string, index string, host string, splunkClient splunk.S
 }
 
 func (s *SplunkSink) Log(message lager.LogFormat) {
-
 	event := map[string]interface{}{
 		"job_index":     s.index,
 		"job":           s.name,
@@ -63,7 +60,6 @@ func (s *SplunkSink) Log(message lager.LogFormat) {
 
 // get host details once to avoid costly os calls
 func GetHostInfo(host string) (string, string) {
-
 	var hostname string
 	var err error
 	if host == "" {
