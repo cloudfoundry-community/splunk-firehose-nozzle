@@ -146,25 +146,7 @@ $ chmod +x scripts/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.0 build
-```
-
-Reinstall dependencies:
-
-```
-$ make updatedeps
-```
-
-Update dependencies (without `strip-vcs` you'll end up with submodules):
-
-```
-glide install --strip-vendor --strip-vcs --update-vendored
-```
-
-Add a new dependency:
-
-```
-glide get github.com/kelseyhightower/envconfig --strip-vendor
+$ make VERSION=1.0
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
@@ -179,6 +161,12 @@ Run all kinds of testing
 $ make test # run all unittest
 $ make race # test if there is race condition in the code
 $ make vet  # examine GoLang code
+$ make cov  # code coverage test and code coverage html report
+```
+
+Or run all testings: unit test, race condition test, code coverage etc
+```
+$ make testall
 ```
 
 Run app
