@@ -13,6 +13,7 @@ default: installdeps build install
 
 installdeps:
 	glide --debug install
+	glide --debug install --strip-vendor
 
 updatedeps:
 	glide --debug update
