@@ -12,7 +12,6 @@ endif
 default: installdeps build install
 
 installdeps:
-	glide --debug install
 	glide --debug install --strip-vendor
 
 updatedeps:
@@ -20,9 +19,6 @@ updatedeps:
 
 initdeps:
 	glide --debug create
-
-stripvendor:
-	glide --debug install --strip-vendor
 
 # -gcflags -N -l for debug
 # -ldflags -w for prod
