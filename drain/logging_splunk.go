@@ -1,6 +1,7 @@
 package drain
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -86,9 +87,35 @@ func (l *LoggingSplunk) indexEvents(client splunk.SplunkClient, batch []map[stri
 	return nil
 }
 
+// ToJSON tries to detect the JSON pattern for msg first, if msg contains JSON pattern either
+// a map or an array (for efficiency), it will try to convert msg to a JSON object. If the convertion
+// success, a JSON object will be returned. Otherwise the original msg will be returned
+// If the msg param doesn't contain the JSON pattern, the msg will be returned directly
+func ToJson(msg string) interface{} {
+	trimed := strings.Trim(msg, " ")
+	if strings.HasPrefix(trimed, "{") && strings.HasSuffix(trimed, "}") {
+		// Probably the msg can be converted to a map JSON object
+		var m map[string]interface{}
+		if err := json.Unmarshal([]byte(trimed), &m); err != nil {
+			// Failed to convert to JSON object, just return the original msg
+			return msg
+		}
+		return m
+	} else if strings.HasPrefix(trimed, "[") && strings.HasSuffix(trimed, "]") {
+		// Probably the msg can be converted to an array JSON object
+		var a []interface{}
+		if err := json.Unmarshal([]byte(trimed), &a); err != nil {
+			// Failed to convert to JSON object, just return the original msg
+			return msg
+		}
+		return a
+	}
+	return msg
+}
+
 func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
 	if len(msg) > 0 {
-		fields["msg"] = msg
+		fields["msg"] = ToJson(msg)
 	}
 	event := map[string]interface{}{}
 
