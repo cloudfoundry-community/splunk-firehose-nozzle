@@ -52,7 +52,7 @@ var (
 	extraFields = kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 			OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").String()
 	keepAlive = kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
-			OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").Duration()
+			OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("120s").Duration()
 	subscriptionId = kingpin.Flag("subscription-id", "Id for the subscription.").
 			OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").String()
 
