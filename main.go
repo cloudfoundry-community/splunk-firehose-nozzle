@@ -1,27 +1,13 @@
 package main
 
 import (
-	"crypto/tls"
-	"errors"
 	"flag"
 	"fmt"
-	"time"
 
 	"code.cloudfoundry.org/cflager"
-	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
-	"github.com/cloudfoundry-community/go-cfclient"
-	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"gopkg.in/alecthomas/kingpin.v2"
-
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 var (
@@ -85,101 +71,38 @@ func main() {
 	cflager.AddFlags(flag.CommandLine)
 	flag.Parse()
 
-	logger, _ := cflager.New("splunk-nozzle-logger")
-	logger.Info("Running splunk-firehose-nozzle")
-
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	parsedExtraFields, err := extrafields.ParseExtraFields(*extraFields)
+	logger, _ := cflager.New("splunk-nozzle-logger")
+	logger.Info("Running splunk-firehose-nozzle")
+
+	splunkNozzle := splunknozzle.NewSplunkFirehoseNozzle(*apiEndpoint, *user, *password, *splunkHost, *splunkToken, *splunkIndex)
+
+	// Setup all other params
+	splunkNozzle.WithJobName(*jobName).
+		WithJobIndex(*jobIndex).
+		WithJobHost(*jobHost).
+		WithSkipSSL(*skipSSL).
+		WithSubscriptionID(*subscriptionId).
+		WithKeepAlive(*keepAlive).
+		WithAddAppInfo(*addAppInfo).
+		WithBoltDBPath(*boltDBPath).
+		WithWantedEvents(*wantedEvents).
+		WithExtraFields(*extraFields).
+		WithFlushInterval(*flushInterval).
+		WithQueueSize(*queueSize).
+		WithBatchSize(*batchSize).
+		WithRetries(*retries).
+		WithHecWorkers(*hecWorkers).
+		WithVersion(version).
+		WithBranch(branch).
+		WithCommit(commit).
+		WithBuildOS(buildos).
+		WithDebug(*debug)
+
+	err := splunkNozzle.Run(logger)
 	if err != nil {
-		logger.Fatal("Error parsing extra fields: ", err)
-	}
-
-	loggingConfig := &drain.LoggingConfig{
-		FlushInterval: *flushInterval,
-		QueueSize:     *queueSize,
-		BatchSize:     *batchSize,
-		Retries:       *retries,
-	}
-
-	var loggingClient logging.Logging
-	if *debug {
-		loggingClient = &drain.LoggingStd{}
-	} else {
-		splunkCLient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
-		logger.RegisterSink(sink.NewSplunkSink(*jobName, *jobIndex, *jobHost, splunkCLient))
-
-		var splunkClients []splunk.SplunkClient
-		for i := 0; i < *hecWorkers; i++ {
-			splunkClient := splunk.NewSplunkClient(*splunkToken, *splunkHost, *splunkIndex, parsedExtraFields, *skipSSL, logger)
-			splunkClients = append(splunkClients, splunkClient)
-		}
-		loggingClient = drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
-	}
-
-	versionInfo := lager.Data{
-		"version":        version,
-		"branch":         branch,
-		"commit":         commit,
-		"buildos":        buildos,
-		"flush-interval": *flushInterval,
-		"queue-size":     *queueSize,
-		"batch-size":     *batchSize,
-		"workers":        *hecWorkers,
-	}
-
-	logger.Info("Connecting to Cloud Foundry. splunk-firehose-nozzle runs", versionInfo)
-	cfConfig := &cfclient.Config{
-		ApiAddress:        *apiEndpoint,
-		Username:          *user,
-		Password:          *password,
-		SkipSslValidation: *skipSSL,
-	}
-	cfClient, err := cfclient.NewClient(cfConfig)
-	if err != nil {
-		logger.Fatal("Error setting up cf client: ", err)
-	}
-
-	logger.Info("Setting up caching")
-	var cache caching.Caching
-	if *addAppInfo {
-		cache = caching.NewCachingBolt(cfClient, *boltDBPath)
-		cache.CreateBucket()
-	} else {
-		cache = caching.NewCachingEmpty()
-	}
-
-	logger.Info("Setting up event routing")
-	events := eventRouting.NewEventRouting(cache, loggingClient)
-	err = events.SetupEventRouting(*wantedEvents)
-	if err != nil {
-		logger.Fatal("Error setting up event routing: ", err)
-	}
-
-	dopplerEndpoint := cfClient.Endpoint.DopplerEndpoint
-	tokenRefresher := auth.NewTokenRefreshAdapter(cfClient)
-	consumer := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: *skipSSL}, nil)
-	consumer.RefreshTokenFrom(tokenRefresher)
-	consumer.SetIdleTimeout(time.Duration(*keepAlive) * time.Second)
-
-	firehoseConfig := &firehoseclient.FirehoseConfig{
-		TrafficControllerURL:   dopplerEndpoint,
-		InsecureSSLSkipVerify:  *skipSSL,
-		IdleTimeoutSeconds:     *keepAlive,
-		FirehoseSubscriptionID: *subscriptionId,
-	}
-
-	logger.Info("Connecting logging client")
-	if loggingClient.Connect() {
-		firehoseClient := firehoseclient.NewFirehoseNozzle(consumer, events, firehoseConfig)
-		err := firehoseClient.Start()
-		if err != nil {
-			logger.Fatal("Failed connecting to Firehose", err)
-		} else {
-			logger.Info("Firehose Subscription Succesfull; routing events.")
-		}
-	} else {
-		logger.Fatal("Failed connecting to Splunk", errors.New(""))
+		logger.Error("Failed to run splunk-firehose-nozzle", err)
 	}
 }

@@ -1,27 +1,31 @@
 package firehoseclient
 
 import (
-	"time"
-
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
 )
 
+type FirehoseConsumer interface {
+	Firehose(subscriptionId string, authToken string) (<-chan *events.Envelope, <-chan error)
+	Close() error
+}
+
+type EventRouter interface {
+	RouteEvent(msg *events.Envelope)
+}
+
 type FirehoseNozzle struct {
-	consumer     splunknozzle.FirehoseConsumer
-	eventRouting splunknozzle.EventRouter
+	consumer     FirehoseConsumer
+	eventRouting EventRouter
 	config       *FirehoseConfig
 }
 
 type FirehoseConfig struct {
-	TrafficControllerURL   string
-	InsecureSSLSkipVerify  bool
-	IdleTimeoutSeconds     time.Duration
 	FirehoseSubscriptionID string
 }
 
-func NewFirehoseNozzle(consumer splunknozzle.FirehoseConsumer, eventRouting splunknozzle.EventRouter, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
+func NewFirehoseNozzle(consumer FirehoseConsumer, eventRouting EventRouter, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
 	return &FirehoseNozzle{
 		eventRouting: eventRouting,
 		consumer:     consumer,
