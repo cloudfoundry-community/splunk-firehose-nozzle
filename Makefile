@@ -9,7 +9,7 @@ PATH := $(subst :,/bin:,$(GOPATH))/bin:$(PATH)
 endif
 
 # Standard build
-default: installdeps build install
+default: installdeps build
 
 installdeps:
 	glide --debug install
