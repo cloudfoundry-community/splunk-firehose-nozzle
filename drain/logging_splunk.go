@@ -92,19 +92,19 @@ func (l *LoggingSplunk) indexEvents(client splunk.SplunkClient, batch []map[stri
 // success, a JSON object will be returned. Otherwise the original msg will be returned
 // If the msg param doesn't contain the JSON pattern, the msg will be returned directly
 func ToJson(msg string) interface{} {
-	trimed := strings.Trim(msg, " ")
-	if strings.HasPrefix(trimed, "{") && strings.HasSuffix(trimed, "}") {
+	trimmed := strings.TrimSpace(msg)
+	if strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}") {
 		// Probably the msg can be converted to a map JSON object
 		var m map[string]interface{}
-		if err := json.Unmarshal([]byte(trimed), &m); err != nil {
+		if err := json.Unmarshal([]byte(trimmed), &m); err != nil {
 			// Failed to convert to JSON object, just return the original msg
 			return msg
 		}
 		return m
-	} else if strings.HasPrefix(trimed, "[") && strings.HasSuffix(trimed, "]") {
+	} else if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
 		// Probably the msg can be converted to an array JSON object
 		var a []interface{}
-		if err := json.Unmarshal([]byte(trimed), &a); err != nil {
+		if err := json.Unmarshal([]byte(trimmed), &a); err != nil {
 			// Failed to convert to JSON object, just return the original msg
 			return msg
 		}
