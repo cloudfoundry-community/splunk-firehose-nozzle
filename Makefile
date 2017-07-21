@@ -74,7 +74,4 @@ SRC_CODE=$(shell find . -type f -name "*.go" -not -path "./vendor/*")
 fmt:
 	@gofmt -l -w ${SRC_CODE}
 
-
-.PHONY: test test-short vet build default
-all: fmt build
-all_test: test test-short vet
+all: installdeps testall build

@@ -3,9 +3,6 @@ package splunknozzle
 import (
 	"crypto/tls"
 	"fmt"
-	"time"
-
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
