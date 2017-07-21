@@ -25,9 +25,6 @@ var _ = Describe("Firehoseclient", func() {
 			consumer = testing.NewMockFirehoseConsumer(-1, int64(10), -1)
 			eventRouter = testing.NewMockEventRouter()
 			config := &FirehoseConfig{
-				TrafficControllerURL:   "https://api.bosh-lite.com",
-				InsecureSSLSkipVerify:  true,
-				IdleTimeoutSeconds:     time.Second,
 				FirehoseSubscriptionID: "splunk-subcription-id",
 			}
 			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
@@ -50,9 +47,6 @@ var _ = Describe("Firehoseclient", func() {
 			consumer = testing.NewMockFirehoseConsumer(-1, int64(10), closeErr)
 			eventRouter = testing.NewMockEventRouter()
 			config := &FirehoseConfig{
-				TrafficControllerURL:   "https://api.bosh-lite.com",
-				InsecureSSLSkipVerify:  true,
-				IdleTimeoutSeconds:     time.Second,
 				FirehoseSubscriptionID: "splunk-subcription-id",
 			}
 			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
