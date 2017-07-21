@@ -20,19 +20,19 @@ import (
 )
 
 type SplunkFirehoseNozzle struct {
-	c *Config
+	config *Config
 }
 
 func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
-		c: config,
+		config: config,
 	}
 }
 
 // eventRouting creates eventRouting object and setup routings for interested events
 func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient logging.Logging) (*eventRouting.EventRouting, error) {
 	events := eventRouting.NewEventRouting(cache, logClient)
-	err := events.SetupEventRouting(s.c.WantedEvents)
+	err := events.SetupEventRouting(s.config.WantedEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +42,10 @@ func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient log
 // pcfClient creates a client object which can talk to PCF
 func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 	cfConfig := &cfclient.Config{
-		ApiAddress:        s.c.ApiEndpoint,
-		Username:          s.c.User,
-		Password:          s.c.Password,
-		SkipSslValidation: s.c.SkipSSL,
+		ApiAddress:        s.config.ApiEndpoint,
+		Username:          s.config.User,
+		Password:          s.config.Password,
+		SkipSslValidation: s.config.SkipSSL,
 	}
 
 	cfClient, err := cfclient.NewClient(cfConfig)
@@ -57,8 +57,8 @@ func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 
 // appCache creates inmemory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) caching.Caching {
-	if s.c.AddAppInfo {
-		cache := caching.NewCachingBolt(cfClient, s.c.BoltDBPath)
+	if s.config.AddAppInfo {
+		cache := caching.NewCachingBolt(cfClient, s.config.BoltDBPath)
 		cache.CreateBucket()
 		return cache
 	}
@@ -68,31 +68,31 @@ func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) caching.Cachi
 
 // logClient creates std logging or Splunk logging
 func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, error) {
-	if s.c.Debug {
+	if s.config.Debug {
 		return &drain.LoggingStd{}, nil
 	}
 
-	parsedExtraFields, err := extrafields.ParseExtraFields(s.c.ExtraFields)
+	parsedExtraFields, err := extrafields.ParseExtraFields(s.config.ExtraFields)
 	if err != nil {
 		return nil, err
 	}
 
 	// SplunkClient for nozzle internal logging
-	splunkClient := splunk.NewSplunkClient(s.c.SplunkToken, s.c.SplunkHost, s.c.SplunkIndex, parsedExtraFields, s.c.SkipSSL, logger)
-	logger.RegisterSink(sink.NewSplunkSink(s.c.JobName, s.c.JobIndex, s.c.JobHost, splunkClient))
+	splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
+	logger.RegisterSink(sink.NewSplunkSink(s.config.JobName, s.config.JobIndex, s.config.JobHost, splunkClient))
 
 	// SplunkClients for raw event POST
 	var splunkClients []splunk.SplunkClient
-	for i := 0; i < s.c.HecWorkers; i++ {
-		splunkClient := splunk.NewSplunkClient(s.c.SplunkToken, s.c.SplunkHost, s.c.SplunkIndex, parsedExtraFields, s.c.SkipSSL, logger)
+	for i := 0; i < s.config.HecWorkers; i++ {
+		splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
 		splunkClients = append(splunkClients, splunkClient)
 	}
 
 	loggingConfig := &drain.LoggingConfig{
-		FlushInterval: s.c.FlushInterval,
-		QueueSize:     s.c.QueueSize,
-		BatchSize:     s.c.BatchSize,
-		Retries:       s.c.Retries,
+		FlushInterval: s.config.FlushInterval,
+		QueueSize:     s.config.QueueSize,
+		BatchSize:     s.config.BatchSize,
+		Retries:       s.config.Retries,
 	}
 
 	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
@@ -106,16 +106,16 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *consumer.Consumer {
 	dopplerEndpoint := pcfClient.Endpoint.DopplerEndpoint
 	tokenRefresher := auth.NewTokenRefreshAdapter(pcfClient)
-	consumer := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: s.c.SkipSSL}, nil)
-	consumer.RefreshTokenFrom(tokenRefresher)
-	consumer.SetIdleTimeout(s.c.KeepAlive)
-	return consumer
+	c := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: s.config.SkipSSL}, nil)
+	c.RefreshTokenFrom(tokenRefresher)
+	c.SetIdleTimeout(s.config.KeepAlive)
+	return c
 }
 
 // firehoseClient creates FirehoseNozzle object which glues the event source and event sink
 func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events *eventRouting.EventRouting) *firehoseclient.FirehoseNozzle {
 	firehoseConfig := &firehoseclient.FirehoseConfig{
-		FirehoseSubscriptionID: s.c.SubscriptionID,
+		FirehoseSubscriptionID: s.config.SubscriptionID,
 	}
 
 	return firehoseclient.NewFirehoseNozzle(consumer, events, firehoseConfig)
@@ -130,14 +130,14 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 
 	params := lager.Data{
-		"version":        s.c.Version,
-		"branch":         s.c.Branch,
-		"commit":         s.c.Commit,
-		"buildos":        s.c.BuildOS,
-		"flush-interval": s.c.FlushInterval,
-		"queue-size":     s.c.QueueSize,
-		"batch-size":     s.c.BatchSize,
-		"workers":        s.c.HecWorkers,
+		"version":        s.config.Version,
+		"branch":         s.config.Branch,
+		"commit":         s.config.Commit,
+		"buildos":        s.config.BuildOS,
+		"flush-interval": s.config.FlushInterval,
+		"queue-size":     s.config.QueueSize,
+		"batch-size":     s.config.BatchSize,
+		"workers":        s.config.HecWorkers,
 	}
 	logger.Info("splunk-firehose-nozzle runs", params)
 
@@ -153,8 +153,8 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 		return err
 	}
 
-	consumer := s.firehoseConsumer(pcfClient)
-	firehoseClient := s.firehoseClient(consumer, events)
+	c := s.firehoseConsumer(pcfClient)
+	firehoseClient := s.firehoseClient(c, events)
 	if err := firehoseClient.Start(); err != nil {
 		return err
 	}
