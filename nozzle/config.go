@@ -114,12 +114,12 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, er
 
 	kingpin.Parse()
 
-	err := c.ParseExtraFields(extraFields)
+	err := c.parseExtraFields(extraFields)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.ParseIndexMapping(indexMapping)
+	err = c.parseIndexMapping(indexMapping)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, er
 	return c, nil
 }
 
-func (c *Config) ParseExtraFields(extraFields string) error {
+func (c *Config) parseExtraFields(extraFields string) error {
 	parsedExtraFields, err := extrafields.ParseExtraFields(extraFields)
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func (c *Config) ParseExtraFields(extraFields string) error {
 	return nil
 }
 
-func (c *Config) ParseIndexMapping(indexMapping string) error {
+func (c *Config) parseIndexMapping(indexMapping string) error {
 	if indexMapping == "" {
 		return errors.New("Index mapping is required")
 	}

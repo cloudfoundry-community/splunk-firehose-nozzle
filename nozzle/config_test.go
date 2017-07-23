@@ -1,9 +1,11 @@
 package splunknozzle_test
 
 import (
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 
 	. "github.com/onsi/ginkgo"
@@ -12,13 +14,34 @@ import (
 
 var _ = Describe("Config", func() {
 
+	var (
+		version         = "1.0"
+		branch          = "develop"
+		commit          = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
+		buildos         = "Linux"
+		mapping         = `{"default_index":"otherindex","mappings":{"cf_org_name":[{"value":"cf_org_name.*","index":"cf_org_name_idx"}],"cf_space_name":[{"value":"cf_space_name.*","index":"cf_space_name_idx"}],"cf_app_name":[{"value":"cf_app_name.*","index":"cf_app_name_idx"}]}}`
+		invalidMapping  = `{"default_index":"otherindex","mappings":{"cf_org_name":[{"value":"cf_org_name.*","index":"cf_org_name_idx"}],"cf_space_name":[{"value":"cf_space_name.*","index":"cf_space_name_idx"}],"cf_app_name":[{"value":"cf_app_name.*","index":"cf_app_name_idx"}]}}]`
+		invalidMapping2 = `{"default_index":"","mappings":nil}`
+	)
+
+	verifyIndexMapping := func(indexMapping *drain.IndexMapConfig) {
+		Expect(indexMapping).ShouldNot(Equal(nil))
+		Expect(indexMapping.DefaultIndex).To(Equal("otherindex"))
+		Expect(indexMapping.Mappings).ShouldNot(Equal(nil))
+		Expect(len(indexMapping.Mappings)).To(Equal(3))
+
+		names := []string{drain.CF_ORG_NAME, drain.CF_SPACE_NAME, drain.CF_APP_NAME}
+		for _, byName := range names {
+			idxMaps, ok := indexMapping.Mappings[byName]
+			Expect(ok).To(Equal(true))
+			Expect(len(idxMaps)).To(Equal(1))
+			Expect(idxMaps[0]).ShouldNot(Equal(nil))
+			Expect(*idxMaps[0].Index).To(Equal(byName + "_idx"))
+			Expect(idxMaps[0].Value).To(Equal(byName + ".*"))
+		}
+	}
+
 	Context("Env config parsing", func() {
-		var (
-			version = "1.0"
-			branch  = "develop"
-			commit  = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
-			buildos = "Linux"
-		)
 
 		BeforeEach(func() {
 			// FIX "nozzle.test: error: unknown short flag '-t', try --help" error when coverage
@@ -30,7 +53,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("API_PASSWORD", "abc123")
 			os.Setenv("SPLUNK_TOKEN", "sometoken")
 			os.Setenv("SPLUNK_HOST", "splunk.example.com")
-			os.Setenv("SPLUNK_INDEX", "splunk_index")
+			os.Setenv("SPLUNK_INDEX_MAPPING", mapping)
 		})
 
 		It("parses config from environment", func() {
@@ -51,7 +74,8 @@ var _ = Describe("Config", func() {
 
 			os.Setenv("FLUSH_INTERVAL", "43s")
 
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.SkipSSL).To(BeTrue())
@@ -66,14 +90,14 @@ var _ = Describe("Config", func() {
 			Expect(c.BoltDBPath).To(Equal("foo.db"))
 
 			Expect(c.WantedEvents).To(Equal("LogMessage"))
-			Expect(c.ExtraFields).To(Equal("foo:bar"))
+			Expect(c.ExtraFields["foo"]).To(Equal("bar"))
 
 			Expect(c.KeepAlive).To(Equal(42 * time.Second))
 			Expect(c.SubscriptionID).To(Equal("my-nozzle"))
 
 			Expect(c.SplunkToken).To(Equal("sometoken"))
 			Expect(c.SplunkHost).To(Equal("splunk.example.com"))
-			Expect(c.SplunkIndex).To(Equal("splunk_index"))
+			verifyIndexMapping(c.IndexMapping)
 			Expect(c.FlushInterval).To(Equal(43 * time.Second))
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
@@ -82,7 +106,8 @@ var _ = Describe("Config", func() {
 		})
 
 		It("check defaults", func() {
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.Debug).To(BeFalse())
 			Expect(c.SkipSSL).To(BeFalse())
@@ -90,7 +115,8 @@ var _ = Describe("Config", func() {
 			Expect(c.JobIndex).To(Equal("-1"))
 			Expect(c.JobHost).To(Equal(""))
 
-			Expect(c.AddAppInfo).To(Equal(false))
+			// Since we have mapping, so AddAppInfo will be reset to true
+			Expect(c.AddAppInfo).To(Equal(true))
 			Expect(c.BoltDBPath).To(Equal("cache.db"))
 
 			Expect(c.WantedEvents).To(Equal("ValueMetric,CounterEvent,ContainerMetric"))
@@ -104,16 +130,27 @@ var _ = Describe("Config", func() {
 			Expect(c.Retries).To(Equal(5))
 			Expect(c.HecWorkers).To(Equal(8))
 		})
+
+		It("Invalid index mapping with invliad json", func() {
+			os.Setenv("SPLUNK_INDEX_MAPPING", invalidMapping)
+			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Invalid index mapping with not configuring index ", func() {
+			os.Setenv("SPLUNK_INDEX_MAPPING", invalidMapping2)
+			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Invalid extra fields", func() {
+			os.Setenv("EXTRA_FIELDS", "abc")
+			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 
 	Context("Flags config parsing", func() {
-		var (
-			version = "1.0"
-			branch  = "develop"
-			commit  = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
-			buildos = "Linux"
-		)
-
 		BeforeEach(func() {
 			os.Clearenv()
 			// FIX "nozzle.test: error: unknown short flag '-t', try --help" error when coverage
@@ -124,7 +161,7 @@ var _ = Describe("Config", func() {
 				"--password=abc123c",
 				"--splunk-token=sometokenc",
 				"--splunk-host=splunk.example.comc",
-				"--splunk-index=splunk_indexc",
+				fmt.Sprintf("--splunk-index-mapping=%s", mapping),
 				"--job-name=my-jobc",
 				"--job-index=3",
 				"--job-host=nozzle.example.comc",
@@ -142,14 +179,15 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses config from cli flags", func() {
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.comc"))
 			Expect(c.User).To(Equal("adminc"))
 			Expect(c.Password).To(Equal("abc123c"))
 			Expect(c.SplunkToken).To(Equal("sometokenc"))
 			Expect(c.SplunkHost).To(Equal("splunk.example.comc"))
-			Expect(c.SplunkIndex).To(Equal("splunk_indexc"))
+			verifyIndexMapping(c.IndexMapping)
 
 			Expect(c.JobName).To(Equal("my-jobc"))
 			Expect(c.JobIndex).To(Equal("3"))
@@ -161,7 +199,8 @@ var _ = Describe("Config", func() {
 
 			Expect(c.BoltDBPath).To(Equal("foo.dbc"))
 			Expect(c.WantedEvents).To(Equal("LogMessagec"))
-			Expect(c.ExtraFields).To(Equal("foo:barc"))
+
+			Expect(c.ExtraFields["foo"]).To(Equal("barc"))
 			Expect(c.KeepAlive).To(Equal(24 * time.Second))
 			Expect(c.SubscriptionID).To(Equal("my-nozzlec"))
 			Expect(c.FlushInterval).To(Equal(34 * time.Second))

@@ -60,8 +60,13 @@ var _ = Describe("LoggingSplunk", func() {
 
 		mockClient = &testing.MockSplunkClient{}
 
+		indexMapConfig := &drain.IndexMapConfig{
+			DefaultIndex: "main",
+		}
+
 		logger = lager.NewLogger("test")
 		loggingConfig := &drain.LoggingConfig{
+			IndexMapping:  indexMapConfig,
 			FlushInterval: time.Millisecond,
 			QueueSize:     1000,
 			BatchSize:     100,
