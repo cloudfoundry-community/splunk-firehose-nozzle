@@ -91,4 +91,17 @@ var _ = Describe("IndexRouting", func() {
 		idx := routing.LookupIndex(fields)
 		Expect(*idx).To(Equal("main"))
 	})
+
+	It("Valid index routing with no validating", func() {
+		var config drain.IndexMapConfig
+		err := json.Unmarshal([]byte(mapping), &config)
+		Ω(err).ShouldNot(HaveOccurred())
+
+		routing := drain.NewIndexRouting(&config)
+		fields := map[string]interface{}{
+			"cf_app_name": "cf_app_name_test",
+		}
+		idx := routing.LookupIndex(fields)
+		Expect(*idx).To(Equal("otherindex"))
+	})
 })

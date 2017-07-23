@@ -60,6 +60,8 @@ type IndexRouting struct {
 	config *IndexMapConfig
 }
 
+// config param should be validated by clients by calling config.Validate())
+// before calling NewIndexRouting
 func NewIndexRouting(config *IndexMapConfig) *IndexRouting {
 	return &IndexRouting{
 		config: config,
