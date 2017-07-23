@@ -124,7 +124,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, er
 		return nil, err
 	}
 
-	if c.IndexMapping != nil {
+	if len(c.IndexMapping.Mappings) > 0 {
 		// We will need app info for org/space/app lookup
 		c.AddAppInfo = true
 	}
