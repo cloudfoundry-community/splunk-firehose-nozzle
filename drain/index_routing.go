@@ -22,7 +22,7 @@ type IndexMap struct {
 //    "mappings": {
 //	    "cf_org_name": [{"value": "sales.*", "index": "sales"}, ...],
 //	    "cf_space_name": [{"value": "test.*", "index": "test"}, ...],
-//	    "cf_app_name": [{"value": "fin.*", "index": "financial"}, {"value": "fin.*", "index": nil}, ...]
+//	    "cf_app_name": [{"value": "fin.*", "index": "financial"}, {"value": "stage.*", "index": nil}, ...]
 //	  }
 // }
 
