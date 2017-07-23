@@ -20,10 +20,14 @@ func main() {
 	logger, _ := cflager.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
-	config := splunknozzle.NewConfigFromCmdFlags(version, branch, commit, buildos)
+	config, err := splunknozzle.NewConfigFromCmdFlags(version, branch, commit, buildos)
+	if err != nil {
+		logger.Error("Failed to get configuration", err)
+		return
+	}
 
 	splunkNozzle := splunknozzle.NewSplunkFirehoseNozzle(config)
-	err := splunkNozzle.Run(logger)
+	err = splunkNozzle.Run(logger)
 	if err != nil {
 		logger.Error("Failed to run splunk-firehose-nozzle", err)
 	}

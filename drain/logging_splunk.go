@@ -17,6 +17,8 @@ type LoggingConfig struct {
 	QueueSize     int //consumer queue buffer size
 	BatchSize     int
 	Retries       int //No of retries to post events to HEC before dropping events
+
+	IndexMapping *IndexMapConfig
 }
 
 type LoggingSplunk struct {
@@ -24,6 +26,8 @@ type LoggingSplunk struct {
 	clients []splunk.SplunkClient
 	config  *LoggingConfig
 	events  chan map[string]interface{}
+
+	indexRouting *IndexRouting
 }
 
 func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, config *LoggingConfig) *LoggingSplunk {
@@ -32,6 +36,8 @@ func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, 
 		clients: splunkClients,
 		config:  config,
 		events:  make(chan map[string]interface{}, config.QueueSize),
+
+		indexRouting: NewIndexRouting(config.IndexMapping),
 	}
 }
 
@@ -44,8 +50,11 @@ func (l *LoggingSplunk) Connect() bool {
 }
 
 func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
-	event := l.buildEvent(fields, msg)
-	l.events <- event
+	if len(msg) > 0 {
+		fields["msg"] = msg
+	}
+
+	l.events <- fields
 }
 
 func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
@@ -55,7 +64,13 @@ func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
 	// Either flush window or batch size reach limits, we flush
 	for {
 		select {
-		case event := <-l.events:
+		case fields := <-l.events:
+			event := l.buildEvent(fields)
+			if event["index"] == nil {
+				// drop it on the floor
+				continue
+			}
+
 			batch = append(batch, event)
 			if len(batch) >= l.config.BatchSize {
 				batch = l.indexEvents(client, batch)
@@ -113,10 +128,16 @@ func ToJson(msg string) interface{} {
 	return msg
 }
 
-func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
-	if len(msg) > 0 {
-		fields["msg"] = ToJson(msg)
+func (l *LoggingSplunk) buildEvent(fields map[string]interface{}) map[string]interface{} {
+	msg, ok := fields["msg"]
+	if ok {
+		// try to convert to json object
+		msgStr, ok := msg.(string)
+		if ok && len(msgStr) > 0 {
+			fields["msg"] = ToJson(msgStr)
+		}
 	}
+
 	event := map[string]interface{}{}
 
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -127,6 +148,7 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}, msg string) ma
 
 	event["host"] = fields["ip"]
 	event["source"] = fields["job"]
+	event["index"] = l.indexRouting.LookupIndex(fields)
 
 	eventType := strings.ToLower(fields["event_type"].(string))
 	event["sourcetype"] = fmt.Sprintf("cf:%s", eventType)

@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
 	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
 	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
@@ -60,6 +59,9 @@ func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) caching.Cachi
 	if s.config.AddAppInfo {
 		cache := caching.NewCachingBolt(cfClient, s.config.BoltDBPath)
 		cache.CreateBucket()
+
+		// populate boltdb cache
+		cache.GetAllApp()
 		return cache
 	}
 
@@ -72,19 +74,14 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 		return &drain.LoggingStd{}, nil
 	}
 
-	parsedExtraFields, err := extrafields.ParseExtraFields(s.config.ExtraFields)
-	if err != nil {
-		return nil, err
-	}
-
 	// SplunkClient for nozzle internal logging
-	splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
+	splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.ExtraFields, s.config.SkipSSL, logger)
 	logger.RegisterSink(sink.NewSplunkSink(s.config.JobName, s.config.JobIndex, s.config.JobHost, splunkClient))
 
 	// SplunkClients for raw event POST
 	var splunkClients []splunk.SplunkClient
 	for i := 0; i < s.config.HecWorkers; i++ {
-		splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
+		splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.ExtraFields, s.config.SkipSSL, logger)
 		splunkClients = append(splunkClients, splunkClient)
 	}
 
@@ -93,6 +90,8 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
+
+		IndexMapping: s.config.IndexMapping,
 	}
 
 	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
