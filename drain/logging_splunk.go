@@ -39,7 +39,6 @@ func (l *LoggingSplunk) Connect() bool {
 	for _, client := range l.clients {
 		go l.consume(client)
 	}
-
 	return true
 }
 
@@ -50,18 +49,19 @@ func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
 
 func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
 	var batch []map[string]interface{}
-	tickChan := time.NewTicker(l.config.FlushInterval).C
-
-	// Either flush window or batch size reach limits, we flush
+	timer := time.NewTimer(l.config.FlushInterval)
+	// Flush takes place when 1) batch limit is reached. 2)flush window expires
 	for {
 		select {
 		case event := <-l.events:
 			batch = append(batch, event)
 			if len(batch) >= l.config.BatchSize {
 				batch = l.indexEvents(client, batch)
+				timer.Reset(l.config.FlushInterval) //reset channel timer
 			}
-		case <-tickChan:
-			batch = l.indexEvents(client, batch)
+		case <-timer.C:
+		  batch = l.indexEvents(client, batch)
+			timer.Reset(l.config.FlushInterval)
 		}
 	}
 }

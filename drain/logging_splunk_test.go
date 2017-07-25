@@ -501,6 +501,13 @@ var _ = Describe("LoggingSplunk", func() {
 			Expect(eventContents["cpu_percentage"]).To(Equal(cpuPercentage))
 			Expect(eventContents["memory_bytes"]).To(Equal(memoryBytes))
 		})
+		// TODO, implement test that will create enough events to fill batch and call indexEvents multiple times
+
+		/*
+			It("checks correct use of batch and flush_window", func() {
+
+
+			})*/
 	})
 
 	Context("ToJson", func() {
