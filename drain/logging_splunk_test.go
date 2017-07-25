@@ -1,10 +1,11 @@
 package drain_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"strconv"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
@@ -12,6 +13,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
@@ -59,7 +61,13 @@ var _ = Describe("LoggingSplunk", func() {
 		mockClient = &testing.MockSplunkClient{}
 
 		logger = lager.NewLogger("test")
-		logging = drain.NewLoggingSplunk(logger, mockClient, time.Millisecond)
+		loggingConfig := &drain.LoggingConfig{
+			FlushInterval: time.Millisecond,
+			QueueSize:     1000,
+			BatchSize:     100,
+			Retries:       3,
+		}
+		logging = drain.NewLoggingSplunk(logger, []splunk.SplunkClient{mockClient}, loggingConfig)
 	})
 
 	It("sends events to client", func() {
@@ -501,4 +509,53 @@ var _ = Describe("LoggingSplunk", func() {
 
 			})*/
 	})
+
+	Context("ToJson", func() {
+		var jsonArray string
+		var jsonMap string
+		var invalidJsonArray string
+		var invalidJsonMap string
+		var nonJsonStr string
+
+		BeforeEach(func() {
+			// With space prefixed and suffixed
+			jsonArray = `  ["splunk", "firehose", "nozzle"]    `
+			jsonMap = `   {"splunk": "firehose"}  `
+			invalidJsonArray = `["splunk", "firehose", "nozzle"]]`
+			invalidJsonMap = `{"splunk": "firehose"}}`
+			nonJsonStr = `this is a raw log`
+		})
+
+		It("Converstion", func() {
+			r := drain.ToJson(jsonArray)
+			ar, ok := r.([]interface{})
+			Expect(ok).To(Equal(true))
+			Expect(len(ar)).To(Equal(3))
+
+			r = drain.ToJson(jsonMap)
+			mr, ok := r.(map[string]interface{})
+			Expect(ok).To(Equal(true))
+			Expect(len(mr)).To(Equal(1))
+
+			r = drain.ToJson(invalidJsonArray)
+			ar, ok = r.([]interface{})
+			Expect(ok).To(Equal(false))
+
+			s, ok := r.(string)
+			Expect(s).To(Equal(invalidJsonArray))
+
+			r = drain.ToJson(invalidJsonMap)
+			mr, ok = r.(map[string]interface{})
+			Expect(ok).To(Equal(false))
+
+			s, ok = r.(string)
+			Expect(s).To(Equal(invalidJsonMap))
+
+			r = drain.ToJson(nonJsonStr)
+			sr, ok := r.(string)
+			Expect(ok).To(Equal(true))
+			Expect(sr).To(Equal(nonJsonStr))
+		})
+	})
+
 })
