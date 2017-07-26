@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 

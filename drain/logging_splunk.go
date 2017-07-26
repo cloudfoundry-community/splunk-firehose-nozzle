@@ -60,7 +60,7 @@ func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
 				timer.Reset(l.config.FlushInterval) //reset channel timer
 			}
 		case <-timer.C:
-		  batch = l.indexEvents(client, batch)
+			batch = l.indexEvents(client, batch)
 			timer.Reset(l.config.FlushInterval)
 		}
 	}

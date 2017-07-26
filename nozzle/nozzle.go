@@ -5,18 +5,19 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry/noaa/consumer"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
+	"time"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -30,7 +31,7 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 }
 
 // eventRouting creates eventRouting object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient logging.Logging) (*eventRouting.EventRouting, error) {
+func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient logging.Logging) (eventRouting.EventRouting, error) {
 	events := eventRouting.NewEventRouting(cache, logClient)
 	err := events.SetupEventRouting(s.config.WantedEvents)
 	if err != nil {
@@ -56,14 +57,19 @@ func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 }
 
 // appCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) caching.Caching {
+func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) (caching.Caching, error) {
 	if s.config.AddAppInfo {
-		cache := caching.NewCachingBolt(cfClient, s.config.BoltDBPath)
-		cache.CreateBucket()
-		return cache
+		// FIXME: IgnoreMissingApps, MissingAppsTTL, CacheInvalidateTTL - need good values and need to put into config struct
+		confObj := caching.CachingBoltConfig{
+			Path:               s.config.BoltDBPath,
+			IgnoreMissingApps:  true,
+			MissingAppsTTL:     time.Hour,
+			CacheInvalidateTTL: time.Hour * 12,
+		}
+		return caching.NewCachingBolt(cfClient, &confObj)
 	}
 
-	return caching.NewCachingEmpty()
+	return caching.NewCachingEmpty(), nil
 }
 
 // logClient creates std logging or Splunk logging
@@ -113,7 +119,7 @@ func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *con
 }
 
 // firehoseClient creates FirehoseNozzle object which glues the event source and event sink
-func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events *eventRouting.EventRouting) *firehoseclient.FirehoseNozzle {
+func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events eventRouting.EventRouting) *firehoseclient.FirehoseNozzle {
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		FirehoseSubscriptionID: s.config.SubscriptionID,
 	}
@@ -146,7 +152,16 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 		return err
 	}
 
-	appCache := s.appCache(pcfClient)
+	appCache, err := s.appCache(pcfClient)
+	if err != nil {
+		return err
+	}
+
+	err = appCache.Open()
+	if err != nil {
+		return err
+	}
+	defer appCache.Close()
 
 	events, err := s.eventRouting(appCache, logClient)
 	if err != nil {
