@@ -42,6 +42,13 @@ build-nozzle: fmt
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 
+deploy-nozzle:
+	@cf push -f ci/splunk_nozzle_manifest.yml -u process --random-route
+
+deploy-data-generation-app:
+	@cf push -f ci/data_generation_app.yml -u process -p ci/data-generation-app --random-route
+
+integration-test: deploy-nozzle deploy-data-generation-app test
 
 testall: test vet race cov
 
