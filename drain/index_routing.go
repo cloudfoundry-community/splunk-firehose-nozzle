@@ -1,66 +1,58 @@
 package drain
 
-import (
-	"errors"
-	"regexp"
-)
-
 const (
-	CF_ORG_NAME   = "cf_org_name"
-	CF_SPACE_NAME = "cf_space_name"
+	CF_ORG_ID   = "cf_org_id"
+	CF_SPACE_ID = "cf_space_id"
+	CF_APP_ID   = "cf_app_id"
+
 	CF_APP_NAME   = "cf_app_name"
+	CF_SPACE_NAME = "cf_space_name"
+	CF_ORG_NAME   = "cf_org_name"
 )
 
 type IndexMap struct {
+	By    string  `json:"by" binding:"required"`
 	Value string  `json:"value" binding:"required"`
 	Index *string `json:"index" binding:"required"`
-	regex *regexp.Regexp
 }
 
 // {
 //    "defult_index": "main",
-//    "mappings": {
-//	    "cf_org_name": [{"value": "sales.*", "index": "sales"}, ...],
-//	    "cf_space_name": [{"value": "test.*", "index": "test"}, ...],
-//	    "cf_app_name": [{"value": "fin.*", "index": "financial"}, {"value": "stage.*", "index": nil}, ...]
-//	  }
+//    "mappings": [
+//	    {"by": "cf_app_id", "value": "app uuid", "index": "sales"},
+//	    {"by": "cf_space_id", "value": "space uuid", index": "test"},
+//	    {"by": "cf_org_id", "value": "org uuid", "index": "financial"}
+//    ]
 // }
 
 type IndexMapConfig struct {
-	DefaultIndex string                 `json:"default_index" binding:"required"`
-	Mappings     map[string][]*IndexMap `json:"mappings" binding:"required"`
+	DefaultIndex  string      `json:"default_index" binding:"required"`
+	Mappings      []*IndexMap `json:"mappings" binding:"required"`
+	removeAppMeta bool
 }
 
-// Validate validates if the index mapping configuration is valid
-// and it will populate some internal states if the config is good
-func (c *IndexMapConfig) Validate() error {
-	indexConfiged := false
-
-	for _, idxMaps := range c.Mappings {
-		for _, idxMap := range idxMaps {
-			if idxMap.Index != nil && *idxMap.Index != "" {
-				indexConfiged = true
+// NeedsAppInfo determin if we need query app meta data information for index routing.
+// If we need do index routing accordingly to space/org ID, we will need
+// App meda data information.
+func (c *IndexMapConfig) NeedsAppInfo(addAppInfo bool) bool {
+	for _, mapping := range c.Mappings {
+		if mapping.By == CF_ORG_ID || mapping.By == CF_SPACE_ID {
+			if !addAppInfo {
+				// If uses doesn't want index app info, we clean it up after
+				// done with index routing
+				c.removeAppMeta = true
 			}
-			regex, err := regexp.Compile(idxMap.Value)
-			if err != nil {
-				return err
-			}
-			idxMap.regex = regex
+			return true
 		}
 	}
-
-	if !indexConfiged && c.DefaultIndex == "" {
-		return errors.New("No index has been configured")
-	}
-
-	return nil
+	return false
 }
 
 type IndexRouting struct {
 	config *IndexMapConfig
 }
 
-// config param should be validated by clients by calling config.Validate())
+// config param should be validated by clients by calling
 // before calling NewIndexRouting
 func NewIndexRouting(config *IndexMapConfig) *IndexRouting {
 	return &IndexRouting{
@@ -68,41 +60,31 @@ func NewIndexRouting(config *IndexMapConfig) *IndexRouting {
 	}
 }
 
-// LookupIndex finds a matching Splunk Index for "fields" passed according to the
-// configuration provided by clients
-// It first searches the index mapping configuration in the following order
-// app -> space -> org
-// If during the search, there is a match found, the corresponding index will be
-// returned immediately. Otherwise a default Index will be returned
-// Note: if this function returns a nil string, it means the "fields" (event) can be
-// discarded directly
+func (i *IndexRouting) removeAppMeta(fields map[string]interface{}) {
+	if !i.config.removeAppMeta {
+		return
+	}
+
+	keys := [...]string{CF_APP_NAME, CF_SPACE_NAME, CF_ORG_NAME, CF_SPACE_ID, CF_ORG_ID}
+	for i := range keys {
+		delete(fields, keys[i])
+	}
+}
+
+// LookupIndex goes through the indexing rules one by one, once there is a batch
+// is found, the index will be returned immediately. Otherwise a default Index will be
+// returned.
 func (i *IndexRouting) LookupIndex(fields map[string]interface{}) *string {
-	if i.config.Mappings == nil {
-		return &i.config.DefaultIndex
-	}
-
-	// app has highest priority
-	for _, byName := range []string{CF_APP_NAME, CF_SPACE_NAME, CF_ORG_NAME} {
-		name, ok := fields[byName].(string)
-		if !ok {
-			continue
-		}
-
-		idxMaps := i.config.Mappings[byName]
-		if idxMaps == nil {
-			continue
-		}
-
-		for _, idxMap := range idxMaps {
-			if idxMap.regex == nil {
-				continue
-			}
-
-			if idxMap.regex.MatchString(name) {
-				return idxMap.Index
-			}
+	idx := &i.config.DefaultIndex
+	for _, idxMap := range i.config.Mappings {
+		id, ok := fields[idxMap.By].(string)
+		if ok && id == idxMap.Value {
+			idx = idxMap.Index
+			break
 		}
 	}
 
-	return &i.config.DefaultIndex
+	i.removeAppMeta(fields)
+
+	return idx
 }

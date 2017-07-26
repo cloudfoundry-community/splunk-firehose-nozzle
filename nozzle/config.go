@@ -2,7 +2,6 @@ package splunknozzle
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -45,7 +44,8 @@ type Config struct {
 	Commit  string
 	BuildOS string
 
-	Debug bool
+	AddAppInfoOrig bool
+	Debug          bool
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, error) {
@@ -99,7 +99,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, er
 
 	var indexMapping string
 	kingpin.Flag("splunk-index-mapping", "Route the events to different Splunk indexes according to org, space, appid etc. Refer to doc for details.").
-		OverrideDefaultFromEnvar("SPLUNK_INDEX_MAPPING").Required().StringVar(&indexMapping)
+		OverrideDefaultFromEnvar("SPLUNK_INDEX_MAPPING").Default("").StringVar(&indexMapping)
 
 	kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every").
 		OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").DurationVar(&c.FlushInterval)
@@ -124,10 +124,13 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) (*Config, er
 		return nil, err
 	}
 
-	if len(c.IndexMapping.Mappings) > 0 {
-		// We will need app info for org/space/app lookup
-		c.AddAppInfo = true
+	// If index routing needs app metadata, we first populate the app meta data
+	// and then remove them
+	needsAppInfo := c.IndexMapping.NeedsAppInfo(c.AddAppInfo)
+	if needsAppInfo && !c.AddAppInfo {
+		c.AddAppInfo = needsAppInfo
 	}
+
 	return c, nil
 }
 
@@ -142,17 +145,14 @@ func (c *Config) parseExtraFields(extraFields string) error {
 }
 
 func (c *Config) parseIndexMapping(indexMapping string) error {
-	if indexMapping == "" {
-		return errors.New("Index mapping is required")
-	}
-
 	var mapConfig drain.IndexMapConfig
-	err := json.Unmarshal([]byte(indexMapping), &mapConfig)
-	if err != nil {
-		return err
+	if indexMapping == "" {
+		// Use the default
+		c.IndexMapping = &mapConfig
+		return nil
 	}
 
-	if err := mapConfig.Validate(); err != nil {
+	if err := json.Unmarshal([]byte(indexMapping), &mapConfig); err != nil {
 		return err
 	}
 

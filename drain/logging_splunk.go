@@ -18,7 +18,8 @@ type LoggingConfig struct {
 	BatchSize     int
 	Retries       int //No of retries to post events to HEC before dropping events
 
-	IndexMapping *IndexMapConfig
+	AddAppInfoOrig bool
+	IndexMapping   *IndexMapConfig
 }
 
 type LoggingSplunk struct {
@@ -66,8 +67,8 @@ func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
 		select {
 		case fields := <-l.events:
 			event := l.buildEvent(fields)
-			if event["index"] == nil {
-				// drop it on the floor
+			if idx, ok := event["index"]; ok && idx == nil {
+				// blacklist, drop it on the floor
 				continue
 			}
 
@@ -148,7 +149,7 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}) map[string]int
 
 	event["host"] = fields["ip"]
 	event["source"] = fields["job"]
-	event["index"] = l.indexRouting.LookupIndex(fields)
+	l.lookupIndex(fields, event)
 
 	eventType := strings.ToLower(fields["event_type"].(string))
 	event["sourcetype"] = fmt.Sprintf("cf:%s", eventType)
@@ -156,6 +157,16 @@ func (l *LoggingSplunk) buildEvent(fields map[string]interface{}) map[string]int
 	event["event"] = fields
 
 	return event
+}
+
+func (l *LoggingSplunk) lookupIndex(fields, event map[string]interface{}) {
+	index := l.indexRouting.LookupIndex(fields)
+
+	// If index is "", we can't set empty index due to HEC will
+	// disard events with index=""
+	if index != nil && *index != "" || index == nil {
+		event["index"] = index
+	}
 }
 
 func (l *LoggingSplunk) nanoSecondsToSeconds(nanoseconds int64) string {

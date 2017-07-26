@@ -15,13 +15,12 @@ import (
 var _ = Describe("Config", func() {
 
 	var (
-		version         = "1.0"
-		branch          = "develop"
-		commit          = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
-		buildos         = "Linux"
-		mapping         = `{"default_index":"otherindex","mappings":{"cf_org_name":[{"value":"cf_org_name.*","index":"cf_org_name_idx"}],"cf_space_name":[{"value":"cf_space_name.*","index":"cf_space_name_idx"}],"cf_app_name":[{"value":"cf_app_name.*","index":"cf_app_name_idx"}]}}`
-		invalidMapping  = `{"default_index":"otherindex","mappings":{"cf_org_name":[{"value":"cf_org_name.*","index":"cf_org_name_idx"}],"cf_space_name":[{"value":"cf_space_name.*","index":"cf_space_name_idx"}],"cf_app_name":[{"value":"cf_app_name.*","index":"cf_app_name_idx"}]}}]`
-		invalidMapping2 = `{"default_index":"","mappings":nil}`
+		version        = "1.0"
+		branch         = "develop"
+		commit         = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
+		buildos        = "Linux"
+		mapping        = `{"default_index":"otherindex","mappings":[{"by":"cf_org_id","value":"cf_org_id_test","index":"cf_org_id_idx"},{"by":"cf_space_id","value":"cf_space_id_test","index":"cf_space_id_idx"},{"by": "cf_app_id","value":"cf_app_id_test","index":"cf_app_id_idx"}]}`
+		invalidMapping = `{"default_index":"main","mappings":[{"by":"cf_org_id","value": "testing", "index": null}]}}`
 	)
 
 	verifyIndexMapping := func(indexMapping *drain.IndexMapConfig) {
@@ -30,14 +29,11 @@ var _ = Describe("Config", func() {
 		Expect(indexMapping.Mappings).ShouldNot(Equal(nil))
 		Expect(len(indexMapping.Mappings)).To(Equal(3))
 
-		names := []string{drain.CF_ORG_NAME, drain.CF_SPACE_NAME, drain.CF_APP_NAME}
-		for _, byName := range names {
-			idxMaps, ok := indexMapping.Mappings[byName]
-			Expect(ok).To(Equal(true))
-			Expect(len(idxMaps)).To(Equal(1))
-			Expect(idxMaps[0]).ShouldNot(Equal(nil))
-			Expect(*idxMaps[0].Index).To(Equal(byName + "_idx"))
-			Expect(idxMaps[0].Value).To(Equal(byName + ".*"))
+		byIDs := []string{drain.CF_ORG_ID, drain.CF_SPACE_ID, drain.CF_APP_ID}
+		for i, idxMap := range indexMapping.Mappings {
+			Expect(idxMap.By).To(Equal(byIDs[i]))
+			Expect(idxMap.Value).To(Equal(byIDs[i] + "_test"))
+			Expect(*idxMap.Index).To(Equal(byIDs[i] + "_idx"))
 		}
 	}
 
@@ -133,12 +129,6 @@ var _ = Describe("Config", func() {
 
 		It("Invalid index mapping with invliad json", func() {
 			os.Setenv("SPLUNK_INDEX_MAPPING", invalidMapping)
-			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
-			Ω(err).Should(HaveOccurred())
-		})
-
-		It("Invalid index mapping with not configuring index ", func() {
-			os.Setenv("SPLUNK_INDEX_MAPPING", invalidMapping2)
 			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
 			Ω(err).Should(HaveOccurred())
 		})

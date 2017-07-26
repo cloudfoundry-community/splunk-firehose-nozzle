@@ -20,7 +20,7 @@ updatedeps:
 initdeps:
 	glide --debug create
 
-# -gcflags -N -l for debug
+# -gcflags "-N -l" for debug
 # -ldflags -w for prod
 #
 #
