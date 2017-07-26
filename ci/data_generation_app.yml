@@ -1,4 +1,5 @@
-pplications:
+---
+applications:
   - name: spl-data-gen
     memory: 128M
     instances: 2
@@ -6,4 +7,3 @@ pplications:
     path: ci/data-generation-app
     env:
       GOPACKAGENAME: main
-
