@@ -17,7 +17,6 @@ import (
 	"github.com/cloudfoundry/noaa/consumer"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
-	"time"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -59,14 +58,12 @@ func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 // appCache creates inmemory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) (caching.Caching, error) {
 	if s.config.AddAppInfo {
-		// FIXME: IgnoreMissingApps, MissingAppsTTL, CacheInvalidateTTL - need good values and need to put into config struct
-		confObj := caching.CachingBoltConfig{
+		c := caching.CachingBoltConfig{
 			Path:               s.config.BoltDBPath,
-			IgnoreMissingApps:  true,
-			MissingAppsTTL:     time.Hour,
-			CacheInvalidateTTL: time.Hour * 12,
+			IgnoreMissingApps:  s.config.IgnoreMissingApps,
+			CacheInvalidateTTL: s.config.CacheInvalidateTTL,
 		}
-		return caching.NewCachingBolt(cfClient, &confObj)
+		return caching.NewCachingBolt(cfClient, &c)
 	}
 
 	return caching.NewCachingEmpty(), nil
@@ -136,10 +133,15 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 
 	params := lager.Data{
-		"version":        s.config.Version,
-		"branch":         s.config.Branch,
-		"commit":         s.config.Commit,
-		"buildos":        s.config.BuildOS,
+		"version": s.config.Version,
+		"branch":  s.config.Branch,
+		"commit":  s.config.Commit,
+		"buildos": s.config.BuildOS,
+
+		"add-app-info":             s.config.AddAppInfo,
+		"ignore-missing-app":       s.config.IgnoreMissingApps,
+		"app-cache-invalidate-ttl": s.config.CacheInvalidateTTL,
+
 		"flush-interval": s.config.FlushInterval,
 		"queue-size":     s.config.QueueSize,
 		"batch-size":     s.config.BatchSize,
