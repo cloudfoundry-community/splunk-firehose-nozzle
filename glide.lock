@@ -17,15 +17,6 @@ imports:
   version: 6b4e7dc5e3143b85ea77909c72caf89416fc2915
 - name: github.com/boltdb/bolt
   version: 4d30731e9122988d2012a9574c43f80f054a0d3b
-- name: github.com/cloudfoundry-community/firehose-to-syslog
-  version: 1ad354225cd7cc0d6b5b07335308fcf3f8869c94
-  subpackages:
-  - caching
-  - eventRouting
-  - events
-  - extrafields
-  - logging
-  - utils
 - name: github.com/cloudfoundry-community/go-cfclient
   version: c783aa0efe78706e9d98ffc4a84f0d42cd322ac8
 - name: github.com/cloudfoundry-incubator/uaago

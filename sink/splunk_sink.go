@@ -2,7 +2,7 @@ package sink
 
 import (
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"net"
 	"os"

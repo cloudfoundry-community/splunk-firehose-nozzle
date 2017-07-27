@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
@@ -35,7 +35,7 @@ var _ = Describe("LoggingSplunk", func() {
 		event      map[string]interface{}
 		logger     lager.Logger
 		mockClient *testing.MockSplunkClient
-		routing    *eventRouting.EventRouting
+		routing    eventRouting.EventRouting
 	)
 
 	BeforeEach(func() {
@@ -56,7 +56,7 @@ var _ = Describe("LoggingSplunk", func() {
 		//using routing to serialize envelope
 		loggingMemory = drain.NewLoggingMemory()
 		routing = eventRouting.NewEventRouting(caching.NewCachingEmpty(), loggingMemory)
-		routing.SetupEventRouting("HttpStartStop,LogMessage,ValueMetric,CounterEvent,ContainerMetric,Error")
+		routing.SetupEventRouting("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric")
 
 		mockClient = &testing.MockSplunkClient{}
 

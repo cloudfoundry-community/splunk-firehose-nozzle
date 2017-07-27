@@ -1,7 +1,7 @@
 package firehoseclient
 
 import (
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
 )
