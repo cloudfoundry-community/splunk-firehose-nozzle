@@ -18,8 +18,8 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 
 ### Setup
 
-The Nozzle requires a user with the scope `doppler.firehose` and 
-`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). 
+The Nozzle requires a user with the scope `doppler.firehose` and
+`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true).
 You can either
 * Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
 * Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
@@ -42,7 +42,7 @@ uaac -t member add cloud_controller.admin_read_only splunk-nozzle
 uaac -t member add doppler.firehose splunk-nozzle
 ```
 
-`cloud_controller.admin_read_only` will work for cf v241 
+`cloud_controller.admin_read_only` will work for cf v241
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
@@ -50,70 +50,70 @@ or later. Earlier versions should use `cloud_controller.admin` instead.
 
 Cloud Foundry configuration parameters:
 
-DEBUG - 
+DEBUG -
 Enable debug mode (forward to standard out instead of Splunk).
 
-SKIP_SSL_VALIDATION - 
+SKIP_SSL_VALIDATION -
 Skip cert validation (for dev environments).
 
-JOB_NAME - 
+JOB_NAME -
 Job name to tag nozzle's own log events with.
 
-JOB_INDEX - 
+JOB_INDEX -
 Job index to tag nozzle's own log events with.
 
-JOB_HOST - 
+JOB_HOST -
 Job host to tag nozzle's own log events with.
 
-ADD_APP_INFO - 
+ADD_APP_INFO -
 Query API to fetch app details.
 
-API_ENDPOINT - 
+API_ENDPOINT -
 Cloud Foundry API endpoint address.
 
-API_USER - 
+API_USER -
 Cloud Foundry user name. (Must have scope described above)
 
-API_PASSWORD - 
+API_PASSWORD -
 Cloud Foundry user password.
 
-BOLTDB_PATH - 
+BOLTDB_PATH -
 Bolt Database path.
 
-EVENTS - 
+EVENTS -
 Comma separated list of events to include.
 possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 
-EXTRA_FIELDS - 
-Extra fields you want to annotate your events with (format is key:value,key:value). 
+EXTRA_FIELDS -
+Extra fields you want to annotate your events with (format is key:value,key:value).
 
-FIREHOSE_KEEP_ALIVE - 
+FIREHOSE_KEEP_ALIVE -
 Keep Alive duration for the firehose consumer.
-    
-FIREHOSE_SUBSCRIPTION_ID - 
+
+FIREHOSE_SUBSCRIPTION_ID -
 Id for the firehose subscription.
 
 Splunk configuration parameters:
 
-SPLUNK_TOKEN - 
+SPLUNK_TOKEN -
 [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
 
-SPLUNK_HOST - 
+SPLUNK_HOST -
 Splunk HTTP event collector host.
 example: https://example.cloud.splunk.com:8088
 
-SPLUNK_INDEX - 
-The Splunk index events will be sent to. 
+SPLUNK_INDEX -
+The Splunk index events will be sent to.
 Warning: Setting an invalid index will cause events to be lost.
 
-FLUSH_INTERVAL - 
+FLUSH_INTERVAL -
 Set the interval for flushing to the heavy forwarder.
 
-CONSUMER_QUEUE_SIZE - 
-Set the internal consumer queue buffer size. 
+CONSUMER_QUEUE_SIZE -
+Set the internal consumer queue buffer size.
 
-HEC_BATCH_SIZE - 
-Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). 
+HEC_BATCH_SIZE -
+Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 
 ### Development
 
@@ -189,14 +189,14 @@ Cloud Foundry as an application. See the **Setup** section for details
 on making a user and credentials.
 
 1. Download the latest release
-    
+
     ```shell
     git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git
     cd splunk-firehose-nozzle
     ```
-    
+
 1. Authenticate to Cloud Foundruy
-    
+
     ```shell
     cf login -a https://api.[your cf system domain] -u [your id]
     ```
@@ -204,7 +204,7 @@ on making a user and credentials.
 1. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    cp manifest.yml.template manifest.yml 
+    cp manifest.yml.template manifest.yml
     vim manifest.yml
     ```
 
@@ -213,6 +213,26 @@ on making a user and credentials.
     ```shell
     cf push
     ```
+
+#### Dump app info to boltdb ####
+If in production, there are lots of PCF applications say tens of thounsands and if user would like to enrich appliation log by using application meta data,
+for example, add app name, space ID, space name, org ID, org name to the events, querying all application metadata information from PCF may take lots of time.
+If there are multiple instances of Spunk nozzle deployed, the situation will be even worse since each of Splunk nozzle will query all applications meta data and
+cache the meta data information to a local file (boltdb file). These querys will introduce load to PCF system and also probably take a long time to finish.
+The scripts/dump_app_info.go is a tool which is used to mitegate this problem. User can run this tool to generate a copy of all application meta data and copy
+to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
+
+To run this tool, user can do
+
+```
+$ cd scripts
+$ go build dump_app_info.go
+$ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoint> --user=<api endpoint login username> --password=<api endpoint login password>
+```
+
+After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
+specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
+
 
 #### Troubleshooting
 In most cases, you would only need to troubleshoot from Splunk which include not only firehose data but also this nozzle internal logs. However, if the nozzle is still not forwarding any data, a good place to start is to get app internal logs directly:
