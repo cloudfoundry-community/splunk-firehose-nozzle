@@ -4,6 +4,7 @@ nozzle.sh
 
 scripts/*
 !scripts/*.template
+!scripts/*.go
 
 cache.db
 
