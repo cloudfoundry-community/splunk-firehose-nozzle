@@ -52,8 +52,18 @@ func main() {
 		fmt.Printf("failed to open boltdb caching, error=%+v\n", err)
 		os.Exit(1)
 	}
-	defer bolt.Close()
+
+	err = bolt.Close()
+	if err != nil {
+		fmt.Printf("failed to populate boltdb caching, error=%+v\n", err)
+		os.Exit(1)
+	}
 
 	end := time.Now().Unix()
-	fmt.Printf("Finish populating boltdb=%s with app info, took=%d seconds\n", *boltdbPath, end-start)
+	apps, err := bolt.GetAllApps()
+	if err != nil {
+		fmt.Printf("failed to get apps from boltdb caching, error=%+v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Finish populating boltdb=%s with %d app info, took=%d seconds\n", *boltdbPath, len(apps), end-start)
 }
