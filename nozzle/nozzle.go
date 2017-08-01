@@ -3,6 +3,8 @@ package splunknozzle
 import (
 	"crypto/tls"
 	"fmt"
+	"os"
+	"os/signal"
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -99,7 +101,7 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 	}
 
 	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
-	if !splunkLog.Connect() {
+	if err := splunkLog.Connect(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
 	return splunkLog, nil
@@ -116,8 +118,10 @@ func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *con
 }
 
 // firehoseClient creates FirehoseNozzle object which glues the event source and event sink
-func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events eventRouting.EventRouting) *firehoseclient.FirehoseNozzle {
+func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events eventRouting.EventRouting, logger lager.Logger) *firehoseclient.FirehoseNozzle {
 	firehoseConfig := &firehoseclient.FirehoseConfig{
+		Logger: logger,
+
 		FirehoseSubscriptionID: s.config.SubscriptionID,
 	}
 
@@ -165,15 +169,28 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 	defer appCache.Close()
 
-	events, err := s.eventRouting(appCache, logClient)
+	eventRouter, err := s.eventRouting(appCache, logClient)
 	if err != nil {
 		return err
 	}
 
 	c := s.firehoseConsumer(pcfClient)
-	firehoseClient := s.firehoseClient(c, events)
-	if err := firehoseClient.Start(); err != nil {
-		return err
-	}
-	return nil
+	firehoseClient := s.firehoseClient(c, eventRouter, logger)
+
+	shutdown := make(chan os.Signal, 2)
+	signal.Notify(shutdown, os.Interrupt)
+
+	go func() {
+		err := firehoseClient.Start()
+		if err != nil {
+			logger.Error("Firehose consumer exist with error", err)
+		}
+		shutdown <- os.Interrupt
+	}()
+
+	<-shutdown
+
+	logger.Info("Splunk Nozzle is going to exit gracefuly")
+	firehoseClient.Close()
+	return logClient.Close()
 }

@@ -3,6 +3,8 @@ package firehoseclient_test
 import (
 	"time"
 
+	"code.cloudfoundry.org/lager"
+
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
@@ -26,6 +28,8 @@ var _ = Describe("Firehoseclient", func() {
 			eventRouter = testing.NewMockEventRouter()
 			config := &FirehoseConfig{
 				FirehoseSubscriptionID: "splunk-subcription-id",
+
+				Logger: lager.NewLogger("test"),
 			}
 			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
 		})
@@ -48,6 +52,8 @@ var _ = Describe("Firehoseclient", func() {
 			eventRouter = testing.NewMockEventRouter()
 			config := &FirehoseConfig{
 				FirehoseSubscriptionID: "splunk-subcription-id",
+
+				Logger: lager.NewLogger("test"),
 			}
 			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
 		}
@@ -62,6 +68,7 @@ var _ = Describe("Firehoseclient", func() {
 			}()
 
 			time.Sleep(time.Second)
+			nozzle.Close()
 
 			err := <-done
 			ce := err.(*websocket.CloseError)

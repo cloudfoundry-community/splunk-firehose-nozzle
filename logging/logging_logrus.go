@@ -27,9 +27,7 @@ func NewLogging(SyslogServerFlag string, SysLogProtocolFlag string, LogFormatter
 	}
 }
 
-func (l *LoggingLogrus) Connect() bool {
-
-	success := false
+func (l *LoggingLogrus) Connect() error {
 	l.Logger.Formatter = GetLogFormatter(l.logFormatterType)
 
 	if !l.debugFlag {
@@ -38,11 +36,16 @@ func (l *LoggingLogrus) Connect() bool {
 		l.Logger.Out = os.Stdout
 	}
 
-	return success
+	return nil
 }
 
-func (l *LoggingLogrus) ShipEvents(eventFields map[string]interface{}, Message string) {
+func (l *LoggingLogrus) Close() error {
+	return nil
+}
+
+func (l *LoggingLogrus) ShipEvents(eventFields map[string]interface{}, Message string) error {
 	l.Logger.WithFields(eventFields).Info(Message)
+	return nil
 }
 
 func GetLogFormatter(logFormatterType string) logrus.Formatter {
