@@ -190,7 +190,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 
 	<-shutdown
 
-	logger.Info("Splunk Nozzle is going to exit gracefuly")
+	logger.Info("Splunk Nozzle is going to exit gracefully")
 	firehoseClient.Close()
 	return logClient.Close()
 }
