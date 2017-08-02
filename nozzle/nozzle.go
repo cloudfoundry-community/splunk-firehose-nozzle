@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -178,7 +179,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	firehoseClient := s.firehoseClient(c, eventRouter, logger)
 
 	shutdown := make(chan os.Signal, 2)
-	signal.Notify(shutdown, os.Interrupt)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		err := firehoseClient.Start()
