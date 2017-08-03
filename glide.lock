@@ -1,5 +1,5 @@
-hash: b73f9c70d8ed16c246af32b7e66fc6306474625614525e21ca355fe7d6b4891c
-updated: 2016-11-02T08:56:04.177492413-07:00
+hash: d7f08c29071249b8d7e8aefbf8edb471ad8dd236599c784787c35c06c9d55747
+updated: 2017-08-04T07:49:42.480285984+08:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -18,7 +18,7 @@ imports:
 - name: github.com/boltdb/bolt
   version: 4d30731e9122988d2012a9574c43f80f054a0d3b
 - name: github.com/cloudfoundry-community/go-cfclient
-  version: c783aa0efe78706e9d98ffc4a84f0d42cd322ac8
+  version: 8035404db0b663d6ea9aee965dbd28c016bd250a
 - name: github.com/cloudfoundry-incubator/uaago
   version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
@@ -51,10 +51,10 @@ imports:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/Sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
-  subpackages:
-  - hooks/syslog
 - name: golang.org/x/net
   version: 7dbad50ab5b31073856416cdcfeb2796d682f844
   subpackages:
@@ -62,6 +62,7 @@ imports:
 - name: golang.org/x/oauth2
   version: 2baa8a1b9338cf13d9eeb27696d761155fa480be
   subpackages:
+  - clientcredentials
   - internal
 - name: golang.org/x/sys
   version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
