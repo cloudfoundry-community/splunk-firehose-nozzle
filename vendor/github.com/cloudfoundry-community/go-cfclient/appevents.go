@@ -2,9 +2,10 @@ package cfclient
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -24,6 +25,12 @@ const (
 	AppSSHAuth = "audit.app.ssh-authorized"
 	//AppSSHUnauth audit.app.ssh-unauthorized event const
 	AppSSHUnauth = "audit.app.ssh-unauthorized"
+	//AppRestage audit.app.restage event const
+	AppRestage = "audit.app.restage"
+	//AppMapRoute audit.app.map-route event const
+	AppMapRoute = "audit.app.map-route"
+	//AppUnmapRoute audit.app.unmap-route event const
+	AppUnmapRoute = "audit.app.unmap-route"
 	//FilterTimestamp const for query filter timestamp
 	FilterTimestamp = "timestamp"
 	//FilterActee const for query filter actee
@@ -74,6 +81,11 @@ type AppEventEntity struct {
 	//Timestamp format "2016-02-26T13:29:44Z". The event creation time.
 	Timestamp time.Time `json:"timestamp"`
 	MetaData  struct {
+		//app.crash event fields
+		ExitDescription string `json:"exit_description,omitempty"`
+		ExitReason      string `json:"reason,omitempty"`
+		ExitStatus      string `json:"exit_status,omitempty"`
+
 		Request struct {
 			Name              string  `json:"name,omitempty"`
 			Instances         float64 `json:"instances,omitempty"`
@@ -89,10 +101,7 @@ type AppEventEntity struct {
 			HealthcheckTimeout float64 `json:"health_check_timeout,omitempty"`
 			Production         bool    `json:"production,omitempty"`
 			//app.crash event fields
-			Index           float64 `json:"index,omitempty"`
-			ExitStatus      string  `json:"exit_status,omitempty"`
-			ExitDescription string  `json:"exit_description,omitempty"`
-			ExitReason      string  `json:"reason,omitempty"`
+			Index float64 `json:"index,omitempty"`
 		} `json:"request"`
 	} `json:"metadata"`
 }
@@ -104,9 +113,11 @@ func (c *Client) ListAppEvents(eventType string) ([]AppEventEntity, error) {
 
 // ListAppEventsByQuery returns all app events based on eventType and queries
 func (c *Client) ListAppEventsByQuery(eventType string, queries []AppEventQuery) ([]AppEventEntity, error) {
+	var events []AppEventEntity
 
 	if eventType != AppCrash && eventType != AppStart && eventType != AppStop && eventType != AppUpdate && eventType != AppCreate &&
-		eventType != AppDelete && eventType != AppSSHAuth && eventType != AppSSHUnauth {
+		eventType != AppDelete && eventType != AppSSHAuth && eventType != AppSSHUnauth && eventType != AppRestage &&
+		eventType != AppMapRoute && eventType != AppUnmapRoute {
 		return nil, errors.New("Unsupported app event type " + eventType)
 	}
 
@@ -124,33 +135,41 @@ func (c *Client) ListAppEventsByQuery(eventType string, queries []AppEventQuery)
 		}
 	}
 
-	requ := c.NewRequest("GET", query)
-
-	resp, err := c.DoRequest(requ)
-	if err != nil {
-		return nil, err
+	for {
+		eventResponse, err := c.getAppEventsResponse(query)
+		if err != nil {
+			return []AppEventEntity{}, err
+		}
+		for _, event := range eventResponse.Resources {
+			events = append(events, event.Entity)
+		}
+		query = eventResponse.NextURL
+		if query == "" {
+			break
+		}
 	}
 
-	resBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode >= 400 {
-		return nil, errors.New(string(resBody[:]))
-	}
+	return events, nil
+}
 
+func (c *Client) getAppEventsResponse(query string) (AppEventResponse, error) {
 	var eventResponse AppEventResponse
+	r := c.NewRequest("GET", query)
+	resp, err := c.DoRequest(r)
+	if err != nil {
+		return AppEventResponse{}, errors.Wrap(err, "Error requesting appevents")
+	}
+	resBody, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return AppEventResponse{}, errors.Wrap(err, "Error reading appevents response body")
+	}
+
 	err = json.Unmarshal(resBody, &eventResponse)
 	if err != nil {
-		return nil, err
+		return AppEventResponse{}, errors.Wrap(err, "Error unmarshalling appevent")
 	}
-
-	eventsLen := len(eventResponse.Resources)
-	events := make([]AppEventEntity, eventsLen)
-	for i := 0; i < eventsLen; i++ {
-		events[i] = eventResponse.Resources[i].Entity
-	}
-	return events, nil
+	return eventResponse, nil
 }
 
 func stringInSlice(str string, list []string) bool {
