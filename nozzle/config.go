@@ -27,7 +27,8 @@ type Config struct {
 
 	AddAppInfo         bool
 	IgnoreMissingApps  bool
-	CacheInvalidateTTL time.Duration
+	MissingAppCacheTTL time.Duration
+	AppCacheTTL        time.Duration
 
 	BoltDBPath   string
 	WantedEvents string
@@ -71,8 +72,11 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
 	kingpin.Flag("ignore-missing-app", "If app is missing, if stop repeatly querying app info from PCF").
 		OverrideDefaultFromEnvar("IGNORE-MISSING-APP").Default("true").BoolVar(&c.IgnoreMissingApps)
+	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
+		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
+
 	kingpin.Flag("app-cache-invalidate-ttl", "How frequently the app info local cache invalidates").
-		OverrideDefaultFromEnvar("APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.CacheInvalidateTTL)
+		OverrideDefaultFromEnvar("APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.AppCacheTTL)
 
 	kingpin.Flag("api-endpoint", "API endpoint address").
 		OverrideDefaultFromEnvar("API_ENDPOINT").Required().StringVar(&c.ApiEndpoint)

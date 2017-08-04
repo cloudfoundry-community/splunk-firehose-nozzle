@@ -16,10 +16,15 @@ const (
 	APP_BUCKET = "AppBucket"
 )
 
+var (
+	MissingAndIgnoredErr = errors.New("App was missed and ignored")
+)
+
 type CachingBoltConfig struct {
 	Path               string
 	IgnoreMissingApps  bool
-	CacheInvalidateTTL time.Duration
+	MissingAppCacheTTL time.Duration
+	AppCacheTTL        time.Duration
 }
 
 type CachingBolt struct {
@@ -59,8 +64,12 @@ func (c *CachingBolt) Open() error {
 		return err
 	}
 
-	if c.config.CacheInvalidateTTL != time.Duration(0) {
+	if c.config.AppCacheTTL != time.Duration(0) {
 		c.invalidateCache()
+	}
+
+	if c.config.MissingAppCacheTTL != time.Duration(0) {
+		c.invalidateMissingAppCache()
 	}
 
 	return c.populateCache()
@@ -157,7 +166,7 @@ func (c *CachingBolt) getAppFromCache(appGuid string) (*App, error) {
 	if c.config.IgnoreMissingApps && alreadyMissed {
 		// already missed
 		c.lock.RUnlock()
-		return nil, errors.New("App was missed and ignored")
+		return nil, MissingAndIgnoredErr
 	}
 	c.lock.RUnlock()
 
@@ -220,10 +229,11 @@ func (c *CachingBolt) createBucket() error {
 	})
 }
 
-// invalidateCache perodically fetches a full copy apps info from remote
-// and update boltdb and in-memory cache
-func (c *CachingBolt) invalidateCache() {
-	ticker := time.NewTicker(c.config.CacheInvalidateTTL)
+// invalidateMissingAppCache perodically cleanup inmemory house keeping for
+// not found apps. When the this cache is cleaned up, end clients have chance
+// to retry missing apps
+func (c *CachingBolt) invalidateMissingAppCache() {
+	ticker := time.NewTicker(c.config.MissingAppCacheTTL)
 
 	c.wg.Add(1)
 	go func() {
@@ -232,7 +242,28 @@ func (c *CachingBolt) invalidateCache() {
 		for {
 			select {
 			case <-ticker.C:
-				// continue
+				c.lock.Lock()
+				c.missingApps = make(map[string]struct{})
+				c.lock.Unlock()
+			case <-c.closing:
+				return
+			}
+		}
+	}()
+}
+
+// invalidateCache perodically fetches a full copy apps info from remote
+// and update boltdb and in-memory cache
+func (c *CachingBolt) invalidateCache() {
+	ticker := time.NewTicker(c.config.AppCacheTTL)
+
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+
+		for {
+			select {
+			case <-ticker.C:
 				apps, err := c.getAllAppsFromRemote()
 				if err == nil {
 					c.lock.Lock()

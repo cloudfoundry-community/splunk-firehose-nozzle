@@ -61,7 +61,8 @@ func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) (caching.Cach
 		c := caching.CachingBoltConfig{
 			Path:               s.config.BoltDBPath,
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
-			CacheInvalidateTTL: s.config.CacheInvalidateTTL,
+			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
+			AppCacheTTL:        s.config.AppCacheTTL,
 		}
 		return caching.NewCachingBolt(cfClient, &c)
 	}
@@ -140,7 +141,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 
 		"add-app-info":             s.config.AddAppInfo,
 		"ignore-missing-app":       s.config.IgnoreMissingApps,
-		"app-cache-invalidate-ttl": s.config.CacheInvalidateTTL,
+		"app-cache-invalidate-ttl": s.config.AppCacheTTL,
 
 		"flush-interval": s.config.FlushInterval,
 		"queue-size":     s.config.QueueSize,

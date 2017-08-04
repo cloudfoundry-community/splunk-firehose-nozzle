@@ -103,7 +103,8 @@ var _ = Describe("Caching", func() {
 	var (
 		boltdbPath         = "/tmp/boltdb"
 		ignoreMissingApps  = true
-		cacheInvalidateTTL = 3 * time.Second
+		appCacheTTL        = 3 * time.Second
+		missingAppCacheTTL = 4 * time.Second
 		n                  = 10
 
 		nilApp *App = nil
@@ -111,7 +112,8 @@ var _ = Describe("Caching", func() {
 		config = &CachingBoltConfig{
 			Path:               boltdbPath,
 			IgnoreMissingApps:  ignoreMissingApps,
-			CacheInvalidateTTL: cacheInvalidateTTL,
+			AppCacheTTL:        appCacheTTL,
+			MissingAppCacheTTL: missingAppCacheTTL,
 		}
 
 		client *mockAppClient = nil
@@ -168,6 +170,17 @@ var _ = Describe("Caching", func() {
 			// recorded the missing app, so nil, err is expected to return
 			app, err = cache.GetApp(guid)
 			Ω(err).Should(HaveOccurred())
+			Expect(err).To(Equal(MissingAndIgnoredErr))
+			Expect(app).To(Equal(nilApp))
+
+			time.Sleep(missingAppCacheTTL + 1)
+
+			// We ignore missing apps, so for the 3rd time query after sleep,
+			// the missing app cache will be cleaned up, so a not found error
+			// will be returned instead of MissingAndIgnoredErr
+			app, err = cache.GetApp(guid)
+			Ω(err).Should(HaveOccurred())
+			Expect(err).NotTo(Equal(MissingAndIgnoredErr))
 			Expect(app).To(Equal(nilApp))
 		})
 	})
@@ -177,9 +190,9 @@ var _ = Describe("Caching", func() {
 			id := fmt.Sprintf("id_%d", time.Now().UnixNano())
 			client.CreateApp(id, id, id)
 
-			// Sleep for CacheInvalidateTTL interval to make sure the cache
+			// Sleep for AppCacheTTL interval to make sure the cache
 			// invalidation happens
-			time.Sleep(cacheInvalidateTTL + 1)
+			time.Sleep(appCacheTTL + 1)
 
 			app, err := cache.GetApp(id)
 			Ω(err).ShouldNot(HaveOccurred())
