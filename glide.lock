@@ -18,7 +18,7 @@ imports:
 - name: github.com/boltdb/bolt
   version: 4d30731e9122988d2012a9574c43f80f054a0d3b
 - name: github.com/cloudfoundry-community/go-cfclient
-  version: 8035404db0b663d6ea9aee965dbd28c016bd250a
+  version: b6617d735773c2a44829cd9f5eeaae3fae1d4645
 - name: github.com/cloudfoundry-incubator/uaago
   version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
