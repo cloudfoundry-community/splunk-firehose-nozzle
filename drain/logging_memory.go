@@ -12,7 +12,7 @@ func NewLoggingMemory() *LoggingMemory {
 	}
 }
 
-func (l *LoggingMemory) Connect() error {
+func (l *LoggingMemory) Open() error {
 	return nil
 }
 
@@ -20,7 +20,7 @@ func (l *LoggingMemory) Close() error {
 	return nil
 }
 
-func (l *LoggingMemory) ShipEvents(fields map[string]interface{}, msg string) error {
+func (l *LoggingMemory) Log(fields map[string]interface{}, msg string) error {
 	l.Events = append(l.Events, fields)
 	l.Messages = append(l.Messages, msg)
 	return nil

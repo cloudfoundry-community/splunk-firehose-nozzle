@@ -1,7 +1,7 @@
 package eventrouter_test
 
 import (
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/caching/cachingfakes"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache/cachefakes"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/logging/loggingfakes"
 	. "github.com/cloudfoundry/sonde-go/events"
@@ -15,7 +15,7 @@ var _ = Describe("Events", func() {
 
 	BeforeEach(func() {
 		logging := new(FakeLogging)
-		caching := new(FakeCaching)
+		caching := new(FakeCache)
 		r = New(caching, logging)
 		r.Setup("")
 

@@ -1,8 +1,8 @@
 package events_test
 
 import (
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/caching/cachingfakes"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache/cachefakes"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
@@ -10,11 +10,11 @@ import (
 )
 
 var _ = Describe("Events", func() {
-	var caching *FakeCaching
+	var fcache *FakeCache
 	var event *fevents.Event
 	var msg *Envelope
 	BeforeEach(func() {
-		caching = new(FakeCaching)
+		fcache = new(FakeCache)
 		msg = CreateLogMessage()
 		event = fevents.LogMessage(msg)
 		event.AnnotateWithEnveloppeData(msg)
@@ -44,7 +44,7 @@ var _ = Describe("Events", func() {
 
 	Context("given Application Metadata", func() {
 		It("Should give us the right Application metadata", func() {
-			caching.GetAppStub = func(appid string) (*App, error) {
+			fcache.GetAppStub = func(appid string) (*App, error) {
 				Expect(appid).To(Equal("eea38ba5-53a5-4173-9617-b442d35ec2fd"))
 				return &App{
 					Name:       "App-Name",
@@ -56,7 +56,7 @@ var _ = Describe("Events", func() {
 					IgnoredApp: true,
 				}, nil
 			}
-			event.AnnotateWithAppData(caching)
+			event.AnnotateWithAppData(fcache)
 			Expect(event.Fields["cf_app_name"]).To(Equal("App-Name"))
 			Expect(event.Fields["cf_space_id"]).To(Equal("Space-Guid"))
 			Expect(event.Fields["cf_space_name"]).To(Equal("Space-Name"))

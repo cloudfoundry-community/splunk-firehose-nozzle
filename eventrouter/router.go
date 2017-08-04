@@ -2,14 +2,13 @@ package eventrouter
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
@@ -19,7 +18,6 @@ import (
 type Router interface {
 	Route(msg *events.Envelope) error
 	Setup(wantedEvents string) error
-	SetExtraFields(extraEventsString string)
 	SelectedEvents() map[string]bool
 	SelectedEventsCount() map[string]uint64
 	TotalCountOfSelectedEvents() uint64
@@ -45,22 +43,22 @@ func GetListAuthorizedEventEvents() (authorizedEvents string) {
 }
 
 type router struct {
-	appCache            caching.Caching
+	appCache            cache.Cache
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
+	extraFields         map[string]string
 	log                 logging.Logging
-	ExtraFields         map[string]string
 }
 
-func New(appCache caching.Caching, logging logging.Logging) Router {
+func New(appCache cache.Cache, log logging.Logging) Router {
 	return &router{
 		appCache:            appCache,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
-		log:                 logging,
+		log:                 log,
 		mutex:               &sync.Mutex{},
-		ExtraFields:         make(map[string]string),
+		extraFields:         make(map[string]string),
 	}
 }
 
@@ -90,7 +88,7 @@ func (r *router) Route(msg *events.Envelope) error {
 
 		event.AnnotateWithEnveloppeData(msg)
 
-		event.AnnotateWithMetaData(r.ExtraFields)
+		event.AnnotateWithMetaData(r.extraFields)
 		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 			event.AnnotateWithAppData(r.appCache)
 		}
@@ -100,9 +98,10 @@ func (r *router) Route(msg *events.Envelope) error {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			r.selectedEventsCount["ignored_app_message"]++
 		} else {
-			err := r.log.ShipEvents(event.Fields, event.Msg)
+			err := r.log.Log(event.Fields, event.Msg)
 			if err != nil {
-				logging.LogError("failed to ship events", err)
+				fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
+				r.log.Log(fields, "Failed to ship events")
 			}
 			r.selectedEventsCount[eventType.String()]++
 
@@ -114,29 +113,30 @@ func (r *router) Route(msg *events.Envelope) error {
 
 func (r *router) Setup(wantedEvents string) error {
 	r.selectedEvents = make(map[string]bool)
+
 	if wantedEvents == "" {
 		r.selectedEvents["LogMessage"] = true
-	} else {
-		for _, event := range strings.Split(wantedEvents, ",") {
-			if IsAuthorizedEvent(strings.TrimSpace(event)) {
-				r.selectedEvents[strings.TrimSpace(event)] = true
-				logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
-			} else {
-				return fmt.Errorf("Rejected Event Name [%s] - Valid events: %s", event, GetListAuthorizedEventEvents())
-			}
+		return nil
+	}
+
+	for _, event := range strings.Split(wantedEvents, ",") {
+		event = strings.TrimSpace(event)
+		if IsAuthorizedEvent(event) {
+			r.selectedEvents[event] = true
+		} else {
+			return fmt.Errorf("Rejected event name [%s] - Valid events: %s", event, GetListAuthorizedEventEvents())
 		}
 	}
 	return nil
 }
 
-func (r *router) SetExtraFields(extraEventsString string) {
-	// Parse extra fields from cmd call
+func (r *router) SetExtraFields(extraEventsString string) error {
 	extraFields, err := extrafields.ParseExtraFields(extraEventsString)
 	if err != nil {
-		logging.LogError("Error parsing extra fields: ", err)
-		os.Exit(1)
+		return err
 	}
-	r.ExtraFields = extraFields
+	r.extraFields = extraFields
+	return nil
 }
 
 func (r *router) TotalCountOfSelectedEvents() uint64 {
@@ -164,7 +164,7 @@ func (r *router) LogEventTotals(logTotalsTime time.Duration) {
 			startTime = time.Now()
 			event, lastCount := r.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			r.log.ShipEvents(event.Fields, event.Msg)
+			r.log.Log(event.Fields, event.Msg)
 		}
 	}()
 }

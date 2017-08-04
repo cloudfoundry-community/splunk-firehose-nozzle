@@ -1,4 +1,4 @@
-package caching_test
+package cache_test
 
 import (
 	"errors"
@@ -7,7 +7,9 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"code.cloudfoundry.org/lager"
+
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -99,7 +101,7 @@ func getApps(n int) map[string]cfclient.App {
 	return apps
 }
 
-var _ = Describe("Caching", func() {
+var _ = Describe("Cache", func() {
 	var (
 		boltdbPath         = "/tmp/boltdb"
 		ignoreMissingApps  = true
@@ -109,22 +111,23 @@ var _ = Describe("Caching", func() {
 
 		nilApp *App = nil
 
-		config = &CachingBoltConfig{
+		config = &BoltdbCacheConfig{
 			Path:               boltdbPath,
 			IgnoreMissingApps:  ignoreMissingApps,
 			AppCacheTTL:        appCacheTTL,
 			MissingAppCacheTTL: missingAppCacheTTL,
+			Logger:             lager.NewLogger("test"),
 		}
 
 		client *mockAppClient = nil
-		cache  *CachingBolt   = nil
+		cache  *BoltdbCache   = nil
 		gerr   error          = nil
 	)
 
 	BeforeEach(func() {
 		os.Remove(boltdbPath)
 		client = newMockAppClient(n)
-		cache, gerr = NewCachingBolt(client, config)
+		cache, gerr = NewBoltdbCache(client, config)
 		Ω(gerr).ShouldNot(HaveOccurred())
 
 		gerr = cache.Open()
@@ -207,11 +210,11 @@ var _ = Describe("Caching", func() {
 		})
 	})
 
-	Context("NewCachingBolt error", func() {
+	Context("NewBoltdbCache error", func() {
 		It("Expect error", func() {
 			dup := *config
 			dup.Path = fmt.Sprintf("/not-exists-%d/boltdb", time.Now().UnixNano())
-			bcache, err := NewCachingBolt(client, &dup)
+			bcache, err := NewBoltdbCache(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()
@@ -223,7 +226,7 @@ var _ = Describe("Caching", func() {
 		It("Expect 10 apps from existing boltdb", func() {
 			dup := *config
 			dup.Path = fmt.Sprintf("/tmp/%d", time.Now().UnixNano())
-			bcache, err := NewCachingBolt(client, &dup)
+			bcache, err := NewBoltdbCache(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()
@@ -234,7 +237,7 @@ var _ = Describe("Caching", func() {
 			bcache.Close()
 
 			// Load from existing db
-			bcache, err = NewCachingBolt(client, &dup)
+			bcache, err = NewBoltdbCache(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()

@@ -37,7 +37,7 @@ func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, 
 	}
 }
 
-func (l *LoggingSplunk) Connect() error {
+func (l *LoggingSplunk) Open() error {
 	for _, client := range l.clients {
 		l.wg.Add(1)
 		go l.consume(client)
@@ -53,7 +53,7 @@ func (l *LoggingSplunk) Close() error {
 	return nil
 }
 
-func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) error {
+func (l *LoggingSplunk) Log(fields map[string]interface{}, msg string) error {
 	event := l.buildEvent(fields, msg)
 	l.events <- event
 	return nil

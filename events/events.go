@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -122,12 +122,12 @@ func ContainerMetric(msg *events.Envelope) *Event {
 	}
 }
 
-func (e *Event) AnnotateWithAppData(caching caching.Caching) {
+func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 	cf_app_id := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cf_app_id)
 
 	if cf_app_id != nil && appGuid != "<nil>" && cf_app_id != "" {
-		appInfo, err := caching.GetApp(appGuid)
+		appInfo, err := appCache.GetApp(appGuid)
 		if err != nil || appInfo == nil {
 			return
 		}

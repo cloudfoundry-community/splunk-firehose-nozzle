@@ -1,4 +1,4 @@
-package caching_test
+package cache_test
 
 import (
 	. "github.com/onsi/ginkgo"

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -36,10 +36,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	config := caching.CachingBoltConfig{
+	config := cache.BoltdbCacheConfig{
 		Path: *boltdbPath,
 	}
-	bolt, err := caching.NewCachingBolt(cfClient, &config)
+	bolt, err := cache.NewBoltdbCache(cfClient, &config)
 	if err != nil {
 		fmt.Printf("failed to create boltdb caching client, error=%+v\n", err)
 		os.Exit(1)

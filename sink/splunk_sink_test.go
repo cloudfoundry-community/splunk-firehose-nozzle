@@ -23,7 +23,7 @@ var _ = Describe("LoggingSplunk", func() {
 		capturedEvents = nil
 		mockClient = &testing.MockSplunkClient{}
 
-		sink = NewSplunkSink("splunk-nozzle_z1", "0", "", mockClient)
+		sink = NewSplunkSink("splunk-nozzle_z1", "0", "localhost", mockClient)
 	})
 
 	It("posts to splunk", func() {

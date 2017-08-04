@@ -1,4 +1,4 @@
-package caching
+package cache
 
 import (
 	"regexp"
@@ -16,9 +16,9 @@ type App struct {
 	IgnoredApp bool
 }
 
-//go:generate counterfeiter . Caching
+//go:generate counterfeiter . Cache
 
-type Caching interface {
+type Cache interface {
 	Open() error
 	Close() error
 

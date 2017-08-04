@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
@@ -33,13 +33,13 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 }
 
 // eventRouter creates EventRouter object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) eventRouter(cache caching.Caching, logClient logging.Logging) (eventrouter.Router, error) {
-	events := eventrouter.New(cache, logClient)
-	err := events.Setup(s.config.WantedEvents)
+func (s *SplunkFirehoseNozzle) eventRouter(cache cache.Cache, logClient logging.Logging) (eventrouter.Router, error) {
+	r := eventrouter.New(cache, logClient)
+	err := r.Setup(s.config.WantedEvents)
 	if err != nil {
 		return nil, err
 	}
-	return events, nil
+	return r, nil
 }
 
 // pcfClient creates a client object which can talk to PCF
@@ -59,18 +59,19 @@ func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 }
 
 // appCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) (caching.Caching, error) {
+func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
-		c := caching.CachingBoltConfig{
+		c := cache.BoltdbCacheConfig{
 			Path:               s.config.BoltDBPath,
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
+			Logger:             logger,
 		}
-		return caching.NewCachingBolt(cfClient, &c)
+		return cache.NewBoltdbCache(cfClient, &c)
 	}
 
-	return caching.NewCachingEmpty(), nil
+	return cache.NewNoCache(), nil
 }
 
 // logClient creates std logging or Splunk logging
@@ -103,7 +104,7 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 	}
 
 	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
-	if err := splunkLog.Connect(); err != nil {
+	if err := splunkLog.Open(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
 	return splunkLog, nil
@@ -160,7 +161,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 		return err
 	}
 
-	appCache, err := s.appCache(pcfClient)
+	appCache, err := s.appCache(pcfClient, logger)
 	if err != nil {
 		return err
 	}

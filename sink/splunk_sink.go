@@ -1,11 +1,12 @@
 package sink
 
 import (
-	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
+	"fmt"
 	"net"
 	"os"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 )
 
 type SplunkSink struct {
@@ -17,7 +18,18 @@ type SplunkSink struct {
 }
 
 func NewSplunkSink(name string, index string, host string, splunkClient splunk.SplunkClient) *SplunkSink {
-	hostname, hostIP := GetHostInfo(host)
+	hostname, hostIP, err := GetHostIPInfo(host)
+	if err != nil {
+		event := map[string]interface{}{
+			"host":  hostname,
+			"index": index,
+			"event": fmt.Sprintf("Failed to resolve hostname and IP, error=%s", err),
+		}
+
+		events := []map[string]interface{}{event}
+		splunkClient.Post(events)
+	}
+
 	return &SplunkSink{
 		name:         name,
 		index:        index,
@@ -58,27 +70,30 @@ func (s *SplunkSink) Log(message lager.LogFormat) {
 	s.splunkClient.Post(events)
 }
 
-// get host details once to avoid costly os calls
-func GetHostInfo(host string) (string, string) {
+// GetHostIPInfo returns hostname and corresponding IP address
+// If empty host is passed in, the current hostname and IP of the host will be
+// returned. If the IP of the hostname can't be resolved, an empty IP and an
+// error will be returned
+func GetHostIPInfo(host string) (string, string, error) {
 	var hostname string
 	var err error
-	if host == "" {
+
+	hostname = host
+	if hostname == "" {
 		hostname, err = os.Hostname()
 		if err != nil {
-			logging.LogError("Unable to get host name", err)
+			return host, "", err
 		}
-	} else {
-		hostname = host
 	}
 
 	ipAddresses, err := net.LookupIP(hostname)
 	if err != nil {
-		logging.LogError("Unable to get IP from host name", err)
+		return hostname, "", err
 	}
 
 	for _, ia := range ipAddresses {
-		return hostname, ia.String()
+		return hostname, ia.String(), nil
 	}
 
-	return hostname, hostname
+	return hostname, "", nil
 }

@@ -8,13 +8,13 @@ import (
 )
 
 type FakeLogging struct {
-	ConnectStub        func() error
-	connectMutex       sync.RWMutex
-	connectArgsForCall []struct{}
-	connectReturns     struct {
+	OpenStub        func() error
+	openMutex       sync.RWMutex
+	openArgsForCall []struct{}
+	openReturns     struct {
 		result1 error
 	}
-	connectReturnsOnCall map[int]struct {
+	openReturnsOnCall map[int]struct {
 		result1 error
 	}
 	CloseStub        func() error
@@ -26,58 +26,58 @@ type FakeLogging struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ShipEventsStub        func(map[string]interface{}, string) error
-	shipEventsMutex       sync.RWMutex
-	shipEventsArgsForCall []struct {
-		arg1 map[string]interface{}
-		arg2 string
+	LogStub        func(fields map[string]interface{}, msg string) error
+	logMutex       sync.RWMutex
+	logArgsForCall []struct {
+		fields map[string]interface{}
+		msg    string
 	}
-	shipEventsReturns struct {
+	logReturns struct {
 		result1 error
 	}
-	shipEventsReturnsOnCall map[int]struct {
+	logReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeLogging) Connect() error {
-	fake.connectMutex.Lock()
-	ret, specificReturn := fake.connectReturnsOnCall[len(fake.connectArgsForCall)]
-	fake.connectArgsForCall = append(fake.connectArgsForCall, struct{}{})
-	fake.recordInvocation("Connect", []interface{}{})
-	fake.connectMutex.Unlock()
-	if fake.ConnectStub != nil {
-		return fake.ConnectStub()
+func (fake *FakeLogging) Open() error {
+	fake.openMutex.Lock()
+	ret, specificReturn := fake.openReturnsOnCall[len(fake.openArgsForCall)]
+	fake.openArgsForCall = append(fake.openArgsForCall, struct{}{})
+	fake.recordInvocation("Open", []interface{}{})
+	fake.openMutex.Unlock()
+	if fake.OpenStub != nil {
+		return fake.OpenStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.connectReturns.result1
+	return fake.openReturns.result1
 }
 
-func (fake *FakeLogging) ConnectCallCount() int {
-	fake.connectMutex.RLock()
-	defer fake.connectMutex.RUnlock()
-	return len(fake.connectArgsForCall)
+func (fake *FakeLogging) OpenCallCount() int {
+	fake.openMutex.RLock()
+	defer fake.openMutex.RUnlock()
+	return len(fake.openArgsForCall)
 }
 
-func (fake *FakeLogging) ConnectReturns(result1 error) {
-	fake.ConnectStub = nil
-	fake.connectReturns = struct {
+func (fake *FakeLogging) OpenReturns(result1 error) {
+	fake.OpenStub = nil
+	fake.openReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeLogging) ConnectReturnsOnCall(i int, result1 error) {
-	fake.ConnectStub = nil
-	if fake.connectReturnsOnCall == nil {
-		fake.connectReturnsOnCall = make(map[int]struct {
+func (fake *FakeLogging) OpenReturnsOnCall(i int, result1 error) {
+	fake.OpenStub = nil
+	if fake.openReturnsOnCall == nil {
+		fake.openReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.connectReturnsOnCall[i] = struct {
+	fake.openReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -122,51 +122,51 @@ func (fake *FakeLogging) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeLogging) ShipEvents(arg1 map[string]interface{}, arg2 string) error {
-	fake.shipEventsMutex.Lock()
-	ret, specificReturn := fake.shipEventsReturnsOnCall[len(fake.shipEventsArgsForCall)]
-	fake.shipEventsArgsForCall = append(fake.shipEventsArgsForCall, struct {
-		arg1 map[string]interface{}
-		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("ShipEvents", []interface{}{arg1, arg2})
-	fake.shipEventsMutex.Unlock()
-	if fake.ShipEventsStub != nil {
-		return fake.ShipEventsStub(arg1, arg2)
+func (fake *FakeLogging) Log(fields map[string]interface{}, msg string) error {
+	fake.logMutex.Lock()
+	ret, specificReturn := fake.logReturnsOnCall[len(fake.logArgsForCall)]
+	fake.logArgsForCall = append(fake.logArgsForCall, struct {
+		fields map[string]interface{}
+		msg    string
+	}{fields, msg})
+	fake.recordInvocation("Log", []interface{}{fields, msg})
+	fake.logMutex.Unlock()
+	if fake.LogStub != nil {
+		return fake.LogStub(fields, msg)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.shipEventsReturns.result1
+	return fake.logReturns.result1
 }
 
-func (fake *FakeLogging) ShipEventsCallCount() int {
-	fake.shipEventsMutex.RLock()
-	defer fake.shipEventsMutex.RUnlock()
-	return len(fake.shipEventsArgsForCall)
+func (fake *FakeLogging) LogCallCount() int {
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
+	return len(fake.logArgsForCall)
 }
 
-func (fake *FakeLogging) ShipEventsArgsForCall(i int) (map[string]interface{}, string) {
-	fake.shipEventsMutex.RLock()
-	defer fake.shipEventsMutex.RUnlock()
-	return fake.shipEventsArgsForCall[i].arg1, fake.shipEventsArgsForCall[i].arg2
+func (fake *FakeLogging) LogArgsForCall(i int) (map[string]interface{}, string) {
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
+	return fake.logArgsForCall[i].fields, fake.logArgsForCall[i].msg
 }
 
-func (fake *FakeLogging) ShipEventsReturns(result1 error) {
-	fake.ShipEventsStub = nil
-	fake.shipEventsReturns = struct {
+func (fake *FakeLogging) LogReturns(result1 error) {
+	fake.LogStub = nil
+	fake.logReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeLogging) ShipEventsReturnsOnCall(i int, result1 error) {
-	fake.ShipEventsStub = nil
-	if fake.shipEventsReturnsOnCall == nil {
-		fake.shipEventsReturnsOnCall = make(map[int]struct {
+func (fake *FakeLogging) LogReturnsOnCall(i int, result1 error) {
+	fake.LogStub = nil
+	if fake.logReturnsOnCall == nil {
+		fake.logReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.shipEventsReturnsOnCall[i] = struct {
+	fake.logReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -174,12 +174,12 @@ func (fake *FakeLogging) ShipEventsReturnsOnCall(i int, result1 error) {
 func (fake *FakeLogging) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.connectMutex.RLock()
-	defer fake.connectMutex.RUnlock()
+	fake.openMutex.RLock()
+	defer fake.openMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
-	fake.shipEventsMutex.RLock()
-	defer fake.shipEventsMutex.RUnlock()
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
