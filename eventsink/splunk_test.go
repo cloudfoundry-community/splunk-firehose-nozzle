@@ -1,4 +1,4 @@
-package drain_test
+package eventsink_test
 
 import (
 	"strconv"
@@ -12,12 +12,12 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry/sonde-go/events"
 
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
-var _ = Describe("LoggingSplunk", func() {
+var _ = Describe("Splunk", func() {
 
 	var (
 		origin        string
@@ -29,12 +29,13 @@ var _ = Describe("LoggingSplunk", func() {
 		envelope      *events.Envelope
 		eventType     events.Envelope_EventType
 
-		loggingMemory *drain.LoggingMemory
-		logging       *drain.LoggingSplunk
+		memSink *testing.MemorySink
+		sink    *eventsink.Splunk
 
 		event       map[string]interface{}
 		logger      lager.Logger
-		mockClient  *testing.MockSplunkClient
+		mockClient  *testing.MockEventWriter
+		mockClient2 *testing.MockEventWriter
 		eventRouter eventrouter.Router
 	)
 
@@ -54,28 +55,30 @@ var _ = Describe("LoggingSplunk", func() {
 		}
 
 		//using routing to serialize envelope
-		loggingMemory = drain.NewLoggingMemory()
-		eventRouter = eventrouter.New(cache.NewNoCache(), loggingMemory)
+		memSink = testing.NewMemorySink()
+		eventRouter = eventrouter.New(cache.NewNoCache(), memSink)
 		eventRouter.Setup("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric")
 
-		mockClient = &testing.MockSplunkClient{}
+		mockClient = &testing.MockEventWriter{}
+		mockClient2 = &testing.MockEventWriter{}
 
 		logger = lager.NewLogger("test")
-		loggingConfig := &drain.LoggingConfig{
+		config := &eventsink.SplunkConfig{
 			FlushInterval: time.Millisecond,
 			QueueSize:     1000,
 			BatchSize:     100,
 			Retries:       3,
+			Logger:        logger,
 		}
-		logging = drain.NewLoggingSplunk(logger, []splunk.SplunkClient{mockClient}, loggingConfig)
+		sink = eventsink.NewSplunk([]splunk.EventWriter{mockClient, mockClient2}, config)
 	})
 
 	It("sends events to client", func() {
 		eventType = events.Envelope_Error
 		eventRouter.Route(envelope)
 
-		logging.Open()
-		logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+		sink.Open()
+		sink.Write(memSink.Events[0], memSink.Messages[0])
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
@@ -86,8 +89,8 @@ var _ = Describe("LoggingSplunk", func() {
 		eventType = events.Envelope_Error
 		eventRouter.Route(envelope)
 
-		logging.Open()
-		logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+		sink.Open()
+		sink.Write(memSink.Events[0], memSink.Messages[0])
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
@@ -174,8 +177,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -237,8 +240,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -296,8 +299,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -351,8 +354,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -406,8 +409,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -472,8 +475,8 @@ var _ = Describe("LoggingSplunk", func() {
 		BeforeEach(func() {
 			eventRouter.Route(envelope)
 
-			logging.Open()
-			logging.Log(loggingMemory.Events[0], loggingMemory.Messages[0])
+			sink.Open()
+			sink.Write(memSink.Events[0], memSink.Messages[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -500,61 +503,6 @@ var _ = Describe("LoggingSplunk", func() {
 
 			Expect(eventContents["cpu_percentage"]).To(Equal(cpuPercentage))
 			Expect(eventContents["memory_bytes"]).To(Equal(memoryBytes))
-		})
-		// TODO, implement test that will create enough events to fill batch and call indexEvents multiple times
-
-		/*
-			It("checks correct use of batch and flush_window", func() {
-
-
-			})*/
-	})
-
-	Context("ToJson", func() {
-		var jsonArray string
-		var jsonMap string
-		var invalidJsonArray string
-		var invalidJsonMap string
-		var nonJsonStr string
-
-		BeforeEach(func() {
-			// With space prefixed and suffixed
-			jsonArray = `  ["splunk", "firehose", "nozzle"]    `
-			jsonMap = `   {"splunk": "firehose"}  `
-			invalidJsonArray = `["splunk", "firehose", "nozzle"]]`
-			invalidJsonMap = `{"splunk": "firehose"}}`
-			nonJsonStr = `this is a raw log`
-		})
-
-		It("Converstion", func() {
-			r := drain.ToJson(jsonArray)
-			ar, ok := r.([]interface{})
-			Expect(ok).To(Equal(true))
-			Expect(len(ar)).To(Equal(3))
-
-			r = drain.ToJson(jsonMap)
-			mr, ok := r.(map[string]interface{})
-			Expect(ok).To(Equal(true))
-			Expect(len(mr)).To(Equal(1))
-
-			r = drain.ToJson(invalidJsonArray)
-			ar, ok = r.([]interface{})
-			Expect(ok).To(Equal(false))
-
-			s, ok := r.(string)
-			Expect(s).To(Equal(invalidJsonArray))
-
-			r = drain.ToJson(invalidJsonMap)
-			mr, ok = r.(map[string]interface{})
-			Expect(ok).To(Equal(false))
-
-			s, ok = r.(string)
-			Expect(s).To(Equal(invalidJsonMap))
-
-			r = drain.ToJson(nonJsonStr)
-			sr, ok := r.(string)
-			Expect(ok).To(Equal(true))
-			Expect(sr).To(Equal(nonJsonStr))
 		})
 	})
 

@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-type MockSplunkClient struct {
+type MockEventWriter struct {
 	lock           sync.Mutex
 	capturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
 }
 
-func (m *MockSplunkClient) Post(events []map[string]interface{}) error {
+func (m *MockEventWriter) Write(events []map[string]interface{}) error {
 	if m.PostBatchFn != nil {
 		return m.PostBatchFn(events)
 	} else {
@@ -21,7 +21,7 @@ func (m *MockSplunkClient) Post(events []map[string]interface{}) error {
 	return nil
 }
 
-func (m *MockSplunkClient) CapturedEvents() []map[string]interface{} {
+func (m *MockEventWriter) CapturedEvents() []map[string]interface{} {
 	m.lock.Lock()
 	var events []map[string]interface{}
 	for _, event := range m.capturedEvents {

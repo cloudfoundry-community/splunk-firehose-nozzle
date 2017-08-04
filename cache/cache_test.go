@@ -164,7 +164,7 @@ var _ = Describe("Cache", func() {
 
 	Context("Get app bad case", func() {
 		It("Expect no app", func() {
-			guid := "cf_app_id_not_exists"
+			guid := fmt.Sprintf("cf_app_id_not_exists_%d", time.Now().UnixNano())
 			app, err := cache.GetApp(guid)
 			Ω(err).Should(HaveOccurred())
 			Expect(app).To(Equal(nilApp))
@@ -176,7 +176,7 @@ var _ = Describe("Cache", func() {
 			Expect(err).To(Equal(MissingAndIgnoredErr))
 			Expect(app).To(Equal(nilApp))
 
-			time.Sleep(missingAppCacheTTL + 1)
+			time.Sleep(missingAppCacheTTL + 2)
 
 			// We ignore missing apps, so for the 3rd time query after sleep,
 			// the missing app cache will be cleaned up, so a not found error

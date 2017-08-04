@@ -1,4 +1,4 @@
-package drain_test
+package eventsink_test
 
 import (
 	. "github.com/onsi/ginkgo"

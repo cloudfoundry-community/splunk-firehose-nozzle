@@ -11,11 +11,9 @@ import (
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry/noaa/consumer"
 
@@ -33,8 +31,8 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 }
 
 // eventRouter creates EventRouter object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) eventRouter(cache cache.Cache, logClient logging.Logging) (eventrouter.Router, error) {
-	r := eventrouter.New(cache, logClient)
+func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
+	r := eventrouter.New(cache, eventSink)
 	err := r.Setup(s.config.WantedEvents)
 	if err != nil {
 		return nil, err
@@ -74,10 +72,10 @@ func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client, logger lager.
 	return cache.NewNoCache(), nil
 }
 
-// logClient creates std logging or Splunk logging
-func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, error) {
+// sink creates std sink or Splunk sink
+func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, error) {
 	if s.config.Debug {
-		return &drain.LoggingStd{}, nil
+		return &eventsink.Std{}, nil
 	}
 
 	parsedExtraFields, err := extrafields.ParseExtraFields(s.config.ExtraFields)
@@ -85,29 +83,28 @@ func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, 
 		return nil, err
 	}
 
-	// SplunkClient for nozzle internal logging
-	splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-	logger.RegisterSink(sink.NewSplunkSink(s.config.JobName, s.config.JobIndex, s.config.JobHost, splunkClient))
-
-	// SplunkClients for raw event POST
-	var splunkClients []splunk.SplunkClient
-	for i := 0; i < s.config.HecWorkers; i++ {
-		splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-		splunkClients = append(splunkClients, splunkClient)
+	// EventWriter for writing events
+	var writers []splunk.EventWriter
+	for i := 0; i < s.config.HecWorkers+1; i++ {
+		writer := splunk.New(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
+		writers = append(writers, writer)
 	}
 
-	loggingConfig := &drain.LoggingConfig{
+	config := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
+		Logger:        logger,
 	}
 
-	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
-	if err := splunkLog.Open(); err != nil {
+	splunkSink := eventsink.NewSplunk(writers, config)
+	if err := splunkSink.Open(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
-	return splunkLog, nil
+
+	logger.RegisterSink(splunkSink)
+	return splunkSink, nil
 }
 
 // firehoseConsumer creates firehose Consumer object which can subscribes the PCF firehose events
@@ -134,7 +131,7 @@ func (s *SplunkFirehoseNozzle) firehoseNozzle(consumer *consumer.Consumer, route
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
-	logClient, err := s.logClient(logger)
+	eventSink, err := s.EventSink(logger)
 	if err != nil {
 		return err
 	}
@@ -172,7 +169,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 	defer appCache.Close()
 
-	router, err := s.eventRouter(appCache, logClient)
+	router, err := s.EventRouter(appCache, eventSink)
 	if err != nil {
 		return err
 	}
@@ -195,5 +192,5 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 
 	logger.Info("Splunk Nozzle is going to exit gracefully")
 	nozzle.Close()
-	return logClient.Close()
+	return eventSink.Close()
 }

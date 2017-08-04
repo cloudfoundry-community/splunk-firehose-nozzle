@@ -10,8 +10,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -48,15 +48,15 @@ type router struct {
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
 	extraFields         map[string]string
-	log                 logging.Logging
+	sink                eventsink.Sink
 }
 
-func New(appCache cache.Cache, log logging.Logging) Router {
+func New(appCache cache.Cache, sink eventsink.Sink) Router {
 	return &router{
 		appCache:            appCache,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
-		log:                 log,
+		sink:                sink,
 		mutex:               &sync.Mutex{},
 		extraFields:         make(map[string]string),
 	}
@@ -98,10 +98,10 @@ func (r *router) Route(msg *events.Envelope) error {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			r.selectedEventsCount["ignored_app_message"]++
 		} else {
-			err := r.log.Log(event.Fields, event.Msg)
+			err := r.sink.Write(event.Fields, event.Msg)
 			if err != nil {
 				fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
-				r.log.Log(fields, "Failed to ship events")
+				r.sink.Write(fields, "Failed to ship events")
 			}
 			r.selectedEventsCount[eventType.String()]++
 
@@ -164,7 +164,7 @@ func (r *router) LogEventTotals(logTotalsTime time.Duration) {
 			startTime = time.Now()
 			event, lastCount := r.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			r.log.Log(event.Fields, event.Msg)
+			r.sink.Write(event.Fields, event.Msg)
 		}
 	}()
 }

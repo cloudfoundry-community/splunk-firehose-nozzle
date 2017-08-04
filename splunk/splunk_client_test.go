@@ -51,9 +51,9 @@ var _ = Describe("SplunkClient", func() {
 
 		It("correctly authenticates requests", func() {
 			tokenValue := "abc-some-random-token"
-			client := NewSplunkClient(tokenValue, testServer.URL, "", nil, true, logger)
+			client := New(tokenValue, testServer.URL, "", nil, true, logger)
 			events := []map[string]interface{}{}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -65,9 +65,9 @@ var _ = Describe("SplunkClient", func() {
 		})
 
 		It("sets content type to json", func() {
-			client := NewSplunkClient("token", testServer.URL, "", nil, true, logger)
+			client := New("token", testServer.URL, "", nil, true, logger)
 			events := []map[string]interface{}{}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -76,8 +76,8 @@ var _ = Describe("SplunkClient", func() {
 			Expect(contentType).To(Equal("application/json"))
 		})
 
-		It("posts batch event json", func() {
-			client := NewSplunkClient("token", testServer.URL, "", nil, true, logger)
+		It("Writes batch event json", func() {
+			client := New("token", testServer.URL, "", nil, true, logger)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -89,7 +89,7 @@ var _ = Describe("SplunkClient", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2, event3}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -105,7 +105,7 @@ var _ = Describe("SplunkClient", func() {
 		})
 
 		It("sets index in splunk payload", func() {
-			client := NewSplunkClient("token", testServer.URL, "index_cf", nil, true, logger)
+			client := New("token", testServer.URL, "index_cf", nil, true, logger)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -114,7 +114,7 @@ var _ = Describe("SplunkClient", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -133,7 +133,7 @@ var _ = Describe("SplunkClient", func() {
 				"hello": "world",
 			}
 
-			client := NewSplunkClient("token", testServer.URL, "", fields, true, logger)
+			client := New("token", testServer.URL, "", fields, true, logger)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -142,7 +142,7 @@ var _ = Describe("SplunkClient", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -156,10 +156,10 @@ var _ = Describe("SplunkClient", func() {
 
 		})
 
-		It("posts to correct endpoint", func() {
-			client := NewSplunkClient("token", testServer.URL, "", nil, true, logger)
+		It("Writes to correct endpoint", func() {
+			client := New("token", testServer.URL, "", nil, true, logger)
 			events := []map[string]interface{}{}
-			err := client.Post(events)
+			err := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
@@ -167,9 +167,9 @@ var _ = Describe("SplunkClient", func() {
 	})
 
 	It("returns error on bad splunk host", func() {
-		client := NewSplunkClient("token", ":", "", nil, true, logger)
+		client := New("token", ":", "", nil, true, logger)
 		events := []map[string]interface{}{}
-		err := client.Post(events)
+		err := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("protocol"))
@@ -181,18 +181,18 @@ var _ = Describe("SplunkClient", func() {
 			writer.Write([]byte("Internal server error"))
 		}))
 
-		client := NewSplunkClient("token", testServer.URL, "", nil, true, logger)
+		client := New("token", testServer.URL, "", nil, true, logger)
 		events := []map[string]interface{}{}
-		err := client.Post(events)
+		err := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("500"))
 	})
 
 	It("Returns error from http client", func() {
-		client := NewSplunkClient("token", "foo://example.com", "", nil, true, logger)
+		client := New("token", "foo://example.com", "", nil, true, logger)
 		events := []map[string]interface{}{}
-		err := client.Post(events)
+		err := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("foo"))

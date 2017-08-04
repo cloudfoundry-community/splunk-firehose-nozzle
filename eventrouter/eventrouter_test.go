@@ -3,7 +3,7 @@ package eventrouter_test
 import (
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache/cachefakes"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/logging/loggingfakes"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink/eventsinkfakes"
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,9 +14,9 @@ var _ = Describe("Events", func() {
 	var r Router
 
 	BeforeEach(func() {
-		logging := new(FakeLogging)
+		sink := new(FakeSink)
 		caching := new(FakeCache)
-		r = New(caching, logging)
+		r = New(caching, sink)
 		r.Setup("")
 
 	})

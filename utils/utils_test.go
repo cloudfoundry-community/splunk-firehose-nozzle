@@ -30,4 +30,51 @@ var _ = Describe("Testing Utils packages", func() {
 		})
 	})
 
+	Context("ToJson", func() {
+		var jsonArray string
+		var jsonMap string
+		var invalidJsonArray string
+		var invalidJsonMap string
+		var nonJsonStr string
+
+		BeforeEach(func() {
+			// With space prefixed and suffixed
+			jsonArray = `  ["splunk", "firehose", "nozzle"]    `
+			jsonMap = `   {"splunk": "firehose"}  `
+			invalidJsonArray = `["splunk", "firehose", "nozzle"]]`
+			invalidJsonMap = `{"splunk": "firehose"}}`
+			nonJsonStr = `this is a raw log`
+		})
+
+		It("Converstion", func() {
+			r := ToJson(jsonArray)
+			ar, ok := r.([]interface{})
+			Expect(ok).To(Equal(true))
+			Expect(len(ar)).To(Equal(3))
+
+			r = ToJson(jsonMap)
+			mr, ok := r.(map[string]interface{})
+			Expect(ok).To(Equal(true))
+			Expect(len(mr)).To(Equal(1))
+
+			r = ToJson(invalidJsonArray)
+			ar, ok = r.([]interface{})
+			Expect(ok).To(Equal(false))
+
+			s, ok := r.(string)
+			Expect(s).To(Equal(invalidJsonArray))
+
+			r = ToJson(invalidJsonMap)
+			mr, ok = r.(map[string]interface{})
+			Expect(ok).To(Equal(false))
+
+			s, ok = r.(string)
+			Expect(s).To(Equal(invalidJsonMap))
+
+			r = ToJson(nonJsonStr)
+			sr, ok := r.(string)
+			Expect(ok).To(Equal(true))
+			Expect(sr).To(Equal(nonJsonStr))
+		})
+	})
 })
