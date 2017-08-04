@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -87,7 +87,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("boltdb-path", "Bolt Database path ").
 		Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").StringVar(&c.BoltDBPath)
 
-	kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
+	kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventrouter.GetListAuthorizedEventEvents())).OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").

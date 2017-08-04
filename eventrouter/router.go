@@ -1,8 +1,9 @@
-package eventRouting
+package eventrouter
 
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -15,8 +16,36 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-type EventRoutingDefault struct {
-	CachingClient       caching.Caching
+type Router interface {
+	Route(msg *events.Envelope) error
+	Setup(wantedEvents string) error
+	SetExtraFields(extraEventsString string)
+	SelectedEvents() map[string]bool
+	SelectedEventsCount() map[string]uint64
+	TotalCountOfSelectedEvents() uint64
+	LogEventTotals(logTotalsTime time.Duration)
+}
+
+func IsAuthorizedEvent(wantedEvent string) bool {
+	for _, authorizeEvent := range events.Envelope_EventType_name {
+		if wantedEvent == authorizeEvent {
+			return true
+		}
+	}
+	return false
+}
+
+func GetListAuthorizedEventEvents() (authorizedEvents string) {
+	arrEvents := []string{}
+	for _, listEvent := range events.Envelope_EventType_name {
+		arrEvents = append(arrEvents, listEvent)
+	}
+	sort.Strings(arrEvents)
+	return strings.Join(arrEvents, ", ")
+}
+
+type router struct {
+	appCache            caching.Caching
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
@@ -24,9 +53,9 @@ type EventRoutingDefault struct {
 	ExtraFields         map[string]string
 }
 
-func NewEventRouting(caching caching.Caching, logging logging.Logging) EventRouting {
-	return &EventRoutingDefault{
-		CachingClient:       caching,
+func New(appCache caching.Caching, logging logging.Logging) Router {
+	return &router{
+		appCache:            appCache,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
 		log:                 logging,
@@ -35,15 +64,14 @@ func NewEventRouting(caching caching.Caching, logging logging.Logging) EventRout
 	}
 }
 
-func (e *EventRoutingDefault) GetSelectedEvents() map[string]bool {
-	return e.selectedEvents
+func (r *router) SelectedEvents() map[string]bool {
+	return r.selectedEvents
 }
 
-func (e *EventRoutingDefault) RouteEvent(msg *events.Envelope) {
-
+func (r *router) Route(msg *events.Envelope) error {
 	eventType := msg.GetEventType()
 
-	if e.selectedEvents[eventType.String()] {
+	if r.selectedEvents[eventType.String()] {
 		var event *fevents.Event
 		switch eventType {
 		case events.Envelope_HttpStartStop:
@@ -62,35 +90,36 @@ func (e *EventRoutingDefault) RouteEvent(msg *events.Envelope) {
 
 		event.AnnotateWithEnveloppeData(msg)
 
-		event.AnnotateWithMetaData(e.ExtraFields)
+		event.AnnotateWithMetaData(r.ExtraFields)
 		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
-			event.AnnotateWithAppData(e.CachingClient)
+			event.AnnotateWithAppData(r.appCache)
 		}
 
-		e.mutex.Lock()
+		r.mutex.Lock()
 		//We do not ship Event
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
-			e.selectedEventsCount["ignored_app_message"]++
+			r.selectedEventsCount["ignored_app_message"]++
 		} else {
-			err := e.log.ShipEvents(event.Fields, event.Msg)
+			err := r.log.ShipEvents(event.Fields, event.Msg)
 			if err != nil {
 				logging.LogError("failed to ship events", err)
 			}
-			e.selectedEventsCount[eventType.String()]++
+			r.selectedEventsCount[eventType.String()]++
 
 		}
-		e.mutex.Unlock()
+		r.mutex.Unlock()
 	}
+	return nil
 }
 
-func (e *EventRoutingDefault) SetupEventRouting(wantedEvents string) error {
-	e.selectedEvents = make(map[string]bool)
+func (r *router) Setup(wantedEvents string) error {
+	r.selectedEvents = make(map[string]bool)
 	if wantedEvents == "" {
-		e.selectedEvents["LogMessage"] = true
+		r.selectedEvents["LogMessage"] = true
 	} else {
 		for _, event := range strings.Split(wantedEvents, ",") {
 			if IsAuthorizedEvent(strings.TrimSpace(event)) {
-				e.selectedEvents[strings.TrimSpace(event)] = true
+				r.selectedEvents[strings.TrimSpace(event)] = true
 				logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
 			} else {
 				return fmt.Errorf("Rejected Event Name [%s] - Valid events: %s", event, GetListAuthorizedEventEvents())
@@ -100,29 +129,29 @@ func (e *EventRoutingDefault) SetupEventRouting(wantedEvents string) error {
 	return nil
 }
 
-func (e *EventRoutingDefault) SetExtraFields(extraEventsString string) {
+func (r *router) SetExtraFields(extraEventsString string) {
 	// Parse extra fields from cmd call
 	extraFields, err := extrafields.ParseExtraFields(extraEventsString)
 	if err != nil {
 		logging.LogError("Error parsing extra fields: ", err)
 		os.Exit(1)
 	}
-	e.ExtraFields = extraFields
+	r.ExtraFields = extraFields
 }
 
-func (e *EventRoutingDefault) GetTotalCountOfSelectedEvents() uint64 {
+func (r *router) TotalCountOfSelectedEvents() uint64 {
 	var total = uint64(0)
-	for _, count := range e.GetSelectedEventsCount() {
+	for _, count := range r.SelectedEventsCount() {
 		total += count
 	}
 	return total
 }
 
-func (e *EventRoutingDefault) GetSelectedEventsCount() map[string]uint64 {
-	return e.selectedEventsCount
+func (r *router) SelectedEventsCount() map[string]uint64 {
+	return r.selectedEventsCount
 }
 
-func (e *EventRoutingDefault) LogEventTotals(logTotalsTime time.Duration) {
+func (r *router) LogEventTotals(logTotalsTime time.Duration) {
 	firehoseEventTotals := time.NewTicker(logTotalsTime)
 	count := uint64(0)
 	startTime := time.Now()
@@ -133,24 +162,24 @@ func (e *EventRoutingDefault) LogEventTotals(logTotalsTime time.Duration) {
 			elapsedTime := time.Since(startTime).Seconds()
 			totalElapsedTime := time.Since(totalTime).Seconds()
 			startTime = time.Now()
-			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
+			event, lastCount := r.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			e.log.ShipEvents(event.Fields, event.Msg)
+			r.log.ShipEvents(event.Fields, event.Msg)
 		}
 	}()
 }
 
-func (e *EventRoutingDefault) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
-	totalCount := e.GetTotalCountOfSelectedEvents()
+func (r *router) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	totalCount := r.TotalCountOfSelectedEvents()
 	sinceLastTime := float64(int(elapsedTime*10)) / 10
 	fields := logrus.Fields{
 		"total_count":   totalCount,
 		"by_sec_Events": int((totalCount - lastCount) / uint64(sinceLastTime)),
 	}
 
-	for eventtype, count := range e.GetSelectedEventsCount() {
+	for eventtype, count := range r.SelectedEventsCount() {
 		fields[eventtype] = count
 	}
 

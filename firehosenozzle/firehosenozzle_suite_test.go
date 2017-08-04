@@ -1,4 +1,4 @@
-package eventRouting_test
+package firehosenozzle_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestEventRouting(t *testing.T) {
+func TestFirehoseclient(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "EventRouting Suite")
+	RunSpecs(t, "Firehoseclient Suite")
 }

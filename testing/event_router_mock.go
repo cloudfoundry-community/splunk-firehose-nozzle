@@ -15,10 +15,11 @@ func NewMockEventRouter() *MockEventRouter {
 	return &MockEventRouter{}
 }
 
-func (router *MockEventRouter) RouteEvent(msg *events.Envelope) {
+func (router *MockEventRouter) Route(msg *events.Envelope) error {
 	router.lock.Lock()
 	router.events = append(router.events, msg)
 	router.lock.Unlock()
+	return nil
 }
 
 func (router *MockEventRouter) Events() []*events.Envelope {

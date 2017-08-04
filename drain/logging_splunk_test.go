@@ -9,7 +9,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
@@ -35,7 +35,7 @@ var _ = Describe("LoggingSplunk", func() {
 		event      map[string]interface{}
 		logger     lager.Logger
 		mockClient *testing.MockSplunkClient
-		routing    eventRouting.EventRouting
+		eventRouter eventrouter.Router
 	)
 
 	BeforeEach(func() {
@@ -55,8 +55,8 @@ var _ = Describe("LoggingSplunk", func() {
 
 		//using routing to serialize envelope
 		loggingMemory = drain.NewLoggingMemory()
-		routing = eventRouting.NewEventRouting(caching.NewCachingEmpty(), loggingMemory)
-		routing.SetupEventRouting("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric")
+		eventRouter = eventrouter.New(caching.NewCachingEmpty(), loggingMemory)
+		eventRouter.Setup("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric")
 
 		mockClient = &testing.MockSplunkClient{}
 
@@ -72,7 +72,7 @@ var _ = Describe("LoggingSplunk", func() {
 
 	It("sends events to client", func() {
 		eventType = events.Envelope_Error
-		routing.RouteEvent(envelope)
+		eventRouter.Route(envelope)
 
 		logging.Connect()
 		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -84,7 +84,7 @@ var _ = Describe("LoggingSplunk", func() {
 
 	It("job_index is present, index is not", func() {
 		eventType = events.Envelope_Error
-		routing.RouteEvent(envelope)
+		eventRouter.Route(envelope)
 
 		logging.Connect()
 		logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -172,7 +172,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -235,7 +235,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -294,7 +294,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -349,7 +349,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -404,7 +404,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])
@@ -470,7 +470,7 @@ var _ = Describe("LoggingSplunk", func() {
 		})
 
 		BeforeEach(func() {
-			routing.RouteEvent(envelope)
+			eventRouter.Route(envelope)
 
 			logging.Connect()
 			logging.ShipEvents(loggingMemory.Events[0], loggingMemory.Messages[0])

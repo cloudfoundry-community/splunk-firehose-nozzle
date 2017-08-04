@@ -12,14 +12,14 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
 	"github.com/cloudfoundry/noaa/consumer"
 
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehosenozzle"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -32,10 +32,10 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	}
 }
 
-// eventRouting creates eventRouting object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient logging.Logging) (eventRouting.EventRouting, error) {
-	events := eventRouting.NewEventRouting(cache, logClient)
-	err := events.SetupEventRouting(s.config.WantedEvents)
+// eventRouter creates EventRouter object and setup routings for interested events
+func (s *SplunkFirehoseNozzle) eventRouter(cache caching.Caching, logClient logging.Logging) (eventrouter.Router, error) {
+	events := eventrouter.New(cache, logClient)
+	err := events.Setup(s.config.WantedEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -119,15 +119,15 @@ func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *con
 	return c
 }
 
-// firehoseClient creates FirehoseNozzle object which glues the event source and event sink
-func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events eventRouting.EventRouting, logger lager.Logger) *firehoseclient.FirehoseNozzle {
-	firehoseConfig := &firehoseclient.FirehoseConfig{
+// firehoseNozzle creates FirehoseNozzle object which glues the event source and event sink
+func (s *SplunkFirehoseNozzle) firehoseNozzle(consumer *consumer.Consumer, router eventrouter.Router, logger lager.Logger) *firehosenozzle.FirehoseNozzle {
+	firehoseConfig := &firehosenozzle.FirehoseConfig{
 		Logger: logger,
 
 		FirehoseSubscriptionID: s.config.SubscriptionID,
 	}
 
-	return firehoseclient.NewFirehoseNozzle(consumer, events, firehoseConfig)
+	return firehosenozzle.New(consumer, router, firehoseConfig)
 }
 
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
@@ -171,19 +171,19 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 	defer appCache.Close()
 
-	eventRouter, err := s.eventRouting(appCache, logClient)
+	router, err := s.eventRouter(appCache, logClient)
 	if err != nil {
 		return err
 	}
 
 	c := s.firehoseConsumer(pcfClient)
-	firehoseClient := s.firehoseClient(c, eventRouter, logger)
+	nozzle := s.firehoseNozzle(c, router, logger)
 
 	shutdown := make(chan os.Signal, 2)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		err := firehoseClient.Start()
+		err := nozzle.Start()
 		if err != nil {
 			logger.Error("Firehose consumer exits with error", err)
 		}
@@ -193,6 +193,6 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	<-shutdown
 
 	logger.Info("Splunk Nozzle is going to exit gracefully")
-	firehoseClient.Close()
+	nozzle.Close()
 	return logClient.Close()
 }

@@ -1,11 +1,11 @@
-package firehoseclient_test
+package firehosenozzle_test
 
 import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
 
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/firehosenozzle"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
 
@@ -31,7 +31,7 @@ var _ = Describe("Firehoseclient", func() {
 
 				Logger: lager.NewLogger("test"),
 			}
-			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
+			nozzle = New(consumer, eventRouter, config)
 		})
 
 		It("collects events from source and routes to sink", func() {
@@ -55,7 +55,7 @@ var _ = Describe("Firehoseclient", func() {
 
 				Logger: lager.NewLogger("test"),
 			}
-			nozzle = NewFirehoseNozzle(consumer, eventRouter, config)
+			nozzle = New(consumer, eventRouter, config)
 		}
 	}
 

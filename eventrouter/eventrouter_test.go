@@ -1,8 +1,8 @@
-package eventRouting_test
+package eventrouter_test
 
 import (
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/caching/cachingfakes"
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/logging/loggingfakes"
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
@@ -11,26 +11,26 @@ import (
 
 var _ = Describe("Events", func() {
 
-	var eventRouting EventRouting
+	var r Router
 
 	BeforeEach(func() {
 		logging := new(FakeLogging)
 		caching := new(FakeCaching)
-		eventRouting = NewEventRouting(caching, logging)
-		eventRouting.SetupEventRouting("")
+		r = New(caching, logging)
+		r.Setup("")
 
 	})
 
 	Context("called with a empty list", func() {
 		It("should return a hash of only the default event", func() {
 			expected := map[string]bool{"LogMessage": true}
-			Expect(eventRouting.GetSelectedEvents()).To(Equal(expected))
+			Expect(r.SelectedEvents()).To(Equal(expected))
 		})
 	})
 
 	Context("called with a list of bogus event names", func() {
 		It("should err out", func() {
-			err := eventRouting.SetupEventRouting("bogus,bogus1")
+			err := r.Setup("bogus,bogus1")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -41,8 +41,8 @@ var _ = Describe("Events", func() {
 				"HttpStartStop": true,
 				"CounterEvent":  true,
 			}
-			eventRouting.SetupEventRouting("HttpStartStop,CounterEvent")
-			Expect(eventRouting.GetSelectedEvents()).To(Equal(expected))
+			r.Setup("HttpStartStop,CounterEvent")
+			Expect(r.SelectedEvents()).To(Equal(expected))
 		})
 	})
 
@@ -50,12 +50,12 @@ var _ = Describe("Events", func() {
 		var expected = uint64(10)
 		BeforeEach(func() {
 			for i := 0; i < int(expected); i++ {
-				eventRouting.RouteEvent(&Envelope{EventType: Envelope_LogMessage.Enum()})
+				r.Route(&Envelope{EventType: Envelope_LogMessage.Enum()})
 			}
 		})
 
 		It("should return a total of 10", func() {
-			Expect(eventRouting.GetTotalCountOfSelectedEvents()).To(Equal(expected))
+			Expect(r.TotalCountOfSelectedEvents()).To(Equal(expected))
 		})
 	})
 

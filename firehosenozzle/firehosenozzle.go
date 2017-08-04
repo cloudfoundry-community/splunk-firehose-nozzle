@@ -1,4 +1,4 @@
-package firehoseclient
+package firehosenozzle
 
 import (
 	"code.cloudfoundry.org/lager"
@@ -13,9 +13,11 @@ type FirehoseConsumer interface {
 }
 
 type EventRouter interface {
-	RouteEvent(msg *events.Envelope)
+	Route(msg *events.Envelope) error
 }
 
+// FirehoseNozzle reads events from FirehoseConsumer and routs events to targets
+// by using EventRouter
 type FirehoseNozzle struct {
 	consumer    FirehoseConsumer
 	eventRouter EventRouter
@@ -31,11 +33,11 @@ type FirehoseConfig struct {
 	FirehoseSubscriptionID string
 }
 
-func NewFirehoseNozzle(consumer FirehoseConsumer, eventRouter EventRouter, firehoseconfig *FirehoseConfig) *FirehoseNozzle {
+func New(consumer FirehoseConsumer, eventRouter EventRouter, config *FirehoseConfig) *FirehoseNozzle {
 	return &FirehoseNozzle{
 		eventRouter: eventRouter,
 		consumer:    consumer,
-		config:      firehoseconfig,
+		config:      config,
 		closing:     make(chan struct{}, 1),
 		closed:      make(chan struct{}, 1),
 	}
@@ -54,7 +56,9 @@ func (f *FirehoseNozzle) Start() error {
 				return lastErr
 			}
 
-			f.eventRouter.RouteEvent(envelope)
+			if err := f.eventRouter.Route(envelope); err != nil {
+				f.config.Logger.Error("Failed to route event", err)
+			}
 
 		case lastErr = <-errs:
 			f.handleError(lastErr)
