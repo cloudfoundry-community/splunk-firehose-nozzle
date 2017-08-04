@@ -72,7 +72,10 @@ func (e *EventRoutingDefault) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			e.log.ShipEvents(event.Fields, event.Msg)
+			err := e.log.ShipEvents(event.Fields, event.Msg)
+			if err != nil {
+				logging.LogError("failed to ship events", err)
+			}
 			e.selectedEventsCount[eventType.String()]++
 
 		}

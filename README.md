@@ -19,7 +19,9 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 ### Setup
 
 The Nozzle requires a user with the scope `doppler.firehose` and
-`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true).
+`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). If `cloud_controller.admin` is not
+available in the system, switch to use `cloud_controller.admin`.
+
 You can either
 * Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
 * Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)

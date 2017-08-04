@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -24,6 +25,7 @@ type LoggingSplunk struct {
 	clients []splunk.SplunkClient
 	config  *LoggingConfig
 	events  chan map[string]interface{}
+	wg      sync.WaitGroup
 }
 
 func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, config *LoggingConfig) *LoggingSplunk {
@@ -35,35 +37,58 @@ func NewLoggingSplunk(logger lager.Logger, splunkClients []splunk.SplunkClient, 
 	}
 }
 
-func (l *LoggingSplunk) Connect() bool {
+func (l *LoggingSplunk) Connect() error {
 	for _, client := range l.clients {
+		l.wg.Add(1)
 		go l.consume(client)
 	}
-	return true
+
+	return nil
 }
 
-func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) {
+func (l *LoggingSplunk) Close() error {
+	// Notify the consume loop to drain events and exit
+	close(l.events)
+	l.wg.Wait()
+	return nil
+}
+
+func (l *LoggingSplunk) ShipEvents(fields map[string]interface{}, msg string) error {
 	event := l.buildEvent(fields, msg)
 	l.events <- event
+	return nil
 }
 
 func (l *LoggingSplunk) consume(client splunk.SplunkClient) {
+	defer l.wg.Done()
+
 	var batch []map[string]interface{}
 	timer := time.NewTimer(l.config.FlushInterval)
-	// Flush takes place when 1) batch limit is reached. 2)flush window expires
+
+	// Flush takes place when 1) batch limit is reached. 2) flush window expires
+LOOP:
 	for {
 		select {
-		case event := <-l.events:
+		case event, ok := <-l.events:
+			if !ok {
+				// events chan has closed and we have drained all events in it
+				break LOOP
+			}
+
 			batch = append(batch, event)
 			if len(batch) >= l.config.BatchSize {
 				batch = l.indexEvents(client, batch)
 				timer.Reset(l.config.FlushInterval) //reset channel timer
 			}
+
 		case <-timer.C:
 			batch = l.indexEvents(client, batch)
 			timer.Reset(l.config.FlushInterval)
 		}
 	}
+
+	// Last batch
+	l.indexEvents(client, batch)
 }
 
 // indexEvents indexes events to Splunk

@@ -35,10 +35,13 @@ build-linux:
 
 build: build-nozzle
 
+debug:
+	DEBUG_FLAGS="-gcflags '-N -l'" make build
+
 LDFLAGS="-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.buildos=$(UNAME)"
 
 build-nozzle: fmt
-	go build -o splunk-firehose-nozzle  -ldflags ${LDFLAGS} ./main.go
+	go build -o splunk-firehose-nozzle  -ldflags ${LDFLAGS} ${DEBUG_FLAGS} ./main.go
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 

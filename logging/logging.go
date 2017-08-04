@@ -9,8 +9,9 @@ import (
 //go:generate counterfeiter . Logging
 
 type Logging interface {
-	Connect() bool
-	ShipEvents(map[string]interface{}, string)
+	Connect() error
+	Close() error
+	ShipEvents(map[string]interface{}, string) error
 }
 
 func LogStd(message string, force bool) {
