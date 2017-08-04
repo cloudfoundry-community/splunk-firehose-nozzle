@@ -3,6 +3,7 @@ package caching_test
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -38,6 +39,10 @@ func (m *mockAppClient) AppByGuid(guid string) (cfclient.App, error) {
 		return app, nil
 	}
 	return app, errors.New("No such app")
+}
+
+func (m *mockAppClient) ListAppsByQueryWithLimits(q url.Values, totalPages int) ([]cfclient.App, error) {
+	return m.ListApps()
 }
 
 func (m *mockAppClient) ListApps() ([]cfclient.App, error) {

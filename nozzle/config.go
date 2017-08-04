@@ -29,6 +29,7 @@ type Config struct {
 	IgnoreMissingApps  bool
 	MissingAppCacheTTL time.Duration
 	AppCacheTTL        time.Duration
+	AppLimits          int
 
 	BoltDBPath   string
 	WantedEvents string
@@ -70,6 +71,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 
 	kingpin.Flag("add-app-info", "Query API to fetch app details").
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
+	kingpin.Flag("app-limits", "Limit the how many latest apps to query back to build app info cache initially").
+		OverrideDefaultFromEnvar("APP_LIMITS").Default("0").IntVar(&c.AppLimits)
 	kingpin.Flag("ignore-missing-app", "If app is missing, if stop repeatly querying app info from PCF").
 		OverrideDefaultFromEnvar("IGNORE-MISSING-APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
