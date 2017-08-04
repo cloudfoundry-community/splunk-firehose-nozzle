@@ -50,7 +50,7 @@ func (f *FirehoseNozzle) Start() error {
 		select {
 		case envelope, ok := <-messages:
 			if !ok {
-				f.config.Logger.Info("Give up after retries. Firehose consumer jis going to exit")
+				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 				return lastErr
 			}
 

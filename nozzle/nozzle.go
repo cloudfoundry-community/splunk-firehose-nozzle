@@ -184,7 +184,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	go func() {
 		err := firehoseClient.Start()
 		if err != nil {
-			logger.Error("Firehose consumer exist with error", err)
+			logger.Error("Firehose consumer exits with error", err)
 		}
 		shutdown <- os.Interrupt
 	}()
