@@ -154,13 +154,18 @@ func (s *Splunk) Log(message lager.LogFormat) {
 		"logger_source": message.Source,
 		"message":       message.Message,
 		"ip":            s.ip,
-		"origin":        "splunknozzle",
+		"origin":        "splunk_nozzle",
+		"log_level":     int(message.LogLevel),
 	}
 
 	event := map[string]interface{}{
 		"host":       s.config.Hostname,
 		"sourcetype": "cf:splunknozzle",
 		"event":      e,
+	}
+
+	if message.Timestamp != "" {
+		event["time"] = message.Timestamp
 	}
 
 	if len(message.Data) > 0 {

@@ -32,9 +32,10 @@ var _ = Describe("Splunk", func() {
 		memSink *testing.MemorySink
 		sink    *eventsink.Splunk
 
-		event       map[string]interface{}
-		logger      lager.Logger
-		mockClient  *testing.MockEventWriter
+		event      map[string]interface{}
+		logger     lager.Logger
+		mockClient *testing.MockEventWriter
+		// Used for internal logging
 		mockClient2 *testing.MockEventWriter
 		eventRouter eventrouter.Router
 	)
@@ -68,6 +69,7 @@ var _ = Describe("Splunk", func() {
 			QueueSize:     1000,
 			BatchSize:     100,
 			Retries:       3,
+			Hostname:      "localhost",
 			Logger:        logger,
 		}
 		sink = eventsink.NewSplunk([]splunk.EventWriter{mockClient, mockClient2}, config)
@@ -504,6 +506,82 @@ var _ = Describe("Splunk", func() {
 			Expect(eventContents["cpu_percentage"]).To(Equal(cpuPercentage))
 			Expect(eventContents["memory_bytes"]).To(Equal(memoryBytes))
 		})
+	})
+
+	It("posts to splunk", func() {
+		message := lager.LogFormat{}
+
+		Expect(mockClient2.CapturedEvents()).To(BeNil())
+
+		sink.Log(message)
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(2))
+	})
+
+	It("translates log message metadata to splunk format", func() {
+		message := lager.LogFormat{
+			Timestamp: "1473180363",
+			Source:    "splunk-nozzle-logger",
+			Message:   "Failure",
+			LogLevel:  lager.ERROR,
+		}
+
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient2.CapturedEvents()[0]
+
+		Expect(envelope["time"]).To(Equal("1473180363"))
+
+		event := envelope["event"].(map[string]interface{})
+		Expect(event["logger_source"]).To(Equal("splunk-nozzle-logger"))
+		Expect(event["log_level"]).To(Equal(2))
+
+	})
+
+	It("translates log message payload to splunk format", func() {
+		message := lager.LogFormat{
+			Timestamp: "1473180363",
+			Source:    "splunk-nozzle-logger",
+			Message:   "Failure",
+			LogLevel:  lager.ERROR,
+			Data: lager.Data{
+				"foo": "bar",
+				"baz": 42,
+			},
+		}
+
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient2.CapturedEvents()[0]
+
+		Expect(envelope["time"]).To(Equal("1473180363"))
+
+		event := envelope["event"].(map[string]interface{})
+		Expect(event["message"]).To(Equal("Failure"))
+
+		data := event["data"].(map[string]interface{})
+		Expect(data["foo"]).To(Equal("bar"))
+		Expect(data["baz"]).To(Equal(42))
+
+	})
+
+	It("adds expected Splunk fields", func() {
+		message := lager.LogFormat{}
+
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient2.CapturedEvents()[0]
+
+		Expect(envelope["sourcetype"]).To(Equal("cf:splunknozzle"))
+		Expect(envelope["host"]).ToNot(BeEmpty())
+
+		event := envelope["event"].(map[string]interface{})
+		Expect(event["ip"]).ToNot(BeEmpty())
+		Expect(event["origin"]).To(Equal("splunk_nozzle"))
 	})
 
 })

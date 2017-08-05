@@ -95,6 +95,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
+		Hostname:      s.config.JobHost,
 		Logger:        logger,
 	}
 
