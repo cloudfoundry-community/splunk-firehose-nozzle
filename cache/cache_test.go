@@ -111,7 +111,7 @@ var _ = Describe("Cache", func() {
 
 		nilApp *App = nil
 
-		config = &BoltdbCacheConfig{
+		config = &BoltdbConfig{
 			Path:               boltdbPath,
 			IgnoreMissingApps:  ignoreMissingApps,
 			AppCacheTTL:        appCacheTTL,
@@ -120,14 +120,14 @@ var _ = Describe("Cache", func() {
 		}
 
 		client *mockAppClient = nil
-		cache  *BoltdbCache   = nil
+		cache  *Boltdb        = nil
 		gerr   error          = nil
 	)
 
 	BeforeEach(func() {
 		os.Remove(boltdbPath)
 		client = newMockAppClient(n)
-		cache, gerr = NewBoltdbCache(client, config)
+		cache, gerr = NewBoltdb(client, config)
 		Ω(gerr).ShouldNot(HaveOccurred())
 
 		gerr = cache.Open()
@@ -210,11 +210,11 @@ var _ = Describe("Cache", func() {
 		})
 	})
 
-	Context("NewBoltdbCache error", func() {
+	Context("NewBoltdb error", func() {
 		It("Expect error", func() {
 			dup := *config
 			dup.Path = fmt.Sprintf("/not-exists-%d/boltdb", time.Now().UnixNano())
-			bcache, err := NewBoltdbCache(client, &dup)
+			bcache, err := NewBoltdb(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()
@@ -226,7 +226,7 @@ var _ = Describe("Cache", func() {
 		It("Expect 10 apps from existing boltdb", func() {
 			dup := *config
 			dup.Path = fmt.Sprintf("/tmp/%d", time.Now().UnixNano())
-			bcache, err := NewBoltdbCache(client, &dup)
+			bcache, err := NewBoltdb(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()
@@ -237,7 +237,7 @@ var _ = Describe("Cache", func() {
 			bcache.Close()
 
 			// Load from existing db
-			bcache, err = NewBoltdbCache(client, &dup)
+			bcache, err = NewBoltdb(client, &dup)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bcache.Open()

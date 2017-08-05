@@ -36,10 +36,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	config := cache.BoltdbCacheConfig{
+	config := cache.BoltdbConfig{
 		Path: *boltdbPath,
 	}
-	bolt, err := cache.NewBoltdbCache(cfClient, &config)
+	bolt, err := cache.NewBoltdb(cfClient, &config)
 	if err != nil {
 		fmt.Printf("failed to create boltdb caching client, error=%+v\n", err)
 		os.Exit(1)

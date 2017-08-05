@@ -52,14 +52,14 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 // AppCache creates inmemory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) AppCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
-		c := cache.BoltdbCacheConfig{
+		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
 			Logger:             logger,
 		}
-		return cache.NewBoltdbCache(cfClient, &c)
+		return cache.NewBoltdb(cfClient, &c)
 	}
 
 	return cache.NewNoCache(), nil
