@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 )
 
@@ -23,7 +23,7 @@ type SplunkConfig struct {
 }
 
 type Splunk struct {
-	writers []splunk.EventWriter
+	writers []eventwriter.Writer
 	config  *SplunkConfig
 	events  chan map[string]interface{}
 	wg      sync.WaitGroup
@@ -32,7 +32,7 @@ type Splunk struct {
 	ip string
 }
 
-func NewSplunk(writers []splunk.EventWriter, config *SplunkConfig) *Splunk {
+func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 	hostname, ip, _ := utils.GetHostIPInfo(config.Hostname)
 	config.Hostname = hostname
 
@@ -66,7 +66,7 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 	return nil
 }
 
-func (s *Splunk) consume(client splunk.EventWriter) {
+func (s *Splunk) consume(writer eventwriter.Writer) {
 	defer s.wg.Done()
 
 	var batch []map[string]interface{}
@@ -84,24 +84,24 @@ LOOP:
 
 			batch = append(batch, event)
 			if len(batch) >= s.config.BatchSize {
-				batch = s.indexEvents(client, batch)
+				batch = s.indexEvents(writer, batch)
 				timer.Reset(s.config.FlushInterval) //reset channel timer
 			}
 
 		case <-timer.C:
-			batch = s.indexEvents(client, batch)
+			batch = s.indexEvents(writer, batch)
 			timer.Reset(s.config.FlushInterval)
 		}
 	}
 
 	// Last batch
-	s.indexEvents(client, batch)
+	s.indexEvents(writer, batch)
 }
 
 // indexEvents indexes events to Splunk
 // return nil when sucessful which clears all outstanding events
 // return what the batch has if there is an error for next retry cycle
-func (s *Splunk) indexEvents(writer splunk.EventWriter, batch []map[string]interface{}) []map[string]interface{} {
+func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]interface{}) []map[string]interface{} {
 	if len(batch) == 0 {
 		return batch
 	}

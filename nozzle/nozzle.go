@@ -1,7 +1,6 @@
 package splunknozzle
 
 import (
-	"crypto/tls"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,13 +8,12 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
-	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehosenozzle"
 )
@@ -30,18 +28,17 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	}
 }
 
-// eventRouter creates EventRouter object and setup routings for interested events
+// EventRouter creates EventRouter object and setup routings for interested events
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
-	r := eventrouter.New(cache, eventSink)
-	err := r.Setup(s.config.WantedEvents)
-	if err != nil {
-		return nil, err
+	config := &eventrouter.Config{
+		SelectedEvents: s.config.WantedEvents,
+		ExtraFields:    s.config.ExtraFields,
 	}
-	return r, nil
+	return eventrouter.New(cache, eventSink, config)
 }
 
-// pcfClient creates a client object which can talk to PCF
-func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
+// PCFClient creates a client object which can talk to PCF
+func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 	cfConfig := &cfclient.Config{
 		ApiAddress:        s.config.ApiEndpoint,
 		Username:          s.config.User,
@@ -49,15 +46,11 @@ func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
 		SkipSslValidation: s.config.SkipSSL,
 	}
 
-	cfClient, err := cfclient.NewClient(cfConfig)
-	if err != nil {
-		return nil, err
-	}
-	return cfClient, nil
+	return cfclient.NewClient(cfConfig)
 }
 
-// appCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
+// AppCache creates inmemory cache or boltDB cache
+func (s *SplunkFirehoseNozzle) AppCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
 		c := cache.BoltdbCacheConfig{
 			Path:               s.config.BoltDBPath,
@@ -72,21 +65,21 @@ func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client, logger lager.
 	return cache.NewNoCache(), nil
 }
 
-// sink creates std sink or Splunk sink
+// EventSink creates std sink or Splunk sink
 func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, error) {
 	if s.config.Debug {
 		return &eventsink.Std{}, nil
 	}
 
-	parsedExtraFields, err := extrafields.ParseExtraFields(s.config.ExtraFields)
+	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
 	if err != nil {
 		return nil, err
 	}
 
 	// EventWriter for writing events
-	var writers []splunk.EventWriter
+	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {
-		writer := splunk.New(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
+		writer := eventwriter.NewSplunk(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
 		writers = append(writers, writer)
 	}
 
@@ -108,25 +101,25 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 	return splunkSink, nil
 }
 
-// firehoseConsumer creates firehose Consumer object which can subscribes the PCF firehose events
-func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *consumer.Consumer {
-	dopplerEndpoint := pcfClient.Endpoint.DopplerEndpoint
-	tokenRefresher := auth.NewTokenRefreshAdapter(pcfClient)
-	c := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: s.config.SkipSSL}, nil)
-	c.RefreshTokenFrom(tokenRefresher)
-	c.SetIdleTimeout(s.config.KeepAlive)
-	return c
-}
-
-// firehoseNozzle creates FirehoseNozzle object which glues the event source and event sink
-func (s *SplunkFirehoseNozzle) firehoseNozzle(consumer *consumer.Consumer, router eventrouter.Router, logger lager.Logger) *firehosenozzle.FirehoseNozzle {
-	firehoseConfig := &firehosenozzle.FirehoseConfig{
-		Logger: logger,
-
-		FirehoseSubscriptionID: s.config.SubscriptionID,
+// EventSource creates eventsource.Source object which can read events from
+func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
+	config := &eventsource.FirehoseConfig{
+		KeepAlive:      s.config.KeepAlive,
+		SkipSSL:        s.config.SkipSSL,
+		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+		SubscriptionID: s.config.SubscriptionID,
 	}
 
-	return firehosenozzle.New(consumer, router, firehoseConfig)
+	return eventsource.NewFirehose(pcfClient, config)
+}
+
+// FirehoseNozzle creates FirehoseNozzle object which glues the event source and event router
+func (s *SplunkFirehoseNozzle) FirehoseNozzle(eventSource eventsource.Source, eventRouter eventrouter.Router, logger lager.Logger) *firehosenozzle.FirehoseNozzle {
+	firehoseConfig := &firehosenozzle.FirehoseConfig{
+		Logger: logger,
+	}
+
+	return firehosenozzle.New(eventSource, eventRouter, firehoseConfig)
 }
 
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
@@ -154,12 +147,12 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 	logger.Info("splunk-firehose-nozzle runs", params)
 
-	pcfClient, err := s.pcfClient()
+	pcfClient, err := s.PCFClient()
 	if err != nil {
 		return err
 	}
 
-	appCache, err := s.appCache(pcfClient, logger)
+	appCache, err := s.AppCache(pcfClient, logger)
 	if err != nil {
 		return err
 	}
@@ -170,13 +163,13 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	}
 	defer appCache.Close()
 
-	router, err := s.EventRouter(appCache, eventSink)
+	eventRouter, err := s.EventRouter(appCache, eventSink)
 	if err != nil {
 		return err
 	}
 
-	c := s.firehoseConsumer(pcfClient)
-	nozzle := s.firehoseNozzle(c, router, logger)
+	eventSource := s.EventSource(pcfClient)
+	nozzle := s.FirehoseNozzle(eventSource, eventRouter, logger)
 
 	shutdown := make(chan os.Signal, 2)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)

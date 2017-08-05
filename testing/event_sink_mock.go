@@ -1,26 +1,26 @@
 package testing
 
-type MemorySink struct {
+type MemorySinkMock struct {
 	Events   []map[string]interface{}
 	Messages []string
 }
 
-func NewMemorySink() *MemorySink {
-	return &MemorySink{
+func NewMemorySinkMock() *MemorySinkMock {
+	return &MemorySinkMock{
 		Events:   []map[string]interface{}{},
 		Messages: []string{},
 	}
 }
 
-func (l *MemorySink) Open() error {
+func (l *MemorySinkMock) Open() error {
 	return nil
 }
 
-func (l *MemorySink) Close() error {
+func (l *MemorySinkMock) Close() error {
 	return nil
 }
 
-func (l *MemorySink) Write(fields map[string]interface{}, msg string) error {
+func (l *MemorySinkMock) Write(fields map[string]interface{}, msg string) error {
 	l.Events = append(l.Events, fields)
 	l.Messages = append(l.Messages, msg)
 	return nil

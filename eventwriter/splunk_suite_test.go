@@ -1,4 +1,4 @@
-package splunk_test
+package eventwriter_test
 
 import (
 	. "github.com/onsi/ginkgo"

@@ -3,24 +3,16 @@ package firehosenozzle
 import (
 	"code.cloudfoundry.org/lager"
 
-	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/gorilla/websocket"
 )
 
-type FirehoseConsumer interface {
-	Firehose(subscriptionId string, authToken string) (<-chan *events.Envelope, <-chan error)
-	Close() error
-}
-
-type EventRouter interface {
-	Route(msg *events.Envelope) error
-}
-
-// FirehoseNozzle reads events from FirehoseConsumer and routs events to targets
-// by using EventRouter
+// FirehoseNozzle reads events from eventsource.Source and routes events
+// to targets by using eventrouter.Router
 type FirehoseNozzle struct {
-	consumer    FirehoseConsumer
-	eventRouter EventRouter
+	eventSource eventsource.Source
+	eventRouter eventrouter.Router
 	config      *FirehoseConfig
 
 	closing chan struct{}
@@ -29,14 +21,12 @@ type FirehoseNozzle struct {
 
 type FirehoseConfig struct {
 	Logger lager.Logger
-
-	FirehoseSubscriptionID string
 }
 
-func New(consumer FirehoseConsumer, eventRouter EventRouter, config *FirehoseConfig) *FirehoseNozzle {
+func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *FirehoseConfig) *FirehoseNozzle {
 	return &FirehoseNozzle{
 		eventRouter: eventRouter,
-		consumer:    consumer,
+		eventSource: eventSource,
 		config:      config,
 		closing:     make(chan struct{}, 1),
 		closed:      make(chan struct{}, 1),
@@ -44,19 +34,24 @@ func New(consumer FirehoseConsumer, eventRouter EventRouter, config *FirehoseCon
 }
 
 func (f *FirehoseNozzle) Start() error {
+	err := f.eventSource.Open()
+	if err != nil {
+		return err
+	}
+
 	defer close(f.closed)
 
 	var lastErr error
-	messages, errs := f.consumer.Firehose(f.config.FirehoseSubscriptionID, "")
+	events, errs := f.eventSource.Read()
 	for {
 		select {
-		case envelope, ok := <-messages:
+		case event, ok := <-events:
 			if !ok {
 				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 				return lastErr
 			}
 
-			if err := f.eventRouter.Route(envelope); err != nil {
+			if err := f.eventRouter.Route(event); err != nil {
 				f.config.Logger.Error("Failed to route event", err)
 			}
 
@@ -70,6 +65,11 @@ func (f *FirehoseNozzle) Start() error {
 }
 
 func (f *FirehoseNozzle) Close() error {
+	err := f.eventSource.Close()
+	if err != nil {
+		return err
+	}
+
 	close(f.closing)
 	<-f.closed
 	return nil

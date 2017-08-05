@@ -1,4 +1,4 @@
-package auth_test
+package eventsource_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCfauth(t *testing.T) {
+func TestEventsource(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Auth Suite")
+	RunSpecs(t, "Eventsource Suite")
 }

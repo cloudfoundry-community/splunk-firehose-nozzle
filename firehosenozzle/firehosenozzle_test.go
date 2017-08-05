@@ -17,21 +17,19 @@ import (
 
 var _ = Describe("Firehoseclient", func() {
 	var (
-		consumer    *testing.MockFirehoseConsumer
-		eventRouter *testing.MockEventRouter
+		eventSource *testing.MemoryEventSourceMock
+		eventRouter *testing.EventRouterMock
 		nozzle      *FirehoseNozzle
 	)
 
 	Context("When there are no errors from event source", func() {
 		BeforeEach(func() {
-			consumer = testing.NewMockFirehoseConsumer(-1, int64(10), -1)
-			eventRouter = testing.NewMockEventRouter()
+			eventSource = testing.NewMemoryEventSourceMock(-1, int64(10), -1)
+			eventRouter = testing.NewEventRouterMock()
 			config := &FirehoseConfig{
-				FirehoseSubscriptionID: "splunk-subcription-id",
-
 				Logger: lager.NewLogger("test"),
 			}
-			nozzle = New(consumer, eventRouter, config)
+			nozzle = New(eventSource, eventRouter, config)
 		})
 
 		It("collects events from source and routes to sink", func() {
@@ -48,14 +46,12 @@ var _ = Describe("Firehoseclient", func() {
 
 	prepare := func(closeErr int) func() {
 		return func() {
-			consumer = testing.NewMockFirehoseConsumer(-1, int64(10), closeErr)
-			eventRouter = testing.NewMockEventRouter()
+			eventSource = testing.NewMemoryEventSourceMock(-1, int64(10), closeErr)
+			eventRouter = testing.NewEventRouterMock()
 			config := &FirehoseConfig{
-				FirehoseSubscriptionID: "splunk-subcription-id",
-
 				Logger: lager.NewLogger("test"),
 			}
-			nozzle = New(consumer, eventRouter, config)
+			nozzle = New(eventSource, eventRouter, config)
 		}
 	}
 

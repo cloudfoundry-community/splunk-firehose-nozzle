@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type MockFirehoseConsumer struct {
+type MemoryEventSourceMock struct {
 	events      chan *events.Envelope
 	errors      chan error
 	eps         int
@@ -24,8 +24,8 @@ func biggerThanMaxEPS(eps int) bool {
 	return eps <= 0 || eps > maxEPS
 }
 
-func NewMockFirehoseConsumer(eps int, totalEvents int64, errCode int) *MockFirehoseConsumer {
-	consumer := &MockFirehoseConsumer{
+func NewMemoryEventSourceMock(eps int, totalEvents int64, errCode int) *MemoryEventSourceMock {
+	e := &MemoryEventSourceMock{
 		events:      make(chan *events.Envelope, 1000000),
 		errors:      make(chan error, 1),
 		eps:         eps,
@@ -39,41 +39,45 @@ func NewMockFirehoseConsumer(eps int, totalEvents int64, errCode int) *MockFireh
 			Code: errCode,
 		}
 
-		consumer.errors <- err
+		e.errors <- err
 	}
 
-	go consumer.publishEvents()
-	return consumer
+	go e.publishEvents()
+	return e
 }
 
-func (consumer *MockFirehoseConsumer) Firehose(subscriptionId string, authToken string) (<-chan *events.Envelope, <-chan error) {
-	return consumer.events, consumer.errors
-}
-
-func (consumer *MockFirehoseConsumer) Close() error {
-	var done struct{}
-	consumer.done <- done
-	<-consumer.done
+func (e *MemoryEventSourceMock) Open() error {
 	return nil
 }
 
-func (consumer *MockFirehoseConsumer) produce(numOfEvents int64) {
+func (e *MemoryEventSourceMock) Read() (<-chan *events.Envelope, <-chan error) {
+	return e.events, e.errors
+}
+
+func (e *MemoryEventSourceMock) Close() error {
+	var done struct{}
+	e.done <- done
+	<-e.done
+	return nil
+}
+
+func (e *MemoryEventSourceMock) produce(numOfEvents int64) {
 	event := newEvent()
 	for i := int64(0); i < numOfEvents; i++ {
 		t := time.Now().UnixNano()
 		event.Timestamp = &t
-		consumer.events <- event
+		e.events <- event
 	}
 }
 
-func (consumer *MockFirehoseConsumer) publishEvents() {
-	if biggerThanMaxEPS(consumer.eps) {
-		consumer.publishEventsAsFastAsPossible()
+func (e *MemoryEventSourceMock) publishEvents() {
+	if biggerThanMaxEPS(e.eps) {
+		e.publishEventsAsFastAsPossible()
 		return
 	}
 
 	// 5 seconds as a window
-	windowEvents := int64(consumer.eps * 5)
+	windowEvents := int64(e.eps * 5)
 	windowDuration := time.Duration(5) * time.Second
 
 	eventSent := int64(0)
@@ -82,10 +86,10 @@ func (consumer *MockFirehoseConsumer) publishEvents() {
 LOOP:
 	for {
 		produceStart := time.Now().UnixNano()
-		if consumer.totalEvents > 0 && eventSent+windowEvents > consumer.totalEvents {
-			windowEvents = eventSent + windowEvents - consumer.totalEvents
+		if e.totalEvents > 0 && eventSent+windowEvents > e.totalEvents {
+			windowEvents = eventSent + windowEvents - e.totalEvents
 		}
-		consumer.produce(windowEvents)
+		e.produce(windowEvents)
 		eventSent += windowEvents
 		duration := time.Duration(time.Now().UnixNano() - produceStart)
 		if duration < windowDuration {
@@ -95,20 +99,20 @@ LOOP:
 			fmt.Printf("Too slow, over committed=%d nano-seconds\n", int64(duration-windowDuration))
 		}
 
-		if eventSent%int64(consumer.eps) == 0 {
+		if eventSent%int64(e.eps) == 0 {
 			duration := time.Now().UnixNano() - start
 			fmt.Printf("Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-				eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+				eventSent, duration, eventSent*1000000000/duration, e.eps)
 		}
 
-		if consumer.totalEvents > 0 && eventSent >= consumer.totalEvents {
+		if e.totalEvents > 0 && eventSent >= e.totalEvents {
 			break LOOP
 		}
 
 		select {
-		case <-consumer.done:
+		case <-e.done:
 			var done struct{}
-			consumer.done <- done
+			e.done <- done
 			break LOOP
 		default:
 		}
@@ -116,10 +120,10 @@ LOOP:
 
 	duration := time.Now().UnixNano() - start
 	fmt.Printf("Done with generation. Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-		eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+		eventSent, duration, eventSent*1000000000/duration, e.eps)
 }
 
-func (consumer *MockFirehoseConsumer) publishEventsAsFastAsPossible() {
+func (e *MemoryEventSourceMock) publishEventsAsFastAsPossible() {
 	eventSent := int64(0)
 	event := newEvent()
 	start := time.Now().UnixNano()
@@ -130,27 +134,27 @@ LOOP:
 		event.Timestamp = &timestamp
 
 		select {
-		case consumer.events <- event:
+		case e.events <- event:
 			eventSent += 1
-			if consumer.totalEvents > 0 && eventSent >= consumer.totalEvents {
+			if e.totalEvents > 0 && eventSent >= e.totalEvents {
 				break LOOP
 			}
 
 			if eventSent%maxEPS == 0 {
 				duration := time.Now().UnixNano() - start
 				fmt.Printf("Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-					eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+					eventSent, duration, eventSent*1000000000/duration, e.eps)
 			}
-		case <-consumer.done:
+		case <-e.done:
 			var done struct{}
-			consumer.done <- done
+			e.done <- done
 			break LOOP
 		}
 	}
 
 	duration := time.Now().UnixNano() - start
 	fmt.Printf("Done with generation. Generated %d events in %d nano-seconds, actual_eps=%d, required_eps=%d\n",
-		eventSent, duration, eventSent*1000000000/duration, consumer.eps)
+		eventSent, duration, eventSent*1000000000/duration, e.eps)
 }
 
 func newEvent() *events.Envelope {

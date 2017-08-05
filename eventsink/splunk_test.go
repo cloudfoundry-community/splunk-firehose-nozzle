@@ -13,13 +13,14 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
 var _ = Describe("Splunk", func() {
 
 	var (
+		err           error
 		origin        string
 		deployment    string
 		job           string
@@ -29,14 +30,14 @@ var _ = Describe("Splunk", func() {
 		envelope      *events.Envelope
 		eventType     events.Envelope_EventType
 
-		memSink *testing.MemorySink
+		memSink *testing.MemorySinkMock
 		sink    *eventsink.Splunk
 
 		event      map[string]interface{}
 		logger     lager.Logger
-		mockClient *testing.MockEventWriter
+		mockClient *testing.EventWriterMock
 		// Used for internal logging
-		mockClient2 *testing.MockEventWriter
+		mockClient2 *testing.EventWriterMock
 		eventRouter eventrouter.Router
 	)
 
@@ -56,12 +57,15 @@ var _ = Describe("Splunk", func() {
 		}
 
 		//using routing to serialize envelope
-		memSink = testing.NewMemorySink()
-		eventRouter = eventrouter.New(cache.NewNoCache(), memSink)
-		eventRouter.Setup("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric")
+		memSink = testing.NewMemorySinkMock()
+		rconfig := &eventrouter.Config{
+			SelectedEvents: "ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric",
+		}
+		eventRouter, err = eventrouter.New(cache.NewNoCache(), memSink, rconfig)
+		Ω(err).ShouldNot(HaveOccurred())
 
-		mockClient = &testing.MockEventWriter{}
-		mockClient2 = &testing.MockEventWriter{}
+		mockClient = &testing.EventWriterMock{}
+		mockClient2 = &testing.EventWriterMock{}
 
 		logger = lager.NewLogger("test")
 		config := &eventsink.SplunkConfig{
@@ -72,7 +76,7 @@ var _ = Describe("Splunk", func() {
 			Hostname:      "localhost",
 			Logger:        logger,
 		}
-		sink = eventsink.NewSplunk([]splunk.EventWriter{mockClient, mockClient2}, config)
+		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
 	})
 
 	It("sends events to client", func() {

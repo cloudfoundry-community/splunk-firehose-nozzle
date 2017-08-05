@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-type MockEventWriter struct {
+type EventWriterMock struct {
 	lock           sync.Mutex
 	capturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
 }
 
-func (m *MockEventWriter) Write(events []map[string]interface{}) error {
+func (m *EventWriterMock) Write(events []map[string]interface{}) error {
 	if m.PostBatchFn != nil {
 		return m.PostBatchFn(events)
 	} else {
@@ -21,7 +21,7 @@ func (m *MockEventWriter) Write(events []map[string]interface{}) error {
 	return nil
 }
 
-func (m *MockEventWriter) CapturedEvents() []map[string]interface{} {
+func (m *EventWriterMock) CapturedEvents() []map[string]interface{} {
 	m.lock.Lock()
 	var events []map[string]interface{}
 	for _, event := range m.capturedEvents {
@@ -30,16 +30,4 @@ func (m *MockEventWriter) CapturedEvents() []map[string]interface{} {
 	m.lock.Unlock()
 
 	return events
-}
-
-type MockTokenGetter struct {
-	GetTokenFn func() (string, error)
-}
-
-func (m *MockTokenGetter) GetToken() (string, error) {
-	if m.GetTokenFn != nil {
-		return m.GetTokenFn()
-	} else {
-		return "", nil
-	}
 }

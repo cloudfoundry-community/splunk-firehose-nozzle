@@ -2,6 +2,8 @@ package events
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
@@ -179,5 +181,64 @@ func (e *Event) AnnotateWithEnveloppeData(msg *events.Envelope) {
 	e.Fields["job"] = msg.GetJob()
 	e.Fields["job_index"] = msg.GetIndex()
 	e.Type = msg.GetEventType().String()
+}
 
+func IsAuthorizedEvent(wantedEvent string) bool {
+	for _, authorizeEvent := range events.Envelope_EventType_name {
+		if wantedEvent == authorizeEvent {
+			return true
+		}
+	}
+	return false
+}
+
+func AuthorizedEvents() string {
+	arrEvents := []string{}
+	for _, listEvent := range events.Envelope_EventType_name {
+		arrEvents = append(arrEvents, listEvent)
+	}
+	sort.Strings(arrEvents)
+	return strings.Join(arrEvents, ", ")
+}
+
+func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
+	selectedEvents := make(map[string]bool)
+	if wantedEvents == "" {
+		selectedEvents["LogMessage"] = true
+		return selectedEvents, nil
+	}
+
+	for _, event := range strings.Split(wantedEvents, ",") {
+		event = strings.TrimSpace(event)
+		if IsAuthorizedEvent(event) {
+			selectedEvents[event] = true
+		} else {
+			return nil, fmt.Errorf("rejected event name [%s] - valid events: %s", event, AuthorizedEvents())
+		}
+	}
+	return selectedEvents, nil
+}
+
+func getKeyValueFromString(kvPair string) (string, string, error) {
+	values := strings.Split(kvPair, ":")
+	if len(values) != 2 {
+		return "", "", fmt.Errorf("When splitting %s by ':' there must be exactly 2 values, got these values %s", kvPair, values)
+	}
+	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
+}
+
+func ParseExtraFields(extraEventsString string) (map[string]string, error) {
+	extraEvents := map[string]string{}
+
+	for _, kvPair := range strings.Split(extraEventsString, ",") {
+		if kvPair != "" {
+			cleaned := strings.TrimSpace(kvPair)
+			k, v, err := getKeyValueFromString(cleaned)
+			if err != nil {
+				return nil, err
+			}
+			extraEvents[k] = v
+		}
+	}
+	return extraEvents, nil
 }

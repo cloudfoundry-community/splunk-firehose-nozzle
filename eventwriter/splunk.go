@@ -1,4 +1,4 @@
-package splunk
+package eventwriter
 
 import (
 	"bytes"
@@ -13,10 +13,6 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type EventWriter interface {
-	Write([]map[string]interface{}) error
-}
-
 type splunkClient struct {
 	httpClient  *http.Client
 	splunkToken string
@@ -26,7 +22,7 @@ type splunkClient struct {
 	logger      lager.Logger
 }
 
-func New(splunkToken string, splunkHost string, index string, fields map[string]string, insecureSkipVerify bool, logger lager.Logger) EventWriter {
+func NewSplunk(splunkToken string, splunkHost string, index string, fields map[string]string, insecureSkipVerify bool, logger lager.Logger) Writer {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},

@@ -63,9 +63,74 @@ var _ = Describe("Events", func() {
 			Expect(event.Fields["cf_org_id"]).To(Equal("Org-Guid"))
 			Expect(event.Fields["cf_org_name"]).To(Equal("Org-Name"))
 			Expect(event.Fields["cf_ignored_app"]).To(Equal(true))
+		})
+	})
 
+	Context("ParseSelectedEvents, empty select events passed in", func() {
+		It("should return a hash of only the default event", func() {
+			results, err := fevents.ParseSelectedEvents("")
+			Ω(err).ShouldNot(HaveOccurred())
+			expected := map[string]bool{"LogMessage": true}
+			Expect(results).To(Equal(expected))
+		})
+	})
+
+	Context("ParseSelectedEvents, bogus event names", func() {
+		It("should err out", func() {
+			_, err := fevents.ParseSelectedEvents("bogus, invalid")
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Context("ParseSelectedEvents, valid event names", func() {
+		It("should return a hash of events", func() {
+			expected := map[string]bool{
+				"HttpStartStop": true,
+				"CounterEvent":  true,
+			}
+			results, err := fevents.ParseSelectedEvents("HttpStartStop,CounterEvent")
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(results).To(Equal(expected))
+		})
+	})
+
+	Context("AuthorizedEvents", func() {
+		It("should return right list of authorized events", func() {
+			Expect(fevents.AuthorizedEvents()).To(Equal("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric"))
+		})
+	})
+
+	Describe("ParseExtraFields", func() {
+		Context("called with a empty string", func() {
+			It("should return a empty hash", func() {
+				expected := map[string]string{}
+				Expect(fevents.ParseExtraFields("")).To(Equal(expected))
+			})
 		})
 
+		Context("called with extra events", func() {
+			It("should return a hash with the events we want", func() {
+				expected := map[string]string{"env": "dev", "kehe": "wakawaka"}
+				extraEvents := "env:dev,kehe:wakawaka"
+				Expect(fevents.ParseExtraFields(extraEvents)).To(Equal(expected))
+			})
+		})
+
+		Context("called with extra events with weird whitespace", func() {
+			It("should return a hash with the events we want", func() {
+				expected := map[string]string{"env": "dev", "kehe": "wakawaka"}
+				extraEvents := "    env:      \ndev,      kehe:wakawaka   "
+				Expect(fevents.ParseExtraFields(extraEvents)).To(Equal(expected))
+			})
+		})
+
+		Context("called with extra events with to many values to a kv pair", func() {
+			It("should return a error", func() {
+				extraEvents := "to:many:values"
+				_, err := fevents.ParseExtraFields(extraEvents)
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 
 })
