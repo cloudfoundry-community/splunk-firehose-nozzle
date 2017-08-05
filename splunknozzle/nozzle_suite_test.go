@@ -1,4 +1,4 @@
-package firehosenozzle_test
+package splunknozzle_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestFirehoseclient(t *testing.T) {
+func TestNozzle(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Firehoseclient Suite")
+	RunSpecs(t, "Nozzle Suite")
 }

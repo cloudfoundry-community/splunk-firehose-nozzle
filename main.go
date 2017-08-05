@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"code.cloudfoundry.org/cflager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 )
 
 var (

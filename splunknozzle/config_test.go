@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

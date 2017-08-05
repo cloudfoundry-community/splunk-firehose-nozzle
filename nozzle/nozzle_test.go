@@ -1,11 +1,11 @@
-package firehosenozzle_test
+package nozzle_test
 
 import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
 
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/firehosenozzle"
+	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
 
@@ -15,18 +15,18 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 )
 
-var _ = Describe("Firehoseclient", func() {
+var _ = Describe("Nozzle", func() {
 	var (
 		eventSource *testing.MemoryEventSourceMock
 		eventRouter *testing.EventRouterMock
-		nozzle      *FirehoseNozzle
+		nozzle      *Nozzle
 	)
 
 	Context("When there are no errors from event source", func() {
 		BeforeEach(func() {
 			eventSource = testing.NewMemoryEventSourceMock(-1, int64(10), -1)
 			eventRouter = testing.NewEventRouterMock()
-			config := &FirehoseConfig{
+			config := &Config{
 				Logger: lager.NewLogger("test"),
 			}
 			nozzle = New(eventSource, eventRouter, config)
@@ -48,7 +48,7 @@ var _ = Describe("Firehoseclient", func() {
 		return func() {
 			eventSource = testing.NewMemoryEventSourceMock(-1, int64(10), closeErr)
 			eventRouter = testing.NewEventRouterMock()
-			config := &FirehoseConfig{
+			config := &Config{
 				Logger: lager.NewLogger("test"),
 			}
 			nozzle = New(eventSource, eventRouter, config)

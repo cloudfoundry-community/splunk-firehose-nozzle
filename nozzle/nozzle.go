@@ -1,190 +1,102 @@
-package splunknozzle
+package nozzle
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"code.cloudfoundry.org/lager"
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehosenozzle"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
+	"github.com/gorilla/websocket"
 )
 
-type SplunkFirehoseNozzle struct {
-	config *Config
+type Config struct {
+	Logger lager.Logger
 }
 
-func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
-	return &SplunkFirehoseNozzle{
-		config: config,
+// Nozzle reads events from eventsource.Source and routes events
+// to targets by using eventrouter.Router
+type Nozzle struct {
+	eventSource eventsource.Source
+	eventRouter eventrouter.Router
+	config      *Config
+
+	closing chan struct{}
+	closed  chan struct{}
+}
+
+func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *Config) *Nozzle {
+	return &Nozzle{
+		eventRouter: eventRouter,
+		eventSource: eventSource,
+		config:      config,
+		closing:     make(chan struct{}, 1),
+		closed:      make(chan struct{}, 1),
 	}
 }
 
-// EventRouter creates EventRouter object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
-	config := &eventrouter.Config{
-		SelectedEvents: s.config.WantedEvents,
-		ExtraFields:    s.config.ExtraFields,
-	}
-	return eventrouter.New(cache, eventSink, config)
-}
-
-// PCFClient creates a client object which can talk to PCF
-func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
-	cfConfig := &cfclient.Config{
-		ApiAddress:        s.config.ApiEndpoint,
-		Username:          s.config.User,
-		Password:          s.config.Password,
-		SkipSslValidation: s.config.SkipSSL,
+func (f *Nozzle) Start() error {
+	err := f.eventSource.Open()
+	if err != nil {
+		return err
 	}
 
-	return cfclient.NewClient(cfConfig)
-}
+	defer close(f.closed)
 
-// AppCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) AppCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
-	if s.config.AddAppInfo {
-		c := cache.BoltdbCacheConfig{
-			Path:               s.config.BoltDBPath,
-			IgnoreMissingApps:  s.config.IgnoreMissingApps,
-			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
-			AppCacheTTL:        s.config.AppCacheTTL,
-			Logger:             logger,
+	var lastErr error
+	events, errs := f.eventSource.Read()
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
+				return lastErr
+			}
+
+			if err := f.eventRouter.Route(event); err != nil {
+				f.config.Logger.Error("Failed to route event", err)
+			}
+
+		case lastErr = <-errs:
+			f.handleError(lastErr)
+
+		case <-f.closing:
+			return lastErr
 		}
-		return cache.NewBoltdbCache(cfClient, &c)
 	}
-
-	return cache.NewNoCache(), nil
 }
 
-// EventSink creates std sink or Splunk sink
-func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, error) {
-	if s.config.Debug {
-		return &eventsink.Std{}, nil
-	}
-
-	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
+func (f *Nozzle) Close() error {
+	err := f.eventSource.Close()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// EventWriter for writing events
-	var writers []eventwriter.Writer
-	for i := 0; i < s.config.HecWorkers+1; i++ {
-		writer := eventwriter.NewSplunk(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-		writers = append(writers, writer)
-	}
-
-	config := &eventsink.SplunkConfig{
-		FlushInterval: s.config.FlushInterval,
-		QueueSize:     s.config.QueueSize,
-		BatchSize:     s.config.BatchSize,
-		Retries:       s.config.Retries,
-		Hostname:      s.config.JobHost,
-		Logger:        logger,
-	}
-
-	splunkSink := eventsink.NewSplunk(writers, config)
-	if err := splunkSink.Open(); err != nil {
-		return nil, fmt.Errorf("failed to connect splunk")
-	}
-
-	logger.RegisterSink(splunkSink)
-	return splunkSink, nil
+	close(f.closing)
+	<-f.closed
+	return nil
 }
 
-// EventSource creates eventsource.Source object which can read events from
-func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
-	config := &eventsource.FirehoseConfig{
-		KeepAlive:      s.config.KeepAlive,
-		SkipSSL:        s.config.SkipSSL,
-		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
-		SubscriptionID: s.config.SubscriptionID,
+func (f *Nozzle) handleError(err error) {
+	closeErr, ok := err.(*websocket.CloseError)
+	if !ok {
+		f.config.Logger.Error("Error while reading from the firehose", err)
+		return
 	}
 
-	return eventsource.NewFirehose(pcfClient, config)
-}
+	msg := ""
+	switch closeErr.Code {
+	case websocket.CloseNormalClosure:
+		msg = "Connection was disconnected by Firehose server. This usually means Nozzle can't keep up " +
+			"with server. Please try to scaling out Nozzzle with mulitple instances by using the " +
+			"same subscription ID."
 
-// FirehoseNozzle creates FirehoseNozzle object which glues the event source and event router
-func (s *SplunkFirehoseNozzle) FirehoseNozzle(eventSource eventsource.Source, eventRouter eventrouter.Router, logger lager.Logger) *firehosenozzle.FirehoseNozzle {
-	firehoseConfig := &firehosenozzle.FirehoseConfig{
-		Logger: logger,
+	case websocket.ClosePolicyViolation:
+		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
+			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
+			"was some temperary network issue causing the heartbeat to get lost."
+
+	default:
+		msg = "Encountered close error while reading from Firehose"
 	}
 
-	return firehosenozzle.New(eventSource, eventRouter, firehoseConfig)
-}
-
-// Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
-// It runs forever until something goes wrong
-func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
-	eventSink, err := s.EventSink(logger)
-	if err != nil {
-		return err
-	}
-
-	params := lager.Data{
-		"version": s.config.Version,
-		"branch":  s.config.Branch,
-		"commit":  s.config.Commit,
-		"buildos": s.config.BuildOS,
-
-		"add-app-info":             s.config.AddAppInfo,
-		"ignore-missing-app":       s.config.IgnoreMissingApps,
-		"app-cache-invalidate-ttl": s.config.AppCacheTTL,
-
-		"flush-interval": s.config.FlushInterval,
-		"queue-size":     s.config.QueueSize,
-		"batch-size":     s.config.BatchSize,
-		"workers":        s.config.HecWorkers,
-	}
-	logger.Info("splunk-firehose-nozzle runs", params)
-
-	pcfClient, err := s.PCFClient()
-	if err != nil {
-		return err
-	}
-
-	appCache, err := s.AppCache(pcfClient, logger)
-	if err != nil {
-		return err
-	}
-
-	err = appCache.Open()
-	if err != nil {
-		return err
-	}
-	defer appCache.Close()
-
-	eventRouter, err := s.EventRouter(appCache, eventSink)
-	if err != nil {
-		return err
-	}
-
-	eventSource := s.EventSource(pcfClient)
-	nozzle := s.FirehoseNozzle(eventSource, eventRouter, logger)
-
-	shutdown := make(chan os.Signal, 2)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		err := nozzle.Start()
-		if err != nil {
-			logger.Error("Firehose consumer exits with error", err)
-		}
-		shutdown <- os.Interrupt
-	}()
-
-	<-shutdown
-
-	logger.Info("Splunk Nozzle is going to exit gracefully")
-	nozzle.Close()
-	return eventSink.Close()
+	f.config.Logger.Error(msg, err)
 }
