@@ -43,42 +43,45 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 func (r *router) Route(msg *events.Envelope) error {
 	eventType := msg.GetEventType()
 
-	if r.selectedEvents[eventType.String()] {
-		var event *fevents.Event
-		switch eventType {
-		case events.Envelope_HttpStartStop:
-			event = fevents.HttpStartStop(msg)
-		case events.Envelope_LogMessage:
-			event = fevents.LogMessage(msg)
-		case events.Envelope_ValueMetric:
-			event = fevents.ValueMetric(msg)
-		case events.Envelope_CounterEvent:
-			event = fevents.CounterEvent(msg)
-		case events.Envelope_Error:
-			event = fevents.ErrorEvent(msg)
-		case events.Envelope_ContainerMetric:
-			event = fevents.ContainerMetric(msg)
-		}
+	if _, ok := r.selectedEvents[eventType.String()]; !ok {
+		// Ignore this event since we are not interested
+		return nil
+	}
 
-		event.AnnotateWithEnveloppeData(msg)
-		event.AnnotateWithMetaData(r.extraFields)
+	var event *fevents.Event
+	switch eventType {
+	case events.Envelope_HttpStartStop:
+		event = fevents.HttpStartStop(msg)
+	case events.Envelope_LogMessage:
+		event = fevents.LogMessage(msg)
+	case events.Envelope_ValueMetric:
+		event = fevents.ValueMetric(msg)
+	case events.Envelope_CounterEvent:
+		event = fevents.CounterEvent(msg)
+	case events.Envelope_Error:
+		event = fevents.ErrorEvent(msg)
+	case events.Envelope_ContainerMetric:
+		event = fevents.ContainerMetric(msg)
+	}
 
-		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
-			event.AnnotateWithAppData(r.appCache)
-		}
+	event.AnnotateWithEnveloppeData(msg)
+	event.AnnotateWithMetaData(r.extraFields)
 
-		if ignored, ok := event.Fields["cf_ignored_app"]; ok {
-			if ignoreApp, ok := ignored.(bool); ok && ignoreApp {
-				// Ignore events from this app
-				return nil
-			}
-		}
+	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
+		event.AnnotateWithAppData(r.appCache)
+	}
 
-		err := r.sink.Write(event.Fields, event.Msg)
-		if err != nil {
-			fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
-			r.sink.Write(fields, "Failed to write events")
+	if ignored, ok := event.Fields["cf_ignored_app"]; ok {
+		if ignoreApp, ok := ignored.(bool); ok && ignoreApp {
+			// Ignore events from this app since end user tag to ignore this app
+			return nil
 		}
 	}
-	return nil
+
+	err := r.sink.Write(event.Fields, event.Msg)
+	if err != nil {
+		fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
+		r.sink.Write(fields, "Failed to write events")
+	}
+	return err
 }

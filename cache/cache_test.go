@@ -1,112 +1,25 @@
 package cache_test
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager"
 
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
-
-type mockAppClient struct {
-	lock sync.RWMutex
-	apps map[string]cfclient.App
-	n    int
-}
-
-func newMockAppClient(n int) *mockAppClient {
-	apps := getApps(n)
-	return &mockAppClient{
-		apps: apps,
-		n:    n,
-	}
-}
-
-func (m *mockAppClient) AppByGuid(guid string) (cfclient.App, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	app, ok := m.apps[guid]
-	if ok {
-		return app, nil
-	}
-	return app, errors.New("No such app")
-}
-
-func (m *mockAppClient) ListApps() ([]cfclient.App, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	var apps []cfclient.App
-	for k := range m.apps {
-		apps = append(apps, m.apps[k])
-	}
-	return apps, nil
-}
-
-func (m *mockAppClient) CreateApp(appID, spaceID, orgID string) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	app := cfclient.App{
-		Guid: appID,
-		Name: appID,
-		SpaceData: cfclient.SpaceResource{
-			Entity: cfclient.Space{
-				Guid: spaceID,
-				Name: spaceID,
-				OrgData: cfclient.OrgResource{
-					Entity: cfclient.Org{
-						Guid: orgID,
-						Name: orgID,
-					},
-				},
-			},
-		},
-	}
-
-	m.apps[appID] = app
-}
-
-func getApps(n int) map[string]cfclient.App {
-	apps := make(map[string]cfclient.App, n)
-	for i := 0; i < n; i++ {
-		app := cfclient.App{
-			Guid: fmt.Sprintf("cf_app_id_%d", i),
-			Name: fmt.Sprintf("cf_app_name_%d", i),
-			SpaceData: cfclient.SpaceResource{
-				Entity: cfclient.Space{
-					Guid: fmt.Sprintf("cf_space_id_%d", i%50),
-					Name: fmt.Sprintf("cf_space_name_%d", i%50),
-					OrgData: cfclient.OrgResource{
-						Entity: cfclient.Org{
-							Guid: fmt.Sprintf("cf_org_id_%d", i%100),
-							Name: fmt.Sprintf("cf_org_name_%d", i%100),
-						},
-					},
-				},
-			},
-		}
-		apps[app.Guid] = app
-	}
-	return apps
-}
 
 var _ = Describe("Cache", func() {
 	var (
 		boltdbPath         = "/tmp/boltdb"
 		ignoreMissingApps  = true
-		appCacheTTL        = 3 * time.Second
-		missingAppCacheTTL = 4 * time.Second
+		appCacheTTL        = 2 * time.Second
+		missingAppCacheTTL = 2 * time.Second
 		n                  = 10
 
 		nilApp *App = nil
@@ -119,14 +32,14 @@ var _ = Describe("Cache", func() {
 			Logger:             lager.NewLogger("test"),
 		}
 
-		client *mockAppClient = nil
-		cache  *Boltdb        = nil
-		gerr   error          = nil
+		client *testing.AppClientMock = nil
+		cache  *Boltdb                = nil
+		gerr   error                  = nil
 	)
 
 	BeforeEach(func() {
 		os.Remove(boltdbPath)
-		client = newMockAppClient(n)
+		client = testing.NewAppClientMock(n)
 		cache, gerr = NewBoltdb(client, config)
 		Ω(gerr).ShouldNot(HaveOccurred())
 
