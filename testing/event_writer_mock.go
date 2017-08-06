@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -8,9 +9,14 @@ type EventWriterMock struct {
 	lock           sync.Mutex
 	capturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
+	ReturnErr      bool
 }
 
 func (m *EventWriterMock) Write(events []map[string]interface{}) error {
+	if m.ReturnErr {
+		return errors.New("mockup error")
+	}
+
 	if m.PostBatchFn != nil {
 		return m.PostBatchFn(events)
 	} else {

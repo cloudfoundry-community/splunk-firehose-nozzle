@@ -71,8 +71,8 @@ var _ = Describe("Splunk", func() {
 		config := &eventsink.SplunkConfig{
 			FlushInterval: time.Millisecond,
 			QueueSize:     1000,
-			BatchSize:     100,
-			Retries:       3,
+			BatchSize:     1,
+			Retries:       1,
 			Hostname:      "localhost",
 			Logger:        logger,
 		}
@@ -512,6 +512,49 @@ var _ = Describe("Splunk", func() {
 		})
 	})
 
+	It("Writer error, retry", func() {
+		eventType = events.Envelope_Error
+		eventRouter.Route(envelope)
+
+		mockClient.ReturnErr = true
+
+		err := sink.Open()
+		Ω(err).ShouldNot(HaveOccurred())
+		err = sink.Write(memSink.Events[0], memSink.Messages[0])
+		Ω(err).ShouldNot(HaveOccurred())
+		time.Sleep(time.Second)
+
+		sink.Close()
+	})
+
+	It("Sink error, retry", func() {
+		eventType = events.Envelope_Error
+		eventRouter.Route(envelope)
+
+		memSink.ReturnErr = true
+
+		err := sink.Open()
+		Ω(err).ShouldNot(HaveOccurred())
+		err = sink.Write(memSink.Events[0], memSink.Messages[0])
+		Ω(err).ShouldNot(HaveOccurred())
+		time.Sleep(time.Second)
+	})
+
+	It("Close no error", func() {
+		eventType = events.Envelope_Error
+		eventRouter.Route(envelope)
+
+		err := sink.Open()
+		Ω(err).ShouldNot(HaveOccurred())
+		err = sink.Write(memSink.Events[0], memSink.Messages[0])
+		Ω(err).ShouldNot(HaveOccurred())
+		time.Sleep(time.Second)
+
+		err = sink.Close()
+		Ω(err).ShouldNot(HaveOccurred())
+	})
+
+	// lager.Logger interface
 	It("posts to splunk", func() {
 		message := lager.LogFormat{}
 
@@ -586,6 +629,18 @@ var _ = Describe("Splunk", func() {
 		event := envelope["event"].(map[string]interface{})
 		Expect(event["ip"]).ToNot(BeEmpty())
 		Expect(event["origin"]).To(Equal("splunk_nozzle"))
+	})
+
+	It("std no error", func() {
+		s := &eventsink.Std{}
+		err := s.Open()
+		Ω(err).ShouldNot(HaveOccurred())
+
+		err = s.Write(nil, "testing")
+		Ω(err).ShouldNot(HaveOccurred())
+
+		err = s.Close()
+		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 })

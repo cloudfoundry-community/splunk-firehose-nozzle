@@ -1,8 +1,11 @@
 package testing
 
+import "errors"
+
 type MemorySinkMock struct {
-	Events   []map[string]interface{}
-	Messages []string
+	Events    []map[string]interface{}
+	Messages  []string
+	ReturnErr bool
 }
 
 func NewMemorySinkMock() *MemorySinkMock {
@@ -21,6 +24,10 @@ func (l *MemorySinkMock) Close() error {
 }
 
 func (l *MemorySinkMock) Write(fields map[string]interface{}, msg string) error {
+	if l.ReturnErr {
+		return errors.New("mockup error")
+	}
+
 	l.Events = append(l.Events, fields)
 	l.Messages = append(l.Messages, msg)
 	return nil

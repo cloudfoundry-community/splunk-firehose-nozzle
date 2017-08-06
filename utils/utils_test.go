@@ -18,6 +18,7 @@ var _ = Describe("Testing Utils packages", func() {
 
 		})
 	})
+
 	Describe("Concat String ", func() {
 		Context("Called with String Map", func() {
 			It("Should return Concat string", func() {
@@ -76,5 +77,23 @@ var _ = Describe("Testing Utils packages", func() {
 			Expect(ok).To(Equal(true))
 			Expect(sr).To(Equal(nonJsonStr))
 		})
+	})
+
+	It("GetHostIPInfo", func() {
+		hostname, _, err := GetHostIPInfo("localhost")
+		Ω(err).ShouldNot(HaveOccurred())
+		Expect(hostname).To(Equal("localhost"))
+
+		hostname, ip, err := GetHostIPInfo("invalid")
+		Ω(err).Should(HaveOccurred())
+		Expect(hostname).To(Equal("invalid"))
+		Expect(ip).To(Equal(""))
+
+		GetHostIPInfo("")
+	})
+
+	It("NanoSecondsToSeconds", func() {
+		nano := NanoSecondsToSeconds(1501981978112315664)
+		Expect(nano).To(Equal("1501981978.112"))
 	})
 })

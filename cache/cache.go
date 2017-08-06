@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"regexp"
-
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
@@ -16,8 +14,6 @@ type App struct {
 	IgnoredApp bool
 }
 
-//go:generate counterfeiter . Cache
-
 type Cache interface {
 	Open() error
 	Close() error
@@ -29,9 +25,4 @@ type Cache interface {
 type AppClient interface {
 	AppByGuid(appGuid string) (cfclient.App, error)
 	ListApps() ([]cfclient.App, error)
-}
-
-func IsNeeded(wantedEvents string) bool {
-	r := regexp.MustCompile("LogMessage|HttpStart|HttpStop|HttpStartStop|ContainerMetric")
-	return r.MatchString(wantedEvents)
 }

@@ -17,6 +17,47 @@ type Event struct {
 	Type   string
 }
 
+func HttpStart(msg *events.Envelope) *Event {
+	httpStart := msg.GetHttpStart()
+
+	fields := logrus.Fields{
+		"timestamp":         httpStart.GetTimestamp(),
+		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
+		"method":            httpStart.GetMethod().String(),
+		"uri":               httpStart.GetUri(),
+		"remote_addr":       httpStart.GetRemoteAddress(),
+		"user_agent":        httpStart.GetUserAgent(),
+		"parent_request_id": utils.FormatUUID(httpStart.GetParentRequestId()),
+		"cf_app_id":         utils.FormatUUID(httpStart.GetApplicationId()),
+		"instance_index":    httpStart.GetInstanceIndex(),
+		"instance_id":       httpStart.GetInstanceId(),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
+}
+
+func HttpStop(msg *events.Envelope) *Event {
+	httpStop := msg.GetHttpStop()
+
+	fields := logrus.Fields{
+		"timestamp":      httpStop.GetTimestamp(),
+		"uri":            httpStop.GetUri(),
+		"request_id":     utils.FormatUUID(httpStop.GetRequestId()),
+		"peer_type":      httpStop.GetPeerType().String(),
+		"status_code":    httpStop.GetStatusCode(),
+		"content_length": httpStop.GetContentLength(),
+		"cf_app_id":      utils.FormatUUID(httpStop.GetApplicationId()),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
+}
+
 func HttpStartStop(msg *events.Envelope) *Event {
 	httpStartStop := msg.GetHttpStartStop()
 
@@ -162,7 +203,6 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 		}
 
 		e.Fields["cf_ignored_app"] = cf_ignored_app
-
 	}
 }
 
@@ -184,12 +224,8 @@ func (e *Event) AnnotateWithEnveloppeData(msg *events.Envelope) {
 }
 
 func IsAuthorizedEvent(wantedEvent string) bool {
-	for _, authorizeEvent := range events.Envelope_EventType_name {
-		if wantedEvent == authorizeEvent {
-			return true
-		}
-	}
-	return false
+	_, ok := events.Envelope_EventType_value[wantedEvent]
+	return ok
 }
 
 func AuthorizedEvents() string {

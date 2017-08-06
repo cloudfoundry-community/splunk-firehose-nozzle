@@ -62,11 +62,17 @@ func (r *router) Route(msg *events.Envelope) error {
 		event = fevents.ErrorEvent(msg)
 	case events.Envelope_ContainerMetric:
 		event = fevents.ContainerMetric(msg)
+	case events.Envelope_HttpStart:
+		event = fevents.HttpStart(msg)
+	case events.Envelope_HttpStop:
+		event = fevents.HttpStop(msg)
+
+	default:
+		return fmt.Errorf("Unsupported event type: %s", eventType.String())
 	}
 
 	event.AnnotateWithEnveloppeData(msg)
 	event.AnnotateWithMetaData(r.extraFields)
-
 	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 		event.AnnotateWithAppData(r.appCache)
 	}

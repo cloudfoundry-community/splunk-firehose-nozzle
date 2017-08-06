@@ -1,7 +1,9 @@
 package testing
 
 import (
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/sonde-go/events"
@@ -13,12 +15,17 @@ type MemoryEventSourceMock struct {
 	errors      chan error
 	eps         int
 	totalEvents int64
+	wg          sync.WaitGroup
 	done        chan struct{}
+	lock        sync.Mutex
+	started     bool
 }
 
 const (
 	maxEPS = 500000
 )
+
+var MockupErr = errors.New("mockup error")
 
 func biggerThanMaxEPS(eps int) bool {
 	return eps <= 0 || eps > maxEPS
@@ -42,6 +49,11 @@ func NewMemoryEventSourceMock(eps int, totalEvents int64, errCode int) *MemoryEv
 		e.errors <- err
 	}
 
+	if errCode == 0 {
+		e.errors <- MockupErr
+	}
+
+	e.wg.Add(1)
 	go e.publishEvents()
 	return e
 }
@@ -55,9 +67,20 @@ func (e *MemoryEventSourceMock) Read() (<-chan *events.Envelope, <-chan error) {
 }
 
 func (e *MemoryEventSourceMock) Close() error {
-	var done struct{}
-	e.done <- done
-	<-e.done
+	e.lock.Lock()
+
+	if !e.started {
+		e.lock.Unlock()
+		return errors.New("not started")
+	}
+	e.started = false
+	e.lock.Unlock()
+
+	e.done <- struct{}{}
+
+	e.wg.Wait()
+
+	close(e.events)
 	return nil
 }
 
@@ -71,6 +94,11 @@ func (e *MemoryEventSourceMock) produce(numOfEvents int64) {
 }
 
 func (e *MemoryEventSourceMock) publishEvents() {
+	defer e.wg.Done()
+	e.lock.Lock()
+	e.started = true
+	e.lock.Unlock()
+
 	if biggerThanMaxEPS(e.eps) {
 		e.publishEventsAsFastAsPossible()
 		return

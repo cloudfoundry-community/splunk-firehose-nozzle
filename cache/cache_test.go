@@ -163,4 +163,24 @@ var _ = Describe("Cache", func() {
 			Expect(len(apps)).To(Equal(n))
 		})
 	})
+
+	Context("No cache", func() {
+		It("No error", func() {
+			c := NewNoCache()
+			err := c.Open()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			apps, err := c.GetAllApps()
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(apps).To(BeNil())
+
+			app, err := c.GetApp("testing")
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(app).To(BeNil())
+
+			err = c.Close()
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
+
 })

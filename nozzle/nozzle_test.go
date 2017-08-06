@@ -42,6 +42,13 @@ var _ = Describe("Nozzle", func() {
 			}).Should(HaveLen(10))
 		})
 
+		It("EventSource close", func() {
+			go nozzle.Start()
+			time.Sleep(time.Second)
+			eventSource.Close()
+			time.Sleep(time.Second)
+			nozzle.Close()
+		})
 	})
 
 	prepare := func(closeErr int) func() {
@@ -67,8 +74,11 @@ var _ = Describe("Nozzle", func() {
 			nozzle.Close()
 
 			err := <-done
-			ce := err.(*websocket.CloseError)
-			Expect(ce.Code).To(Equal(closeErr))
+			if ce, ok := err.(*websocket.CloseError); ok {
+				Expect(ce.Code).To(Equal(closeErr))
+			} else {
+				Expect(err).To(Equal(testing.MockupErr))
+			}
 		}
 	}
 
@@ -86,4 +96,10 @@ var _ = Describe("Nozzle", func() {
 		BeforeEach(prepare(websocket.CloseGoingAway))
 		It("handles errors when collects events from source", runAndAssert(websocket.CloseGoingAway))
 	})
+
+	Context("When there is other error from event source", func() {
+		BeforeEach(prepare(0))
+		It("handles errors when collects events from source", runAndAssert(0))
+	})
+
 })

@@ -1,23 +1,127 @@
 package events_test
 
 import (
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
-	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/cache/cachefakes"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Events", func() {
-	var fcache *FakeCache
-	var event *fevents.Event
-	var msg *Envelope
+	var (
+		fcache *testing.MemoryCacheMock
+		event  *fevents.Event
+		msg    *Envelope
+	)
+
 	BeforeEach(func() {
-		fcache = new(FakeCache)
-		msg = CreateLogMessage()
+		fcache = &testing.MemoryCacheMock{}
+		msg = NewLogMessage()
 		event = fevents.LogMessage(msg)
 		event.AnnotateWithEnveloppeData(msg)
+	})
+
+	It("HttpStart", func() {
+		msg = NewHttpStart()
+		evt := fevents.HttpStart(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["timestamp"]).To(Equal(timestamp))
+		Expect(evt.Fields["request_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["method"]).To(Equal(methodStr))
+		Expect(evt.Fields["uri"]).To(Equal(uri))
+		Expect(evt.Fields["remote_addr"]).To(Equal(remoteAddr))
+		Expect(evt.Fields["user_agent"]).To(Equal(userAgent))
+		Expect(evt.Fields["parent_request_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["instance_index"]).To(Equal(instanceIdx))
+		Expect(evt.Fields["instance_id"]).To(Equal(instanceId))
+	})
+
+	It("HttpStop", func() {
+		msg = NewHttpStop()
+		evt := fevents.HttpStop(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["timestamp"]).To(Equal(timestamp))
+		Expect(evt.Fields["uri"]).To(Equal(uri))
+		Expect(evt.Fields["request_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["peer_type"]).To(Equal(peerTypeStr))
+		Expect(evt.Fields["status_code"]).To(Equal(statusCode))
+		Expect(evt.Fields["content_length"]).To(Equal(contentLength))
+		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
+	})
+
+	It("HttpStartStop", func() {
+		msg = NewHttpStartStop()
+		evt := fevents.HttpStartStop(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["content_length"]).To(Equal(contentLength))
+		Expect(evt.Fields["instance_index"]).To(Equal(instanceIdx))
+		Expect(evt.Fields["instance_id"]).To(Equal(instanceId))
+		Expect(evt.Fields["method"]).To(Equal(methodStr))
+		Expect(evt.Fields["peer_type"]).To(Equal(peerTypeStr))
+		Expect(evt.Fields["remote_addr"]).To(Equal(remoteAddr))
+		Expect(evt.Fields["request_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["start_timestamp"]).To(Equal(timestamp))
+		Expect(evt.Fields["stop_timestamp"]).To(Equal(timestamp))
+		Expect(evt.Fields["status_code"]).To(Equal(statusCode))
+		Expect(evt.Fields["uri"]).To(Equal(uri))
+		Expect(evt.Fields["user_agent"]).To(Equal(userAgent))
+		Expect(evt.Fields["forwarded"]).To(BeNil())
+	})
+
+	It("ValueMetric", func() {
+		msg = NewValueMetric()
+		evt := fevents.ValueMetric(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["name"]).To(Equal(name))
+		Expect(evt.Fields["value"]).To(Equal(value))
+		Expect(evt.Fields["unit"]).To(Equal(unit))
+	})
+
+	It("CounterEvent", func() {
+		msg = NewCounterEvent()
+		evt := fevents.CounterEvent(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["name"]).To(Equal(name))
+		Expect(evt.Fields["delta"]).To(Equal(delta))
+		Expect(evt.Fields["total"]).To(Equal(total))
+	})
+
+	It("ErrorEvent", func() {
+		msg = NewErrorEvent()
+		evt := fevents.ErrorEvent(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(message))
+		Expect(evt.Fields["code"]).To(Equal(code))
+		Expect(evt.Fields["source"]).To(Equal(source))
+	})
+
+	It("ContainerMetric", func() {
+		msg = NewContainerMetric()
+		evt := fevents.ContainerMetric(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
+		Expect(evt.Fields["cpu_percentage"]).To(Equal(cpuPercentage))
+		Expect(evt.Fields["disk_bytes"]).To(Equal(diskBytes))
+		Expect(evt.Fields["disk_bytes_quota"]).To(Equal(diskBytesQuota))
+		Expect(evt.Fields["memory_bytes"]).To(Equal(memoryBytes))
+		Expect(evt.Fields["memory_bytes_quota"]).To(Equal(memoryBytesQuota))
+		Expect(evt.Fields["instance_index"]).To(Equal(instanceIdx))
 	})
 
 	Context("given a envelope", func() {
@@ -31,6 +135,7 @@ var _ = Describe("Events", func() {
 			Expect(event.Msg).To(Equal("Help, I'm a rock! Help, I'm a rock! Help, I'm a cop! Help, I'm a cop!"))
 		})
 	})
+
 	Context("given metadata", func() {
 		It("Should give us the right metadata", func() {
 			event.AnnotateWithMetaData(map[string]string{"extra": "field"})
@@ -44,26 +149,25 @@ var _ = Describe("Events", func() {
 
 	Context("given Application Metadata", func() {
 		It("Should give us the right Application metadata", func() {
-			fcache.GetAppStub = func(appid string) (*App, error) {
-				Expect(appid).To(Equal("eea38ba5-53a5-4173-9617-b442d35ec2fd"))
-				return &App{
-					Name:       "App-Name",
-					Guid:       appid,
-					SpaceName:  "Space-Name",
-					SpaceGuid:  "Space-Guid",
-					OrgName:    "Org-Name",
-					OrgGuid:    "Org-Guid",
-					IgnoredApp: true,
-				}, nil
-			}
+			fcache.SetIgnoreApp(true)
 			event.AnnotateWithAppData(fcache)
-			Expect(event.Fields["cf_app_name"]).To(Equal("App-Name"))
-			Expect(event.Fields["cf_space_id"]).To(Equal("Space-Guid"))
-			Expect(event.Fields["cf_space_name"]).To(Equal("Space-Name"))
-			Expect(event.Fields["cf_org_id"]).To(Equal("Org-Guid"))
-			Expect(event.Fields["cf_org_name"]).To(Equal("Org-Name"))
+			Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
+			Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
+			Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
+			Expect(event.Fields["cf_org_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d7"))
+			Expect(event.Fields["cf_org_name"]).To(Equal("testing-org"))
 			Expect(event.Fields["cf_ignored_app"]).To(Equal(true))
 		})
+	})
+
+	It("HttpStart", func() {
+		event.AnnotateWithAppData(fcache)
+		Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
+		Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
+		Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
+		Expect(event.Fields["cf_org_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d7"))
+		Expect(event.Fields["cf_org_name"]).To(Equal("testing-org"))
+		Expect(event.Fields["cf_ignored_app"]).To(Equal(false))
 	})
 
 	Context("ParseSelectedEvents, empty select events passed in", func() {
