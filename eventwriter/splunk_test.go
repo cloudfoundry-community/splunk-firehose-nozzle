@@ -22,10 +22,18 @@ var _ = Describe("Splunk", func() {
 		capturedBody    []byte
 		splunkResponse  []byte
 		logger          lager.Logger
+		config          *SplunkConfig
 	)
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("test")
+		config = &SplunkConfig{
+			Token:   "token",
+			Index:   "",
+			Fields:  nil,
+			SkipSSL: true,
+			Logger:  logger,
+		}
 	})
 
 	Context("success response", func() {
@@ -43,6 +51,8 @@ var _ = Describe("Splunk", func() {
 
 				writer.Write(splunkResponse)
 			}))
+
+			config.Host = testServer.URL
 		})
 
 		AfterEach(func() {
@@ -51,7 +61,9 @@ var _ = Describe("Splunk", func() {
 
 		It("correctly authenticates requests", func() {
 			tokenValue := "abc-some-random-token"
-			client := NewSplunk(tokenValue, testServer.URL, "", nil, true, logger)
+			config.Token = tokenValue
+
+			client := NewSplunk(config)
 			events := []map[string]interface{}{}
 			err := client.Write(events)
 
@@ -65,7 +77,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets content type to json", func() {
-			client := NewSplunk("token", testServer.URL, "", nil, true, logger)
+			client := NewSplunk(config)
 			events := []map[string]interface{}{}
 			err := client.Write(events)
 
@@ -77,7 +89,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("Writes batch event json", func() {
-			client := NewSplunk("token", testServer.URL, "", nil, true, logger)
+			client := NewSplunk(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -105,7 +117,8 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets index in splunk payload", func() {
-			client := NewSplunk("token", testServer.URL, "index_cf", nil, true, logger)
+			config.Index = "index_cf"
+			client := NewSplunk(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -132,8 +145,9 @@ var _ = Describe("Splunk", func() {
 				"foo":   "bar",
 				"hello": "world",
 			}
+			config.Fields = fields
 
-			client := NewSplunk("token", testServer.URL, "", fields, true, logger)
+			client := NewSplunk(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -157,7 +171,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("Writes to correct endpoint", func() {
-			client := NewSplunk("token", testServer.URL, "", nil, true, logger)
+			client := NewSplunk(config)
 			events := []map[string]interface{}{}
 			err := client.Write(events)
 
@@ -167,7 +181,8 @@ var _ = Describe("Splunk", func() {
 	})
 
 	It("returns error on bad splunk host", func() {
-		client := NewSplunk("token", ":", "", nil, true, logger)
+		config.Host = ":"
+		client := NewSplunk(config)
 		events := []map[string]interface{}{}
 		err := client.Write(events)
 
@@ -181,7 +196,8 @@ var _ = Describe("Splunk", func() {
 			writer.Write([]byte("Internal server error"))
 		}))
 
-		client := NewSplunk("token", testServer.URL, "", nil, true, logger)
+		config.Host = testServer.URL
+		client := NewSplunk(config)
 		events := []map[string]interface{}{}
 		err := client.Write(events)
 
@@ -190,7 +206,8 @@ var _ = Describe("Splunk", func() {
 	})
 
 	It("Returns error from http client", func() {
-		client := NewSplunk("token", "foo://example.com", "", nil, true, logger)
+		config.Host = "foo://example.com"
+		client := NewSplunk(config)
 		events := []map[string]interface{}{}
 		err := client.Write(events)
 

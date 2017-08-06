@@ -3,8 +3,6 @@ package splunknozzle
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -49,7 +47,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 }
 
 // AppCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) AppCache(cfClient *cfclient.Client, logger lager.Logger) (cache.Cache, error) {
+func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
 		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
@@ -58,7 +56,7 @@ func (s *SplunkFirehoseNozzle) AppCache(cfClient *cfclient.Client, logger lager.
 			AppCacheTTL:        s.config.AppCacheTTL,
 			Logger:             logger,
 		}
-		return cache.NewBoltdb(cfClient, &c)
+		return cache.NewBoltdb(client, &c)
 	}
 
 	return cache.NewNoCache(), nil
@@ -76,13 +74,22 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 	}
 
 	// EventWriter for writing events
-	var writers []eventwriter.Writer
-	for i := 0; i < s.config.HecWorkers+1; i++ {
-		writer := eventwriter.NewSplunk(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-		writers = append(writers, writer)
+	writerConfig := &eventwriter.SplunkConfig{
+		Host:    s.config.SplunkHost,
+		Token:   s.config.SplunkToken,
+		Index:   s.config.SplunkIndex,
+		Fields:  parsedExtraFields,
+		SkipSSL: s.config.SkipSSL,
+		Logger:  logger,
 	}
 
-	config := &eventsink.SplunkConfig{
+	var writers []eventwriter.Writer
+	for i := 0; i < s.config.HecWorkers+1; i++ {
+		splunkWriter := eventwriter.NewSplunk(writerConfig)
+		writers = append(writers, splunkWriter)
+	}
+
+	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
@@ -91,7 +98,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Logger:        logger,
 	}
 
-	splunkSink := eventsink.NewSplunk(writers, config)
+	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
 	if err := splunkSink.Open(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
@@ -123,7 +130,7 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
-func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
+func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
 	eventSink, err := s.EventSink(logger)
 	if err != nil {
 		return err
@@ -155,18 +162,15 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 	eventSource := s.EventSource(pcfClient)
 	noz := s.Nozzle(eventSource, eventRouter, logger)
 
-	shutdown := make(chan os.Signal, 2)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
 		err := noz.Start()
 		if err != nil {
 			logger.Error("Firehose consumer exits with error", err)
 		}
-		shutdown <- os.Interrupt
+		shutdownChan <- os.Interrupt
 	}()
 
-	<-shutdown
+	<-shutdownChan
 
 	logger.Info("Splunk Nozzle is going to exit gracefully")
 	noz.Close()
