@@ -1,6 +1,7 @@
 package splunknozzle
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,43 +11,43 @@ import (
 )
 
 type Config struct {
-	ApiEndpoint string
-	User        string
-	Password    string
+	ApiEndpoint string `json:"api-endpoint"`
+	User        string `json:"-"`
+	Password    string `json:"-"`
 
-	SplunkToken string
-	SplunkHost  string
-	SplunkIndex string
+	SplunkToken string `json:"-"`
+	SplunkHost  string `json:"splunk-host"`
+	SplunkIndex string `json:"splunk-index"`
 
-	JobName  string
-	JobIndex string
-	JobHost  string
+	JobName  string `json:"job-name"`
+	JobIndex string `json:"job-index"`
+	JobHost  string `json:"job-host"`
 
-	SkipSSL        bool
-	SubscriptionID string
-	KeepAlive      time.Duration
+	SkipSSL        bool          `json:"skip-ssl"`
+	SubscriptionID string        `json:"subscription-id"`
+	KeepAlive      time.Duration `json:"keep-alive"`
 
-	AddAppInfo         bool
-	IgnoreMissingApps  bool
-	MissingAppCacheTTL time.Duration
-	AppCacheTTL        time.Duration
+	AddAppInfo         bool          `json:"add-app-info"`
+	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
+	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
+	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
 
-	BoltDBPath   string
-	WantedEvents string
-	ExtraFields  string
+	BoltDBPath   string `json:"boltdb-path"`
+	WantedEvents string `json:"wanted-events"`
+	ExtraFields  string `json:"extra-fields"`
 
-	FlushInterval time.Duration
-	QueueSize     int
-	BatchSize     int
-	Retries       int
-	HecWorkers    int
+	FlushInterval time.Duration `json:"flush-interval"`
+	QueueSize     int           `json:"queue-size"`
+	BatchSize     int           `json:"batch-size"`
+	Retries       int           `json:"retries"`
+	HecWorkers    int           `json:"hec-workers"`
 
-	Version string
-	Branch  string
-	Commit  string
-	BuildOS string
+	Version string `json:"version"`
+	Branch  string `json:"branch"`
+	Commit  string `json:"commit"`
+	BuildOS string `json:"buildos"`
 
-	Debug bool
+	Debug bool `json:"debug"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -116,4 +117,11 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Parse()
 
 	return c
+}
+
+func (c *Config) ToMap() map[string]interface{} {
+	data, _ := json.Marshal(c)
+	var r map[string]interface{}
+	json.Unmarshal(data, &r)
+	return r
 }

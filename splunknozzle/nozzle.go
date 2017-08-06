@@ -129,22 +129,7 @@ func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
 		return err
 	}
 
-	params := lager.Data{
-		"version": s.config.Version,
-		"branch":  s.config.Branch,
-		"commit":  s.config.Commit,
-		"buildos": s.config.BuildOS,
-
-		"add-app-info":             s.config.AddAppInfo,
-		"ignore-missing-app":       s.config.IgnoreMissingApps,
-		"app-cache-invalidate-ttl": s.config.AppCacheTTL,
-
-		"flush-interval": s.config.FlushInterval,
-		"queue-size":     s.config.QueueSize,
-		"batch-size":     s.config.BatchSize,
-		"workers":        s.config.HecWorkers,
-	}
-	logger.Info("splunk-firehose-nozzle runs", params)
+	logger.Info("splunk-firehose-nozzle runs", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
