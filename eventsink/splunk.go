@@ -61,8 +61,10 @@ func (s *Splunk) Close() error {
 }
 
 func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
-	event := s.buildEvent(fields, msg)
-	s.events <- event
+	if len(msg) > 0 {
+		fields["msg"] = msg
+	}
+	s.events <- fields
 	return nil
 }
 
@@ -82,10 +84,11 @@ LOOP:
 				break LOOP
 			}
 
+			event = s.buildEvent(event)
 			batch = append(batch, event)
 			if len(batch) >= s.config.BatchSize {
 				batch = s.indexEvents(writer, batch)
-				timer.Reset(s.config.FlushInterval) //reset channel timer
+				timer.Reset(s.config.FlushInterval) // reset channel timer
 			}
 
 		case <-timer.C:
@@ -118,10 +121,13 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 	return nil
 }
 
-func (s *Splunk) buildEvent(fields map[string]interface{}, msg string) map[string]interface{} {
-	if len(msg) > 0 {
-		fields["msg"] = utils.ToJson(msg)
+func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{} {
+	if msg, ok := fields["msg"]; ok {
+		if msgStr, ok := msg.(string); ok && len(msgStr) > 0 {
+			fields["msg"] = utils.ToJson(msgStr)
+		}
 	}
+
 	event := map[string]interface{}{}
 
 	var timestamp string
@@ -131,6 +137,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}, msg string) map[strin
 		}
 	}
 
+	// Timestamp
 	if timestamp == "" {
 		timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	}
