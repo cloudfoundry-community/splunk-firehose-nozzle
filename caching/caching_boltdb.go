@@ -3,6 +3,7 @@ package caching
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -25,6 +26,7 @@ type CachingBoltConfig struct {
 	IgnoreMissingApps  bool
 	MissingAppCacheTTL time.Duration
 	AppCacheTTL        time.Duration
+	AppLimits          int
 }
 
 type CachingBolt struct {
@@ -201,7 +203,17 @@ func (c *CachingBolt) getAllAppsFromBoltDB() (map[string]*App, error) {
 func (c *CachingBolt) getAllAppsFromRemote() (map[string]*App, error) {
 	logging.LogStd("Retrieving Apps for Cache...", false)
 
-	cfApps, err := c.appClient.ListApps()
+	totalPages := 0
+	q := url.Values{}
+	q.Set("inline-relations-depth", "2")
+	if c.config.AppLimits > 0 {
+		// Latest N apps
+		q.Set("order-direction", "desc")
+		q.Set("results-per-page", "100")
+		totalPages = c.config.AppLimits%100 + 1
+	}
+
+	cfApps, err := c.appClient.ListAppsByQueryWithLimits(q, totalPages)
 	if err != nil {
 		return nil, err
 	}
