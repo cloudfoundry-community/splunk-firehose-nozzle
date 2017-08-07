@@ -68,7 +68,10 @@ JOB_HOST -
 Job host to tag nozzle's own log events with.
 
 ADD_APP_INFO -
-Query API to fetch app details.
+Enrich raw data with app details.
+
+APP_LIMITS -
+Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache.
 
 API_ENDPOINT -
 Cloud Foundry API endpoint address.
