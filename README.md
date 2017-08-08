@@ -3,7 +3,7 @@
 Cloud Foundry Firehose-to-Splunk Nozzle
 
 ### Usage
-Splunk nozzle is used to stream Cloud Foundry Firehose events to Splunk HTTP Event Collector. Using pre-defined Splunk sourcetypes, the nozzle automatically parses the events and enriches them with additional metadata before forwarding to Splunk. For detailed descriptions of each Firehose event type and their fields, refer to underlying [dropsonde protocol](https://github.com/cloudfoundry/dropsonde-protocol). Below is a mapping of each firehose event type to its corresponding Splunk sourcetype. Refer to [Searching Events](#searching-events) for example Splunk searches.
+Splunk nozzle is used to stream Cloud Foundry Firehose events to Splunk HTTP Event Collector. Using pre-defined Splunk sourcetypes, the nozzle automatically parses the events and enriches them with additional metadata before forwarding to Splunk. For detailed descriptions of each Firehose event type and their fields, refer to underlying [dropsonde protocol](https://github.com/cloudfoundry/dropsonde-protocol). Below is a mapping of each Firehose event type to its corresponding Splunk sourcetype. Refer to [Searching Events](#searching-events) for example Splunk searches.
 
 | Firehose event type | Splunk sourcetype | Description
 |---|---|---
@@ -48,7 +48,7 @@ uaac -t member add doppler.firehose splunk-nozzle
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
-#### Environment Paramaters (declare parameters by making a copy of scripts/nozzle.sh.template)
+#### Environment Parameters (declare parameters by making a copy of scripts/nozzle.sh.template)
 
 Cloud Foundry configuration parameters:
 
@@ -120,70 +120,6 @@ Set the internal consumer queue buffer size.
 HEC_BATCH_SIZE -
 Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 
-### Development
-
-#### Software Requirements
-
-Make sure you have the following installed on your workstation:
-
-| Software | Version
-| --- | --- |
-| go | go1.7.x
-| glide | 0.12.x
-
-Then install all dependent packages via [Glide](https://glide.sh/):
-
-```
-$ cd <REPO_ROOT_DIRECTORY>
-$ make installdeps
-```
-
-#### Environment
-
-For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
-copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
-
-```
-$ cp script/dev.sh.template scripts/nozzle.sh
-$ chmod +x scripts/nozzle.sh
-```
-
-Build project:
-
-```
-$ make VERSION=1.0
-```
-
-Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
-
-```
-$ ginkgo -r
-```
-
-Run all kinds of testing
-
-```
-$ make test # run all unittest
-$ make race # test if there is race condition in the code
-$ make vet  # examine GoLang code
-$ make cov  # code coverage test and code coverage html report
-```
-
-Or run all testings: unit test, race condition test, code coverage etc
-```
-$ make testall
-```
-
-Run app
-
-```
-# this will run: go run main.go
-$ ./scripts/nozzle.sh
-```
-
-#### CI
-
-https://concourse.cfplatformeng.com/teams/splunk/pipelines/splunk-firehose-tile-build
 
 ### Push as an App to Cloud Foundry
 
@@ -200,7 +136,7 @@ on making a user and credentials.
     cd splunk-firehose-nozzle
     ```
 
-1. Authenticate to Cloud Foundruy
+1. Authenticate to Cloud Foundry
 
     ```shell
     cf login -a https://api.[your cf system domain] -u [your id]
@@ -306,3 +242,67 @@ sourcetype="cf:counterevent"
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
+### Development
+
+#### Software Requirements
+
+Make sure you have the following installed on your workstation:
+
+| Software | Version
+| --- | --- |
+| go | go1.7.x
+| glide | 0.12.x
+
+Then install all dependent packages via [Glide](https://glide.sh/):
+
+```
+$ cd <REPO_ROOT_DIRECTORY>
+$ make installdeps
+```
+
+#### Environment
+
+For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
+copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
+
+```
+$ cp script/dev.sh.template scripts/nozzle.sh
+$ chmod +x scripts/nozzle.sh
+```
+
+Build project:
+
+```
+$ make VERSION=1.0
+```
+
+Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
+
+```
+$ ginkgo -r
+```
+
+Run all kinds of testing
+
+```
+$ make test # run all unittest
+$ make race # test if there is race condition in the code
+$ make vet  # examine GoLang code
+$ make cov  # code coverage test and code coverage html report
+```
+
+Or run all testings: unit test, race condition test, code coverage etc
+```
+$ make testall
+```
+
+Run app
+
+```
+# this will run: go run main.go
+$ ./scripts/nozzle.sh
+```
+
+#### CI
+
+https://concourse.cfplatformeng.com/teams/splunk/pipelines/splunk-firehose-tile-build
