@@ -89,7 +89,7 @@ var _ = Describe("Cache", func() {
 			Expect(err).To(Equal(MissingAndIgnoredErr))
 			Expect(app).To(Equal(nilApp))
 
-			time.Sleep(missingAppCacheTTL + 2)
+			time.Sleep(missingAppCacheTTL + 3)
 
 			// We ignore missing apps, so for the 3rd time query after sleep,
 			// the missing app cache will be cleaned up, so a not found error

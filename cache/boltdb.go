@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -26,6 +27,7 @@ type BoltdbConfig struct {
 	IgnoreMissingApps  bool
 	MissingAppCacheTTL time.Duration
 	AppCacheTTL        time.Duration
+	AppLimits          int
 
 	Logger lager.Logger
 }
@@ -204,7 +206,17 @@ func (c *Boltdb) getAllAppsFromBoltDB() (map[string]*App, error) {
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 	c.config.Logger.Info("Retrieving apps from remote")
 
-	cfApps, err := c.appClient.ListApps()
+	totalPages := 0
+	q := url.Values{}
+	q.Set("inline-relations-depth", "2")
+	if c.config.AppLimits > 0 {
+		// Latest N apps
+		q.Set("order-direction", "desc")
+		q.Set("results-per-page", "100")
+		totalPages = c.config.AppLimits/100 + 1
+	}
+
+	cfApps, err := c.appClient.ListAppsByQueryWithLimits(q, totalPages)
 	if err != nil {
 		return nil, err
 	}

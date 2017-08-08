@@ -3,6 +3,7 @@ package testing
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -42,6 +43,10 @@ func (m *AppClientMock) ListApps() ([]cfclient.App, error) {
 		apps = append(apps, m.apps[k])
 	}
 	return apps, nil
+}
+
+func (m *AppClientMock) ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error) {
+	return m.ListApps()
 }
 
 func (m *AppClientMock) CreateApp(appID, spaceID, orgID string) {

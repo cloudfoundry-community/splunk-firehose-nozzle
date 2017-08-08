@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"net/url"
+
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
@@ -25,4 +27,5 @@ type Cache interface {
 type AppClient interface {
 	AppByGuid(appGuid string) (cfclient.App, error)
 	ListApps() ([]cfclient.App, error)
+	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
 }
