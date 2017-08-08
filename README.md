@@ -239,7 +239,7 @@ After populating the application info cache file, user can copy to different Spl
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 
 #### Index routing
-If end users would like to route logs to different Splunk index according to some rules, say route application logs to different Splunk indexes according to
+If end users would like to route logs to different Splunk indexes according to some rules, say route application logs to different Splunk indexes according to
 app ID/name, or space ID/name, org ID/name for better ACL and data retention control in Splunk. End users can configure props.conf and transforms.conf on Splunk indexers
 or Splunk Heavy Forwarders if there are Heavery Forwarders deployed.
 
@@ -247,12 +247,15 @@ The following is one example of how to route application ID `95930b4e-c16c-478e-
 Splunk `prod` index.
 
 $SPLUNK_HOME/etc/system/local/props.conf
+
 ```
 [cf:logmessage]
 TRANSFORMS-index_routing = route_data_to_index_by_field_cf_app_id
+```
 
 
 $SPLUNK_HOME/etc/system/local/transforms.conf
+
 ```
 [route_data_to_index_by_field_cf_app_id]
 REGEX = "(\w+)":"95930b4e-c16c-478e-8ded-5c6e9c5981f8"
@@ -264,12 +267,15 @@ Another example is routing application logs from all orgs whose names are prefix
 Splunk `sales` index.
 
 $SPLUNK_HOME/etc/system/local/props.conf
+
 ```
 [cf:logmessage]
 TRANSFORMS-index_routing = route_data_to_index_by_field_cf_org_name
+```
 
 
 $SPLUNK_HOME/etc/system/local/transforms.conf
+
 ```
 [route_data_to_index_by_field_cf_org_name]
 REGEX = "cf_org_name":"(sales.*)"
