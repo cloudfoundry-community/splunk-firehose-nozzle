@@ -33,7 +33,7 @@ mac:
 build-linux:
 	GOOS=linux GOARCH=amd64 make build
 
-build: build-nozzle
+build: build-nozzle build-app-dump
 
 debug:
 	DEBUG_FLAGS="-gcflags '-N -l'" make build
@@ -42,6 +42,10 @@ LDFLAGS="-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.branch=$(BR
 
 build-nozzle: fmt
 	go build -o splunk-firehose-nozzle  -ldflags ${LDFLAGS} ${DEBUG_FLAGS} ./main.go
+
+build-app-dump:
+	go build -o scripts/dump_app_info ./scripts/dump_app_info.go
+
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 

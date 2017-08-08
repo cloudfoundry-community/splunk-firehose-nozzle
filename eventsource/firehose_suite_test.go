@@ -1,4 +1,4 @@
-package nozzle_test
+package eventsource_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNozzle(t *testing.T) {
+func TestEventsource(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Firehoseclient Suite")
+	RunSpecs(t, "Eventsource Suite")
 }

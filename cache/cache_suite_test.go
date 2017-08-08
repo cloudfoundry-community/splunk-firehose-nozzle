@@ -1,4 +1,4 @@
-package nozzle_test
+package cache_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNozzle(t *testing.T) {
+func TestCaching(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Firehoseclient Suite")
+	RunSpecs(t, "Caching Suite")
 }

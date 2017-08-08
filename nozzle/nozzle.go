@@ -1,198 +1,102 @@
-package splunknozzle
+package nozzle
 
 import (
-	"crypto/tls"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"code.cloudfoundry.org/lager"
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/auth"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/drain"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventRouting"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/extrafields"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/logging"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/sink"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk"
-	"github.com/cloudfoundry/noaa/consumer"
 
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/firehoseclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
+	"github.com/gorilla/websocket"
 )
 
-type SplunkFirehoseNozzle struct {
-	config *Config
+type Config struct {
+	Logger lager.Logger
 }
 
-func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
-	return &SplunkFirehoseNozzle{
-		config: config,
+// Nozzle reads events from eventsource.Source and routes events
+// to targets by using eventrouter.Router
+type Nozzle struct {
+	eventSource eventsource.Source
+	eventRouter eventrouter.Router
+	config      *Config
+
+	closing chan struct{}
+	closed  chan struct{}
+}
+
+func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *Config) *Nozzle {
+	return &Nozzle{
+		eventRouter: eventRouter,
+		eventSource: eventSource,
+		config:      config,
+		closing:     make(chan struct{}, 1),
+		closed:      make(chan struct{}, 1),
 	}
 }
 
-// eventRouting creates eventRouting object and setup routings for interested events
-func (s *SplunkFirehoseNozzle) eventRouting(cache caching.Caching, logClient logging.Logging) (eventRouting.EventRouting, error) {
-	events := eventRouting.NewEventRouting(cache, logClient)
-	err := events.SetupEventRouting(s.config.WantedEvents)
+func (f *Nozzle) Start() error {
+	err := f.eventSource.Open()
 	if err != nil {
-		return nil, err
-	}
-	return events, nil
-}
-
-// pcfClient creates a client object which can talk to PCF
-func (s *SplunkFirehoseNozzle) pcfClient() (*cfclient.Client, error) {
-	cfConfig := &cfclient.Config{
-		ApiAddress:        s.config.ApiEndpoint,
-		Username:          s.config.User,
-		Password:          s.config.Password,
-		SkipSslValidation: s.config.SkipSSL,
+		return err
 	}
 
-	cfClient, err := cfclient.NewClient(cfConfig)
-	if err != nil {
-		return nil, err
-	}
-	return cfClient, nil
-}
+	defer close(f.closed)
 
-// appCache creates inmemory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) appCache(cfClient *cfclient.Client) (caching.Caching, error) {
-	if s.config.AddAppInfo {
-		c := caching.CachingBoltConfig{
-			Path:               s.config.BoltDBPath,
-			IgnoreMissingApps:  s.config.IgnoreMissingApps,
-			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
-			AppCacheTTL:        s.config.AppCacheTTL,
+	var lastErr error
+	events, errs := f.eventSource.Read()
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
+				return lastErr
+			}
+
+			if err := f.eventRouter.Route(event); err != nil {
+				f.config.Logger.Error("Failed to route event", err)
+			}
+
+		case lastErr = <-errs:
+			f.handleError(lastErr)
+
+		case <-f.closing:
+			return lastErr
 		}
-		return caching.NewCachingBolt(cfClient, &c)
 	}
-
-	return caching.NewCachingEmpty(), nil
 }
 
-// logClient creates std logging or Splunk logging
-func (s *SplunkFirehoseNozzle) logClient(logger lager.Logger) (logging.Logging, error) {
-	if s.config.Debug {
-		return &drain.LoggingStd{}, nil
-	}
-
-	parsedExtraFields, err := extrafields.ParseExtraFields(s.config.ExtraFields)
+func (f *Nozzle) Close() error {
+	err := f.eventSource.Close()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// SplunkClient for nozzle internal logging
-	splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-	logger.RegisterSink(sink.NewSplunkSink(s.config.JobName, s.config.JobIndex, s.config.JobHost, splunkClient))
-
-	// SplunkClients for raw event POST
-	var splunkClients []splunk.SplunkClient
-	for i := 0; i < s.config.HecWorkers; i++ {
-		splunkClient := splunk.NewSplunkClient(s.config.SplunkToken, s.config.SplunkHost, s.config.SplunkIndex, parsedExtraFields, s.config.SkipSSL, logger)
-		splunkClients = append(splunkClients, splunkClient)
-	}
-
-	loggingConfig := &drain.LoggingConfig{
-		FlushInterval: s.config.FlushInterval,
-		QueueSize:     s.config.QueueSize,
-		BatchSize:     s.config.BatchSize,
-		Retries:       s.config.Retries,
-	}
-
-	splunkLog := drain.NewLoggingSplunk(logger, splunkClients, loggingConfig)
-	if err := splunkLog.Connect(); err != nil {
-		return nil, fmt.Errorf("failed to connect splunk")
-	}
-	return splunkLog, nil
+	close(f.closing)
+	<-f.closed
+	return nil
 }
 
-// firehoseConsumer creates firehose Consumer object which can subscribes the PCF firehose events
-func (s *SplunkFirehoseNozzle) firehoseConsumer(pcfClient *cfclient.Client) *consumer.Consumer {
-	dopplerEndpoint := pcfClient.Endpoint.DopplerEndpoint
-	tokenRefresher := auth.NewTokenRefreshAdapter(pcfClient)
-	c := consumer.New(dopplerEndpoint, &tls.Config{InsecureSkipVerify: s.config.SkipSSL}, nil)
-	c.RefreshTokenFrom(tokenRefresher)
-	c.SetIdleTimeout(s.config.KeepAlive)
-	return c
-}
-
-// firehoseClient creates FirehoseNozzle object which glues the event source and event sink
-func (s *SplunkFirehoseNozzle) firehoseClient(consumer *consumer.Consumer, events eventRouting.EventRouting, logger lager.Logger) *firehoseclient.FirehoseNozzle {
-	firehoseConfig := &firehoseclient.FirehoseConfig{
-		Logger: logger,
-
-		FirehoseSubscriptionID: s.config.SubscriptionID,
+func (f *Nozzle) handleError(err error) {
+	closeErr, ok := err.(*websocket.CloseError)
+	if !ok {
+		f.config.Logger.Error("Error while reading from the firehose", err)
+		return
 	}
 
-	return firehoseclient.NewFirehoseNozzle(consumer, events, firehoseConfig)
-}
+	msg := ""
+	switch closeErr.Code {
+	case websocket.CloseNormalClosure:
+		msg = "Connection was disconnected by Firehose server. This usually means Nozzle can't keep up " +
+			"with server. Please try to scaling out Nozzzle with mulitple instances by using the " +
+			"same subscription ID."
 
-// Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
-// It runs forever until something goes wrong
-func (s *SplunkFirehoseNozzle) Run(logger lager.Logger) error {
-	logClient, err := s.logClient(logger)
-	if err != nil {
-		return err
+	case websocket.ClosePolicyViolation:
+		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
+			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
+			"was some temperary network issue causing the heartbeat to get lost."
+
+	default:
+		msg = "Encountered close error while reading from Firehose"
 	}
 
-	params := lager.Data{
-		"version": s.config.Version,
-		"branch":  s.config.Branch,
-		"commit":  s.config.Commit,
-		"buildos": s.config.BuildOS,
-
-		"add-app-info":             s.config.AddAppInfo,
-		"ignore-missing-app":       s.config.IgnoreMissingApps,
-		"app-cache-invalidate-ttl": s.config.AppCacheTTL,
-
-		"flush-interval": s.config.FlushInterval,
-		"queue-size":     s.config.QueueSize,
-		"batch-size":     s.config.BatchSize,
-		"workers":        s.config.HecWorkers,
-	}
-	logger.Info("splunk-firehose-nozzle runs", params)
-
-	pcfClient, err := s.pcfClient()
-	if err != nil {
-		return err
-	}
-
-	appCache, err := s.appCache(pcfClient)
-	if err != nil {
-		return err
-	}
-
-	err = appCache.Open()
-	if err != nil {
-		return err
-	}
-	defer appCache.Close()
-
-	eventRouter, err := s.eventRouting(appCache, logClient)
-	if err != nil {
-		return err
-	}
-
-	c := s.firehoseConsumer(pcfClient)
-	firehoseClient := s.firehoseClient(c, eventRouter, logger)
-
-	shutdown := make(chan os.Signal, 2)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		err := firehoseClient.Start()
-		if err != nil {
-			logger.Error("Firehose consumer exits with error", err)
-		}
-		shutdown <- os.Interrupt
-	}()
-
-	<-shutdown
-
-	logger.Info("Splunk Nozzle is going to exit gracefully")
-	firehoseClient.Close()
-	return logClient.Close()
+	f.config.Logger.Error(msg, err)
 }

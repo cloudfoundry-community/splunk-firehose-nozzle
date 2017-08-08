@@ -2,9 +2,11 @@ package events
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/caching"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -13,6 +15,47 @@ type Event struct {
 	Fields map[string]interface{}
 	Msg    string
 	Type   string
+}
+
+func HttpStart(msg *events.Envelope) *Event {
+	httpStart := msg.GetHttpStart()
+
+	fields := logrus.Fields{
+		"timestamp":         httpStart.GetTimestamp(),
+		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
+		"method":            httpStart.GetMethod().String(),
+		"uri":               httpStart.GetUri(),
+		"remote_addr":       httpStart.GetRemoteAddress(),
+		"user_agent":        httpStart.GetUserAgent(),
+		"parent_request_id": utils.FormatUUID(httpStart.GetParentRequestId()),
+		"cf_app_id":         utils.FormatUUID(httpStart.GetApplicationId()),
+		"instance_index":    httpStart.GetInstanceIndex(),
+		"instance_id":       httpStart.GetInstanceId(),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
+}
+
+func HttpStop(msg *events.Envelope) *Event {
+	httpStop := msg.GetHttpStop()
+
+	fields := logrus.Fields{
+		"timestamp":      httpStop.GetTimestamp(),
+		"uri":            httpStop.GetUri(),
+		"request_id":     utils.FormatUUID(httpStop.GetRequestId()),
+		"peer_type":      httpStop.GetPeerType().String(),
+		"status_code":    httpStop.GetStatusCode(),
+		"content_length": httpStop.GetContentLength(),
+		"cf_app_id":      utils.FormatUUID(httpStop.GetApplicationId()),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
 }
 
 func HttpStartStop(msg *events.Envelope) *Event {
@@ -122,12 +165,12 @@ func ContainerMetric(msg *events.Envelope) *Event {
 	}
 }
 
-func (e *Event) AnnotateWithAppData(caching caching.Caching) {
+func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 	cf_app_id := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cf_app_id)
 
 	if cf_app_id != nil && appGuid != "<nil>" && cf_app_id != "" {
-		appInfo, err := caching.GetApp(appGuid)
+		appInfo, err := appCache.GetApp(appGuid)
 		if err != nil || appInfo == nil {
 			return
 		}
@@ -160,7 +203,6 @@ func (e *Event) AnnotateWithAppData(caching caching.Caching) {
 		}
 
 		e.Fields["cf_ignored_app"] = cf_ignored_app
-
 	}
 }
 
@@ -179,5 +221,60 @@ func (e *Event) AnnotateWithEnveloppeData(msg *events.Envelope) {
 	e.Fields["job"] = msg.GetJob()
 	e.Fields["job_index"] = msg.GetIndex()
 	e.Type = msg.GetEventType().String()
+}
 
+func IsAuthorizedEvent(wantedEvent string) bool {
+	_, ok := events.Envelope_EventType_value[wantedEvent]
+	return ok
+}
+
+func AuthorizedEvents() string {
+	arrEvents := []string{}
+	for _, listEvent := range events.Envelope_EventType_name {
+		arrEvents = append(arrEvents, listEvent)
+	}
+	sort.Strings(arrEvents)
+	return strings.Join(arrEvents, ", ")
+}
+
+func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
+	selectedEvents := make(map[string]bool)
+	if wantedEvents == "" {
+		selectedEvents["LogMessage"] = true
+		return selectedEvents, nil
+	}
+
+	for _, event := range strings.Split(wantedEvents, ",") {
+		event = strings.TrimSpace(event)
+		if IsAuthorizedEvent(event) {
+			selectedEvents[event] = true
+		} else {
+			return nil, fmt.Errorf("rejected event name [%s] - valid events: %s", event, AuthorizedEvents())
+		}
+	}
+	return selectedEvents, nil
+}
+
+func getKeyValueFromString(kvPair string) (string, string, error) {
+	values := strings.Split(kvPair, ":")
+	if len(values) != 2 {
+		return "", "", fmt.Errorf("When splitting %s by ':' there must be exactly 2 values, got these values %s", kvPair, values)
+	}
+	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
+}
+
+func ParseExtraFields(extraEventsString string) (map[string]string, error) {
+	extraEvents := map[string]string{}
+
+	for _, kvPair := range strings.Split(extraEventsString, ",") {
+		if kvPair != "" {
+			cleaned := strings.TrimSpace(kvPair)
+			k, v, err := getKeyValueFromString(cleaned)
+			if err != nil {
+				return nil, err
+			}
+			extraEvents[k] = v
+		}
+	}
+	return extraEvents, nil
 }
