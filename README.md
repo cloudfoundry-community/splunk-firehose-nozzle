@@ -238,6 +238,44 @@ $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoin
 After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 
+#### Index routing
+If end users would like to route logs to different Splunk index according to some rules, say route application logs to different Splunk indexes according to
+app ID/name, or space ID/name, org ID/name for better ACL and data retention control in Splunk. End users can configure props.conf and transforms.conf on Splunk indexers
+or Splunk Heavy Forwarders if there are Heavery Forwarders deployed.
+
+The following is one example of how to route application ID `95930b4e-c16c-478e-8ded-5c6e9c5981f8` to
+Splunk `prod` index.
+
+$SPLUNK_HOME/etc/system/local/props.conf
+```
+[cf:logmessage]
+TRANSFORMS-index_routing = route_data_to_index_by_field_cf_app_id
+
+
+$SPLUNK_HOME/etc/system/local/transforms.conf
+```
+[route_data_to_index_by_field_cf_app_id]
+REGEX = "(\w+)":"95930b4e-c16c-478e-8ded-5c6e9c5981f8"
+DEST_KEY = _MetaData:Index
+FORMAT = prod
+```
+
+Another example is routing application logs from all orgs whose names are prefixed with `sales` to
+Splunk `sales` index.
+
+$SPLUNK_HOME/etc/system/local/props.conf
+```
+[cf:logmessage]
+TRANSFORMS-index_routing = route_data_to_index_by_field_cf_org_name
+
+
+$SPLUNK_HOME/etc/system/local/transforms.conf
+```
+[route_data_to_index_by_field_cf_org_name]
+REGEX = "cf_org_name":"(sales.*)"
+DEST_KEY = _MetaData:Index
+FORMAT = sales
+```
 
 #### Troubleshooting
 In most cases, you would only need to troubleshoot from Splunk which include not only firehose data but also this nozzle internal logs. However, if the nozzle is still not forwarding any data, a good place to start is to get app internal logs directly:
