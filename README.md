@@ -219,13 +219,13 @@ on making a user and credentials.
     cf push
     ```
 
-#### Dump app info to boltdb ####
-If in production, there are lots of PCF applications say tens of thounsands and if user would like to enrich appliation log by using application meta data,
-for example, add app name, space ID, space name, org ID, org name to the events, querying all application metadata information from PCF may take lots of time.
-If there are multiple instances of Spunk nozzle deployed, the situation will be even worse since each of Splunk nozzle will query all applications meta data and
-cache the meta data information to a local file (boltdb file). These querys will introduce load to PCF system and also probably take a long time to finish.
-The scripts/dump_app_info.go is a tool which is used to mitegate this problem. User can run this tool to generate a copy of all application meta data and copy
-to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
+#### Dump application info to boltdb ####
+If in production there are lots of PCF applications(say tens of thousands) and if the user would like to enrich application logs by including application meta data.
+For example if we include, add app name, space ID, space name, org ID and org name to the events, querying all application metadata information from PCF may take some time.
+If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
+cache the meta data information to the local boltdb file. These queries will introduce load to the PCF system and could potentially take a long time to finish.
+The scripts/dump_app_info.go is a tool which is used to mitigate this problem. Users can run this tool to generate a copy of all application meta data and copy
+this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
 To run this tool, user can do
 
@@ -238,19 +238,63 @@ $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoin
 After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 
+#### Index routing
+Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
+Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
+Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.
+
+The following is an example of how to route application ID `95930b4e-c16c-478e-8ded-5c6e9c5981f8` to a Splunk `prod` index.
+
+$SPLUNK_HOME/etc/system/local/props.conf
+
+```
+[cf:logmessage]
+TRANSFORMS-index_routing = route_data_to_index_by_field_cf_app_id
+```
+
+
+$SPLUNK_HOME/etc/system/local/transforms.conf
+
+```
+[route_data_to_index_by_field_cf_app_id]
+REGEX = "(\w+)":"95930b4e-c16c-478e-8ded-5c6e9c5981f8"
+DEST_KEY = _MetaData:Index
+FORMAT = prod
+```
+
+Another example is routing application logs from any Cloud Foundry orgs whose names are prefixed with `sales` to a Splunk `sales` index.
+
+$SPLUNK_HOME/etc/system/local/props.conf
+
+```
+[cf:logmessage]
+TRANSFORMS-index_routing = route_data_to_index_by_field_cf_org_name
+```
+
+
+$SPLUNK_HOME/etc/system/local/transforms.conf
+
+```
+[route_data_to_index_by_field_cf_org_name]
+REGEX = "cf_org_name":"(sales.*)"
+DEST_KEY = _MetaData:Index
+FORMAT = sales
+```
 
 #### Troubleshooting
-In most cases, you would only need to troubleshoot from Splunk which include not only firehose data but also this nozzle internal logs. However, if the nozzle is still not forwarding any data, a good place to start is to get app internal logs directly:
+In most cases you will only need to troubleshoot from Splunk which includes not only firehose data but also this Splunk nozzle internal logs.
+However, if the nozzle is still not forwarding any data, a good place to start is to get the application internal logs directly:
 
 ```shell
 cf logs splunk-firehose-nozzle
 ```
 
-A common mis-configuration occurs when having invalid or unsigned certificate for Cloud Foundry API endpoint. In that case, for non-production environments, you can set `SKIP_SSL_VALIDATION` to `true` in above manifest.yml before re-deploying the app.
+A common mis-configuration occurs when having invalid or unsigned certificate(s) for the Cloud Foundry API endpoint.
+In the case for non-production environments, you can set `SKIP_SSL_VALIDATION` to `true` in manifest.yml before re-deploying the app.
 
 #### Searching Events
 
-Here are two short Splunk queries to start exploring some of the events
+Here are two short Splunk queries to start exploring some of the Cloud Foundry events in Splunk.
 
 ```
 sourcetype="cf:valuemetric"
