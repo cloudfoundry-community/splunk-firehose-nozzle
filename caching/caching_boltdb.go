@@ -210,7 +210,7 @@ func (c *CachingBolt) getAllAppsFromRemote() (map[string]*App, error) {
 		// Latest N apps
 		q.Set("order-direction", "desc")
 		q.Set("results-per-page", "100")
-		totalPages = c.config.AppLimits%100 + 1
+		totalPages = c.config.AppLimits/100 + 1
 	}
 
 	cfApps, err := c.appClient.ListAppsByQueryWithLimits(q, totalPages)
