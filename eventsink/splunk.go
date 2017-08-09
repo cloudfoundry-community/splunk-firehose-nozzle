@@ -5,13 +5,13 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"sync/atomic"
+	"time"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 )
 
 type SplunkConfig struct {
@@ -21,16 +21,16 @@ type SplunkConfig struct {
 	Retries       int // No of retries to post events to HEC before dropping events
 	Hostname      string
 	SplunkVersion string
-	ExtraFields  string
+	ExtraFields   string
 
 	Logger lager.Logger
 }
 
 type Splunk struct {
-	writers []eventwriter.Writer
-	config  *SplunkConfig
-	events  chan map[string]interface{}
-	wg      sync.WaitGroup
+	writers          []eventwriter.Writer
+	config           *SplunkConfig
+	events           chan map[string]interface{}
+	wg               sync.WaitGroup
 	splunkEventCount uint64
 
 	// cached IP
@@ -42,10 +42,10 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 	config.Hostname = hostname
 
 	return &Splunk{
-		writers: writers,
-		config:  config,
-		events:  make(chan map[string]interface{}, config.QueueSize),
-		ip:      ip,
+		writers:          writers,
+		config:           config,
+		events:           make(chan map[string]interface{}, config.QueueSize),
+		ip:               ip,
 		splunkEventCount: 0,
 	}
 }
@@ -161,7 +161,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 	}
 
 	extraFields := make(map[string]interface{})
-	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.splunkEventCount,1),10)
+	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.splunkEventCount, 1), 10)
 	for k, v := range parsedExtraFields {
 		extraFields[k] = v
 	}

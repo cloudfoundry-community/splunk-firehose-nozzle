@@ -42,7 +42,7 @@ type Config struct {
 	BatchSize     int           `json:"batch-size"`
 	Retries       int           `json:"retries"`
 	HecWorkers    int           `json:"hec-workers"`
-	SplunkVersion  string       `json:"splunk-version"`
+	SplunkVersion string        `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
