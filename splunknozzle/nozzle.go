@@ -94,7 +94,6 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
-
 	if err := splunkSink.Open(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
@@ -127,8 +126,6 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
-
-
 	eventSink, err := s.EventSink(logger)
 	if err != nil {
 		return err

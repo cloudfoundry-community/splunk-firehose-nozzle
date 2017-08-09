@@ -21,7 +21,6 @@ type Nozzle struct {
 
 	closing chan struct{}
 	closed  chan struct{}
-
 }
 
 func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *Config) *Nozzle {
@@ -45,7 +44,6 @@ func (f *Nozzle) Start() error {
 
 	var lastErr error
 	events, errs := f.eventSource.Read()
-
 	for {
 		select {
 		case event, ok := <-events:

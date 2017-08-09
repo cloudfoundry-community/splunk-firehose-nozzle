@@ -6,13 +6,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"sync/atomic"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
-
-	"sync/atomic"
 )
 
 type SplunkConfig struct {
@@ -48,7 +47,6 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 		events:  make(chan map[string]interface{}, config.QueueSize),
 		ip:      ip,
 		splunkEventCount: 0,
-
 	}
 }
 
@@ -104,7 +102,6 @@ LOOP:
 		}
 
 	}
-
 	// Last batch
 	s.indexEvents(writer, batch)
 }

@@ -273,6 +273,5 @@ func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 			extraEvents[k] = v
 		}
 	}
-
 	return extraEvents, nil
 }
