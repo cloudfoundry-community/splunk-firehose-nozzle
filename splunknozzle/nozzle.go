@@ -8,6 +8,7 @@ import (
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
@@ -82,14 +83,19 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		writers = append(writers, splunkWriter)
 	}
 
+	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
+	if err != nil {
+		return nil, err
+	}
+
 	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
 		Hostname:      s.config.JobHost,
-		SplunkVersion: s.config.SplunkVersion,
-		ExtraFields:   s.config.ExtraFields,
+		Version:       s.config.SplunkVersion,
+		ExtraFields:   parsedExtraFields,
 		Logger:        logger,
 	}
 
