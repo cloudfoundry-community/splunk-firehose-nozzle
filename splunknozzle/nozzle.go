@@ -46,7 +46,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 	return cfclient.NewClient(cfConfig)
 }
 
-// AppCache creates inmemory cache or boltDB cache
+// AppCache creates in-memory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
 		c := cache.BoltdbConfig{
@@ -68,7 +68,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return &eventsink.Std{}, nil
 	}
 
-	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
+	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields, s.config.MetadataMode)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +131,13 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
+
+	logger.Info("Running splunk-firehose-nozzle with following environment variables ", s.config.ToMap())
+
 	eventSink, err := s.EventSink(logger)
 	if err != nil {
 		return err
 	}
-
-	logger.Info("splunk-firehose-nozzle runs", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
@@ -162,6 +163,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Log
 	eventSource := s.EventSource(pcfClient)
 	noz := s.Nozzle(eventSource, eventRouter, logger)
 
+	//Continuous Loop will run forever
 	go func() {
 		err := noz.Start()
 		if err != nil {

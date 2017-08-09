@@ -19,7 +19,7 @@ var _ = Describe("Events", func() {
 		fcache = &testing.MemoryCacheMock{}
 		msg = NewLogMessage()
 		event = fevents.LogMessage(msg)
-		event.AnnotateWithEnveloppeData(msg)
+		event.AnnotateWithEnvelopeData(msg)
 	})
 
 	It("HttpStart", func() {
@@ -138,10 +138,9 @@ var _ = Describe("Events", func() {
 
 	Context("given metadata", func() {
 		It("Should give us the right metadata", func() {
-			event.AnnotateWithMetaData(map[string]string{"extra": "field"})
+			event.AnnotateWithCFMetaData()
 			Expect(event.Fields["cf_origin"]).To(Equal("firehose"))
 			Expect(event.Fields["event_type"]).To(Equal(event.Type))
-			Expect(event.Fields["extra"]).To(Equal("field"))
 
 		})
 

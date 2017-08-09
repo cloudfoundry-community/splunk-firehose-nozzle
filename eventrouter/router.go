@@ -5,5 +5,5 @@ import (
 )
 
 type Router interface {
-	Route(msg *events.Envelope) error
+	Route(msg *events.Envelope, splunkEventCount uint64) error
 }

@@ -206,15 +206,12 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 	}
 }
 
-func (e *Event) AnnotateWithMetaData(extraFields map[string]string) {
+func (e *Event) AnnotateWithCFMetaData() {
 	e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
-	for k, v := range extraFields {
-		e.Fields[k] = v
-	}
 }
 
-func (e *Event) AnnotateWithEnveloppeData(msg *events.Envelope) {
+func (e *Event) AnnotateWithEnvelopeData(msg *events.Envelope) {
 	e.Fields["origin"] = msg.GetOrigin()
 	e.Fields["deployment"] = msg.GetDeployment()
 	e.Fields["ip"] = msg.GetIp()
@@ -263,7 +260,7 @@ func getKeyValueFromString(kvPair string) (string, string, error) {
 	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
 }
 
-func ParseExtraFields(extraEventsString string) (map[string]string, error) {
+func ParseExtraFields(extraEventsString string, metaDataMode bool) (map[string]string, error) {
 	extraEvents := map[string]string{}
 
 	for _, kvPair := range strings.Split(extraEventsString, ",") {
@@ -276,5 +273,11 @@ func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 			extraEvents[k] = v
 		}
 	}
+
+	//support older and newer formats for HEC
+	if !metaDataMode {
+
+	}
+
 	return extraEvents, nil
 }

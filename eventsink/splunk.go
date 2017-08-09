@@ -95,6 +95,7 @@ LOOP:
 			batch = s.indexEvents(writer, batch)
 			timer.Reset(s.config.FlushInterval)
 		}
+
 	}
 
 	// Last batch
@@ -102,7 +103,7 @@ LOOP:
 }
 
 // indexEvents indexes events to Splunk
-// return nil when sucessful which clears all outstanding events
+// return nil when successful which clears all outstanding events
 // return what the batch has if there is an error for next retry cycle
 func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]interface{}) []map[string]interface{} {
 	if len(batch) == 0 {
@@ -155,7 +156,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 	return event
 }
 
-// Log implements lager.Sink required inteface
+// Log implements lager.Sink required interface
 func (s *Splunk) Log(message lager.LogFormat) {
 	e := map[string]interface{}{
 		"logger_source": message.Source,

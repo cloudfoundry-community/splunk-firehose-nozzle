@@ -57,7 +57,7 @@ func NewBoltdb(client AppClient, config *BoltdbConfig) (*Boltdb, error) {
 
 func (c *Boltdb) Open() error {
 	// Open bolt db
-	db, err := bolt.Open(c.config.Path, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	db, err := bolt.Open(c.config.Path, 0600, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
 		c.config.Logger.Error("Fail to open boltdb: ", err)
 		return err

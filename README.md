@@ -120,6 +120,8 @@ Set the internal consumer queue buffer size.
 HEC_BATCH_SIZE -
 Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 
+HEC_WORKERS -
+Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
 
 ### Push as an App to Cloud Foundry
 
@@ -156,14 +158,14 @@ on making a user and credentials.
     ```
 
 #### Dump application info to boltdb ####
-If in production there are lots of PCF applications(say tens of thousands) and if the user would like to enrich application logs by including application meta data.
-For example if we include, add app name, space ID, space name, org ID and org name to the events, querying all application metadata information from PCF may take some time.
+If in production there are lots of PCF applications(say tens of thousands) and if the user would like to enrich
+application logs by including application meta data,querying all application metadata information from PCF may take some time.
+For example if we include, add app name, space ID, space name, org ID and org name to the events.
 If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
 cache the meta data information to the local boltdb file. These queries will introduce load to the PCF system and could potentially take a long time to finish.
-The scripts/dump_app_info.go is a tool which is used to mitigate this problem. Users can run this tool to generate a copy of all application meta data and copy
-this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
+Users can run this tool to generate a copy of all application meta data and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
-To run this tool, user can do
+Example of how to run the dump application info tool:
 
 ```
 $ cd scripts

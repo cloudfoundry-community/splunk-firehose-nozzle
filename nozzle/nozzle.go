@@ -43,6 +43,7 @@ func (f *Nozzle) Start() error {
 
 	var lastErr error
 	events, errs := f.eventSource.Read()
+	
 	for {
 		select {
 		case event, ok := <-events:
