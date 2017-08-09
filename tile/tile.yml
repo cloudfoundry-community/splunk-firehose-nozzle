@@ -1,0 +1,212 @@
+---
+name: splunk-firehose-nozzle
+label: Splunk Firehose Nozzle for PCF
+description: Forward firehose logs & metrics to Splunk
+icon_file: icon.png
+
+# org: test-org                       # Optional
+# space: test-space                   # Optional
+org_quota: 4096                       # Optional, memory quota in mb
+apply_open_security_group: true       # Apply open security group, default: false
+allow_paid_service_plans: true        # Allow paid service plans, default: false
+
+stemcell_criteria:
+  os: ubuntu-trusty
+  requires_cpi: false
+  version: '3263'
+
+properties:
+- name: author
+  type: string
+  label: Author
+  value: Matt Cholick & Roy Arsan
+
+forms:
+- name: splunk-config
+  label: Splunk Destination
+  description: Splunk target configuration
+  markdown: |
+    Configure your Splunk target destination of one or more servers
+  properties:
+  - name: splunk_server
+    type: string
+    label: Remote Splunk server(s)
+    description: Comma-separated list of Splunk indexers to send data to. Each Splunk indexer specified as <address>:<port>, where address is either FQDN or IP address, and port is the port on which Splunk indexer is listening
+  - name: splunk_index
+    type: string
+    label: Index
+    description: Splunk index
+    default: main
+  - name: extra_fields
+    type: string
+    label: Additional fields for metadata
+    description: Arbitrary set of key:value pairs in the form "key1:value1,key2:value2,key3:value3" that do not occur in event payload itself. These fields are added to every event payload for indexing by Splunk, and are used to tag all events from this foundation.
+    optional: true
+
+- name: splunk-config-ssl
+  label: Splunk SSL Settings
+  description: Splunk connection encryption & authentication
+  markdown: |
+    You can configure Splunk forwarding to use your own SSL certificates to ensure that your data is securely encrypted when in transit.
+    This is not required for using the Splunk Nozzle but it is highly recommended.
+
+    Follow Splunk documented instructions on [how to prepare your signed certificates into single PEM file](http://docs.splunk.com/Documentation/Splunk/6.5.1/Security/HowtoprepareyoursignedcertificatesforSplunk) to be provided as `Client certificate` in this form.
+
+    Refer to Splunk Docs for more background on [securing data from forwarders](http://docs.splunk.com/Documentation/Splunk/6.5.1/Security/Aboutsecuringdatafromforwarders)
+  properties:
+  - name: splunk_ssl
+    type: boolean
+    label: Enable Splunk SSL
+    description: Enable SSL authentication
+    default: false
+  - name: splunk_ssl_cert
+    type: text
+    label: Client certificate (PEM format)
+    description: Properly concatenated client certificate, client private key & public certificate as single PEM file
+    optional: true
+  - name: splunk_ssl_password
+    type: secret
+    label: Client certificate password
+    description: Passphrase for client private key (if applicable)
+    optional: true
+  - name: splunk_ssl_root_ca
+    type: text
+    label: Root CA certificate(s) (PEM format)
+    description: One or more root CA certificates concatenated together. This will be used to verify target Splunk indexer(s) certificates.
+    optional: true
+  - name: splunk_ssl_common_name
+    type: string
+    label: Common name(s) of server(s) certificates
+    description: Comma-separated list of common names. The common name of Splunk server(s) certificates will be checked against this list.
+    optional: true
+  - name: splunk_ssl_alt_name
+    type: string
+    label: Alternate name(s) of server(s) certificates
+    description: Comma-separated list of alternate names. The alternate name of Splunk server(s) certificates will be checked against this list.
+    optional: true
+
+- name: cf-config
+  label: Cloud Foundry Settings
+  description: Cloud Foundry connection details
+  markdown: |
+    On deployments with runtimes 1.8.9/1.7.29 and above,
+    the built in user `splunk-firehose` will be used when no user is specified.
+
+    API user is **required** for earlier versions of the Elastic Runtimes.
+    Failing to specify the API user on versions without `splunk-firehose` will result in:
+
+    ```
+    unknown property "splunk_firehose_credentials"...
+    ```
+
+    See the docs for detailed instructions on creating a user.
+  properties:
+  - name: skip_ssl_validation
+    type: boolean
+    label: Skip SSL validation
+    default: false
+    description: Skip SSL validation (to allow things like self-signed certs). Do not set to true in production.
+  - name: add_app_info
+    type: boolean
+    default: false
+    label: Add app info
+    description: When true, nozzle will query cloud controller to add name, space, org. This will greatly increase load on the cloud controller.
+  - name: api_user
+    type: string
+    label: API user
+    description: Nozzle user (a user having both "cloud_controller.admin_read_only" and "doppler.firehose splunk-nozzle"
+    optional: true
+  - name: api_password
+    type: secret
+    label: API password
+    description: Password for API user
+    optional: true
+  - name: selected_events
+    type: multi_select_options
+    label: Event types
+    default: ['ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
+    options:
+      - name: HttpStartStop
+        label: HttpStartStop
+      - name: LogMessage
+        label: LogMessage
+      - name: ValueMetric
+        label: ValueMetric
+      - name: CounterEvent
+        label: CounterEvent
+      - name: Error
+        label: Error
+      - name: ContainerMetric
+        label: ContainerMetric
+    description: Event types to forward to Splunk
+
+- name: advanced
+  label: Advanced
+  description: Internal Splunk nozzle configuration (for advanced usage or debug)
+  properties:
+  - name: splunk_admin_user
+    type: string
+    label: Splunk Forwarder admin username
+    default: admin
+    description: admin username for internal Splunk Forwarder
+  - name: splunk_admin_pass
+    type: string
+    label: Splunk Forwarder admin password
+    description: password for internal Splunk Forwarder
+    default: AdminPass1
+  - name: token
+    type: string
+    label: Splunk Forwarder HEC Token
+    description: HTTP Event Collector (HEC) token to be internally used by Splunk Forwarder to accept events from firehose
+    default: Splunk-HEC-Token-1
+  - name: firehose_subscription_id
+    type: string
+    label: Firehose subscription id
+    default: splunk-firehose-subscription-id
+    description: Subscription id unique to nozzle; firehose balances across socket connections having same id.
+
+packages:
+- name: splunk-firehose-nozzle
+  type: app
+  label: Splunk-Firehose-Nozzle     
+  manifest:
+    memory: 512M
+    instances: 2
+    #buildpack: go_buildpack
+    buildpack: binary_buildpack
+    path: ../splunk-firehose-nozzle
+    command: ./splunk-firehose-nozzle
+    env:
+      GOPACKAGENAME: main
+      API_ENDPOINT:
+      API_USER:
+      API_PASSWORD:
+      SPLUNK_TOKEN:
+      SPLUNK_HOST:
+      SPLUNK_INDEX:
+      DEBUG: false
+      SKIP_SSL_VALIDATION: true
+      JOB_NAME: splunk-nozzle
+      JOB_INDEX: -1
+ #    JOB_HOST:
+      ADD_APP_INFO: false
+      BOLTDB_PATH: cache.db
+      EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+ #    EXTRA_FIELDS:
+      FIREHOSE_KEEP_ALIVE: 25s
+      FIREHOSE_SUBSCRIPTION_ID: splunk-firehose
+      FLUSH_INTERVAL: 5s
+      CONSUMER_QUEUE_SIZE: 10000
+      HEC_BATCH_SIZE: 1000
+      HEC_RETRIES: 5
+      HEC_WORKERS: 8
+    
+     
+ 
+
+
+
+
+
+
+
