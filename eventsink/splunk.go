@@ -27,6 +27,7 @@ type Splunk struct {
 	config  *SplunkConfig
 	events  chan map[string]interface{}
 	wg      sync.WaitGroup
+	eventCount int64
 
 	// cached IP
 	ip string
@@ -41,6 +42,7 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 		config:  config,
 		events:  make(chan map[string]interface{}, config.QueueSize),
 		ip:      ip,
+		eventCount: 0,
 	}
 }
 
@@ -151,6 +153,8 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		event["sourcetype"] = fmt.Sprintf("cf:%s", strings.ToLower(eventType))
 	}
 
+	fields["splunkCount"] = s.eventCount
+	s.eventCount++
 	event["event"] = fields
 
 	return event

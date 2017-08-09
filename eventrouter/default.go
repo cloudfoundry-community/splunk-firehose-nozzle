@@ -33,7 +33,7 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 	}, nil
 }
 
-func (r *router) Route(msg *events.Envelope, splunkEventCount uint64) error {
+func (r *router) Route(msg *events.Envelope) error {
 	eventType := msg.GetEventType()
 
 	if _, ok := r.selectedEvents[eventType.String()]; !ok {
