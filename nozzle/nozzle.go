@@ -21,9 +21,11 @@ type Nozzle struct {
 
 	closing chan struct{}
 	closed  chan struct{}
+
 }
 
 func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *Config) *Nozzle {
+
 	return &Nozzle{
 		eventRouter: eventRouter,
 		eventSource: eventSource,
@@ -51,7 +53,6 @@ func (f *Nozzle) Start() error {
 				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 				return lastErr
 			}
-
 			if err := f.eventRouter.Route(event); err != nil {
 				f.config.Logger.Error("Failed to route event", err)
 			}

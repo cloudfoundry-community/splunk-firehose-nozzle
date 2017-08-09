@@ -42,7 +42,7 @@ type Config struct {
 	BatchSize     int           `json:"batch-size"`
 	Retries       int           `json:"retries"`
 	HecWorkers    int           `json:"hec-workers"`
-	MetadataMode  bool          `json:"legacy-metadata-mode"`
+	SplunkVersion  string       `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
@@ -102,8 +102,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 
 	kingpin.Flag("boltdb-path", "Bolt Database path ").
 		Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").StringVar(&c.BoltDBPath)
-	kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", events.AuthorizedEvents())).OverrideDefaultFromEnvar("EVENTS").
-		Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
+	kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", events.AuthorizedEvents())).
+		OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
 
@@ -117,8 +117,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
 		OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").IntVar(&c.HecWorkers)
-	kingpin.Flag("legacy-metadata-mode", "Add metadata fields in event payload instead of in fields: '--legacy-metadata-mode").
-		OverrideDefaultFromEnvar("METADATA_MODE").Default("false").BoolVar(&c.MetadataMode)
+	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=6.6	").
+		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("6.4").StringVar(&c.SplunkVersion)
 
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)

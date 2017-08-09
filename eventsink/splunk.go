@@ -10,6 +10,9 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
+
+	"sync/atomic"
 )
 
 type SplunkConfig struct {
@@ -18,6 +21,8 @@ type SplunkConfig struct {
 	BatchSize     int
 	Retries       int // No of retries to post events to HEC before dropping events
 	Hostname      string
+	SplunkVersion string
+	ExtraFields  string
 
 	Logger lager.Logger
 }
@@ -27,7 +32,7 @@ type Splunk struct {
 	config  *SplunkConfig
 	events  chan map[string]interface{}
 	wg      sync.WaitGroup
-	eventCount int64
+	splunkEventCount uint64
 
 	// cached IP
 	ip string
@@ -42,7 +47,8 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 		config:  config,
 		events:  make(chan map[string]interface{}, config.QueueSize),
 		ip:      ip,
-		eventCount: 0,
+		splunkEventCount: 0,
+
 	}
 }
 
@@ -51,7 +57,6 @@ func (s *Splunk) Open() error {
 		s.wg.Add(1)
 		go s.consume(client)
 	}
-
 	return nil
 }
 
@@ -153,10 +158,26 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		event["sourcetype"] = fmt.Sprintf("cf:%s", strings.ToLower(eventType))
 	}
 
-	fields["splunkCount"] = s.eventCount
-	s.eventCount++
-	event["event"] = fields
+	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
+	if err != nil {
+		return nil
+	}
 
+	extraFields := make(map[string]interface{})
+	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.splunkEventCount,1),10)
+	for k, v := range parsedExtraFields {
+		extraFields[k] = v
+	}
+
+	if s.config.SplunkVersion != "6.3" {
+		event["event"] = fields
+		event["fields"] = extraFields
+	} else {
+		for k, v := range extraFields {
+			fields[k] = v
+		}
+		event["event"] = fields
+	}
 	return event
 }
 

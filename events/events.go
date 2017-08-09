@@ -260,7 +260,7 @@ func getKeyValueFromString(kvPair string) (string, string, error) {
 	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
 }
 
-func ParseExtraFields(extraEventsString string, metaDataMode bool) (map[string]string, error) {
+func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 	extraEvents := map[string]string{}
 
 	for _, kvPair := range strings.Split(extraEventsString, ",") {
@@ -272,11 +272,6 @@ func ParseExtraFields(extraEventsString string, metaDataMode bool) (map[string]s
 			}
 			extraEvents[k] = v
 		}
-	}
-
-	//support older and newer formats for HEC
-	if !metaDataMode {
-
 	}
 
 	return extraEvents, nil

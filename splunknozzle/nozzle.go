@@ -8,7 +8,6 @@ import (
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
@@ -68,17 +67,11 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return &eventsink.Std{}, nil
 	}
 
-	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields, s.config.MetadataMode)
-	if err != nil {
-		return nil, err
-	}
-
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
-		Fields:  parsedExtraFields,
 		SkipSSL: s.config.SkipSSL,
 		Logger:  logger,
 	}
@@ -95,10 +88,13 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
 		Hostname:      s.config.JobHost,
+		SplunkVersion: s.config.SplunkVersion,
+		ExtraFields:   s.config.ExtraFields,
 		Logger:        logger,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
+
 	if err := splunkSink.Open(); err != nil {
 		return nil, fmt.Errorf("failed to connect splunk")
 	}
@@ -132,12 +128,13 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
 
-	logger.Info("Running splunk-firehose-nozzle with following environment variables ", s.config.ToMap())
 
 	eventSink, err := s.EventSink(logger)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("Running splunk-firehose-nozzle with following environment variables ", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
@@ -163,7 +160,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Log
 	eventSource := s.EventSource(pcfClient)
 	noz := s.Nozzle(eventSource, eventRouter, logger)
 
-	//Continuous Loop will run forever
+	// Continuous Loop will run forever
 	go func() {
 		err := noz.Start()
 		if err != nil {
