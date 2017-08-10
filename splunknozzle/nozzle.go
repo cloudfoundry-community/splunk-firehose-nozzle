@@ -46,7 +46,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 	return cfclient.NewClient(cfConfig)
 }
 
-// AppCache creates inmemory cache or boltDB cache
+// AppCache creates in-memory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
 	if s.config.AddAppInfo {
 		c := cache.BoltdbConfig{
@@ -68,17 +68,11 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return &eventsink.Std{}, nil
 	}
 
-	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
-	if err != nil {
-		return nil, err
-	}
-
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
-		Fields:  parsedExtraFields,
 		SkipSSL: s.config.SkipSSL,
 		Logger:  logger,
 	}
@@ -89,12 +83,19 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		writers = append(writers, splunkWriter)
 	}
 
+	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
+	if err != nil {
+		return nil, err
+	}
+
 	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
 		QueueSize:     s.config.QueueSize,
 		BatchSize:     s.config.BatchSize,
 		Retries:       s.config.Retries,
 		Hostname:      s.config.JobHost,
+		Version:       s.config.SplunkVersion,
+		ExtraFields:   parsedExtraFields,
 		Logger:        logger,
 	}
 
@@ -136,7 +137,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Log
 		return err
 	}
 
-	logger.Info("splunk-firehose-nozzle runs", s.config.ToMap())
+	logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
@@ -162,6 +163,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Log
 	eventSource := s.EventSource(pcfClient)
 	noz := s.Nozzle(eventSource, eventRouter, logger)
 
+	// Continuous Loop will run forever
 	go func() {
 		err := noz.Start()
 		if err != nil {

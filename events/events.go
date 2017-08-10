@@ -206,15 +206,12 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 	}
 }
 
-func (e *Event) AnnotateWithMetaData(extraFields map[string]string) {
+func (e *Event) AnnotateWithCFMetaData() {
 	e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
-	for k, v := range extraFields {
-		e.Fields[k] = v
-	}
 }
 
-func (e *Event) AnnotateWithEnveloppeData(msg *events.Envelope) {
+func (e *Event) AnnotateWithEnvelopeData(msg *events.Envelope) {
 	e.Fields["origin"] = msg.GetOrigin()
 	e.Fields["deployment"] = msg.GetDeployment()
 	e.Fields["ip"] = msg.GetIp()

@@ -10,7 +10,10 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
+	"sync/atomic"
 )
+
+const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
 
 type SplunkConfig struct {
 	FlushInterval time.Duration
@@ -18,15 +21,18 @@ type SplunkConfig struct {
 	BatchSize     int
 	Retries       int // No of retries to post events to HEC before dropping events
 	Hostname      string
+	Version       string
+	ExtraFields   map[string]string
 
 	Logger lager.Logger
 }
 
 type Splunk struct {
-	writers []eventwriter.Writer
-	config  *SplunkConfig
-	events  chan map[string]interface{}
-	wg      sync.WaitGroup
+	writers    []eventwriter.Writer
+	config     *SplunkConfig
+	events     chan map[string]interface{}
+	wg         sync.WaitGroup
+	eventCount uint64
 
 	// cached IP
 	ip string
@@ -37,10 +43,11 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 	config.Hostname = hostname
 
 	return &Splunk{
-		writers: writers,
-		config:  config,
-		events:  make(chan map[string]interface{}, config.QueueSize),
-		ip:      ip,
+		writers:    writers,
+		config:     config,
+		events:     make(chan map[string]interface{}, config.QueueSize),
+		ip:         ip,
+		eventCount: 0,
 	}
 }
 
@@ -49,7 +56,6 @@ func (s *Splunk) Open() error {
 		s.wg.Add(1)
 		go s.consume(client)
 	}
-
 	return nil
 }
 
@@ -95,14 +101,14 @@ LOOP:
 			batch = s.indexEvents(writer, batch)
 			timer.Reset(s.config.FlushInterval)
 		}
-	}
 
+	}
 	// Last batch
 	s.indexEvents(writer, batch)
 }
 
 // indexEvents indexes events to Splunk
-// return nil when sucessful which clears all outstanding events
+// return nil when successful which clears all outstanding events
 // return what the batch has if there is an error for next retry cycle
 func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]interface{}) []map[string]interface{} {
 	if len(batch) == 0 {
@@ -150,12 +156,22 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		event["sourcetype"] = fmt.Sprintf("cf:%s", strings.ToLower(eventType))
 	}
 
-	event["event"] = fields
+	extraFields := make(map[string]interface{})
+	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
+	for k, v := range s.config.ExtraFields {
+		extraFields[k] = v
+	}
 
+	if s.config.Version >= SPLUNK_HEC_FIELDS_SUPPORT_VERSION {
+		event["fields"] = extraFields
+	} else {
+		fields["pcf-extra"] = extraFields
+	}
+	event["event"] = fields
 	return event
 }
 
-// Log implements lager.Sink required inteface
+// Log implements lager.Sink required interface
 func (s *Splunk) Log(message lager.LogFormat) {
 	e := map[string]interface{}{
 		"logger_source": message.Source,

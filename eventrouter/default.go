@@ -11,23 +11,17 @@ import (
 
 type Config struct {
 	SelectedEvents string
-	ExtraFields    string
 }
 
 type router struct {
 	appCache       cache.Cache
 	sink           eventsink.Sink
 	selectedEvents map[string]bool
-	extraFields    map[string]string
 }
 
 func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, error) {
 	selectedEvents, err := fevents.ParseSelectedEvents(config.SelectedEvents)
-	if err != nil {
-		return nil, err
-	}
 
-	extraFields, err := fevents.ParseExtraFields(config.ExtraFields)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +30,6 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 		appCache:       appCache,
 		sink:           sink,
 		selectedEvents: selectedEvents,
-		extraFields:    extraFields,
 	}, nil
 }
 
@@ -71,8 +64,9 @@ func (r *router) Route(msg *events.Envelope) error {
 		return fmt.Errorf("Unsupported event type: %s", eventType.String())
 	}
 
-	event.AnnotateWithEnveloppeData(msg)
-	event.AnnotateWithMetaData(r.extraFields)
+	event.AnnotateWithEnvelopeData(msg)
+	event.AnnotateWithCFMetaData()
+
 	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 		event.AnnotateWithAppData(r.appCache)
 	}
