@@ -137,7 +137,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Log
 		return err
 	}
 
-	logger.Info("Running splunk-firehose-nozzle with following environment variables ", s.config.ToMap())
+	logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {

@@ -165,7 +165,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 	if s.config.Version >= SPLUNK_HEC_FIELDS_SUPPORT_VERSION {
 		event["fields"] = extraFields
 	} else {
-		fields["pcf-metadata"] = extraFields
+		fields["pcf-extra"] = extraFields
 	}
 	event["event"] = fields
 	return event
