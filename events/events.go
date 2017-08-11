@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/twinj/uuid"
 )
 
 type Event struct {
@@ -275,10 +274,4 @@ func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 		}
 	}
 	return extraEvents, nil
-}
-
-func CreateUUID() string {
-	uuid.Init()
-	u4 := uuid.NewV4()
-	return u4.String()
 }

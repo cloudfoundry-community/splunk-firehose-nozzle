@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/google/uuid"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -88,7 +89,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return nil, err
 	}
 
-	nozzle_uuid := events.CreateUUID()
+	nozzle_uuid := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
@@ -98,7 +99,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Hostname:      s.config.JobHost,
 		Version:       s.config.SplunkVersion,
 		ExtraFields:   parsedExtraFields,
-		NozzleUUID:    nozzle_uuid,
+		UUID:          nozzle_uuid,
 		Logger:        logger,
 	}
 
