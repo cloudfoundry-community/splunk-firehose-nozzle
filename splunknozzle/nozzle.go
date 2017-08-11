@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/google/uuid"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -26,7 +27,7 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	}
 }
 
-// EventRouter creates EventRouter object and setup routings for interested events
+// EventRouter creates EventRouter object and setup routes for interested events
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
 	config := &eventrouter.Config{
 		SelectedEvents: s.config.WantedEvents,
@@ -88,6 +89,8 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return nil, err
 	}
 
+	nozzleUUID := uuid.New().String()
+
 	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
 		QueueSize:     s.config.QueueSize,
@@ -96,6 +99,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Hostname:      s.config.JobHost,
 		Version:       s.config.SplunkVersion,
 		ExtraFields:   parsedExtraFields,
+		UUID:          nozzleUUID,
 		Logger:        logger,
 	}
 

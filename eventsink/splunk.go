@@ -23,6 +23,7 @@ type SplunkConfig struct {
 	Hostname      string
 	Version       string
 	ExtraFields   map[string]string
+	UUID          string
 
 	Logger lager.Logger
 }
@@ -158,6 +159,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 
 	extraFields := make(map[string]interface{})
 	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
+	extraFields["uuid"] = s.config.UUID
 	for k, v := range s.config.ExtraFields {
 		extraFields[k] = v
 	}

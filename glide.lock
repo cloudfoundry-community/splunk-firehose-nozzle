@@ -1,5 +1,5 @@
 hash: d7f08c29071249b8d7e8aefbf8edb471ad8dd236599c784787c35c06c9d55747
-updated: 2017-08-04T07:49:42.480285984+08:00
+updated: 2017-08-11T10:37:34.247335915-07:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -41,6 +41,8 @@ imports:
   version: 98fa357170587e470c5f27d3c3ea0947b71eb455
   subpackages:
   - proto
+- name: github.com/google/uuid
+  version: 281f560d28af7174109514e936f94c2ab2cb2823
 - name: github.com/gorilla/websocket
   version: a69d25be2fe2923a97c2af6849b2f52426f68fc0
 - name: github.com/kelseyhightower/envconfig
@@ -62,7 +64,6 @@ imports:
 - name: golang.org/x/oauth2
   version: 2baa8a1b9338cf13d9eeb27696d761155fa480be
   subpackages:
-  - clientcredentials
   - internal
 - name: golang.org/x/sys
   version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
