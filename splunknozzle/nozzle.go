@@ -89,7 +89,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		return nil, err
 	}
 
-	nozzle_uuid := uuid.New().String()
+	nozzleUUID := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
 		FlushInterval: s.config.FlushInterval,
@@ -99,7 +99,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Hostname:      s.config.JobHost,
 		Version:       s.config.SplunkVersion,
 		ExtraFields:   parsedExtraFields,
-		UUID:          nozzle_uuid,
+		UUID:          nozzleUUID,
 		Logger:        logger,
 	}
 
