@@ -9,7 +9,11 @@ fi
 
 echo "building go binary"
 pushd ..
-make build
+curdir=`pwd`
+go get github.com/cloudfoundry-community/splunk-firehose-nozzle
+cd $GOPATH/src/github.com/cloudfoundry-community/splunk-firehose-nozzle && git checkout develop && make build VERSION=1.0
+cp $GOPATH/src/github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk-firehose-nozzle ${curdir}/../splunk-firehose-nozzle/
+cd ${curdir}
 popd
 
 echo "building tile"

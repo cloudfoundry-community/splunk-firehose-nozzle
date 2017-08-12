@@ -164,6 +164,21 @@ forms:
     label: Firehose subscription id
     default: splunk-firehose-subscription-id
     description: Subscription id unique to nozzle; firehose balances across socket connections having same id.
+  - name: api_endpoint
+    type: string
+    label: CF API ENDPOINT
+    default: api.sys.pie-27.cfplatformeng.com
+    description: Cloud foundry api endpoint 
+  - name: splunk_token
+    type: string
+    label: SPLUNK HEC TOKEN
+    default: EE05A31A-3563-4ED4-909D-6F4F1FD965D5
+    description: Splunk HEC token. 
+  - name: splunk_host
+    type: string
+    label: SPLUNK HEC host
+    default: 52.53.254.149:9997
+    description: Splunk HEC token.        
 
 packages:
 - name: splunk-firehose-nozzle
@@ -178,29 +193,9 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT:
-      API_USER:
-      API_PASSWORD:
-      SPLUNK_TOKEN:
-      SPLUNK_HOST:
-      SPLUNK_INDEX:
-      DEBUG: false
-      SKIP_SSL_VALIDATION: true
-      JOB_NAME: splunk-nozzle
-      JOB_INDEX: -1
- #    JOB_HOST:
-      ADD_APP_INFO: false
-      BOLTDB_PATH: cache.db
-      EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
- #    EXTRA_FIELDS:
-      FIREHOSE_KEEP_ALIVE: 25s
-      FIREHOSE_SUBSCRIPTION_ID: splunk-firehose
-      FLUSH_INTERVAL: 5s
-      CONSUMER_QUEUE_SIZE: 10000
-      HEC_BATCH_SIZE: 1000
-      HEC_RETRIES: 5
-      HEC_WORKERS: 8
-    
+      #add more environment variables
+      
+
      
  
 
