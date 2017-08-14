@@ -92,15 +92,17 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 	nozzleUUID := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
-		FlushInterval: s.config.FlushInterval,
-		QueueSize:     s.config.QueueSize,
-		BatchSize:     s.config.BatchSize,
-		Retries:       s.config.Retries,
-		Hostname:      s.config.JobHost,
-		Version:       s.config.SplunkVersion,
-		ExtraFields:   parsedExtraFields,
-		UUID:          nozzleUUID,
-		Logger:        logger,
+		FlushInterval:  s.config.FlushInterval,
+		QueueSize:      s.config.QueueSize,
+		BatchSize:      s.config.BatchSize,
+		Retries:        s.config.Retries,
+		Hostname:       s.config.JobHost,
+		Version:        s.config.SplunkVersion,
+		SubscriptionID: s.config.SubscriptionID,
+		TraceLogging:   s.config.TraceLogging,
+		ExtraFields:    parsedExtraFields,
+		UUID:           nozzleUUID,
+		Logger:         logger,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
