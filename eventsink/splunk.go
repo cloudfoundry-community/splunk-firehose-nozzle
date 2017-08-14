@@ -165,6 +165,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
 		extraFields["subscription-id"] = s.config.SubscriptionID
 		extraFields["uuid"] = s.config.UUID
+	}
 		for k, v := range s.config.ExtraFields {
 			extraFields[k] = v
 		}
@@ -174,7 +175,6 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		} else {
 			fields["pcf-extra"] = extraFields
 		}
-	}
 	event["event"] = fields
 	return event
 }
