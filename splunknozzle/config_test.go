@@ -59,6 +59,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("HEC_WORKERS", "5")
 			os.Setenv("SPLUNK_VERSION", "6.2")
 
+			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
 
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
@@ -101,6 +102,7 @@ var _ = Describe("Config", func() {
 			Expect(c.Commit).To(Equal(commit))
 			Expect(c.BuildOS).To(Equal(buildos))
 
+			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
 		})
 
@@ -132,6 +134,7 @@ var _ = Describe("Config", func() {
 			Expect(c.HecWorkers).To(Equal(8))
 			Expect(c.SplunkVersion).To(Equal("6.6"))
 
+			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
 		})
 	})
@@ -175,6 +178,7 @@ var _ = Describe("Config", func() {
 				"--hec-retries=9",
 				"--hec-workers=16",
 				"--splunk-version=5.2",
+				"--enable-event-tracing",
 				"--debug",
 			}
 			os.Args = args
@@ -217,6 +221,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SplunkVersion).To(Equal("5.2"))
 
 			Expect(c.Debug).To(BeTrue())
+			Expect(c.TraceLogging).To(BeTrue())
 
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
