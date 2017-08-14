@@ -123,8 +123,8 @@ Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 HEC_WORKERS -
 Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
 
-ENABLE_TRACE_LOGGING -
-Enable trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Count and Subscription-ID
+ENABLE_EVENT_TRACING -
+Enable event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Count and Subscription-ID
 for correlation searches.
 
 ### Push as an App to Cloud Foundry
