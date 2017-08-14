@@ -59,7 +59,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("HEC_WORKERS", "5")
 			os.Setenv("SPLUNK_VERSION", "6.2")
 
-			os.Setenv("ENABLE_TRACE_LOGGING", "true")
+			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
 
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
@@ -178,7 +178,7 @@ var _ = Describe("Config", func() {
 				"--hec-retries=9",
 				"--hec-workers=16",
 				"--splunk-version=5.2",
-				"--enable-trace-logging",
+				"--enable-event-tracing",
 				"--debug",
 			}
 			os.Args = args

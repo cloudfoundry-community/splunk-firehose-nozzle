@@ -166,15 +166,15 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 		extraFields["subscription-id"] = s.config.SubscriptionID
 		extraFields["uuid"] = s.config.UUID
 	}
-		for k, v := range s.config.ExtraFields {
-			extraFields[k] = v
-		}
+	for k, v := range s.config.ExtraFields {
+		extraFields[k] = v
+	}
 
-		if s.config.Version >= SPLUNK_HEC_FIELDS_SUPPORT_VERSION {
-			event["fields"] = extraFields
-		} else {
-			fields["pcf-extra"] = extraFields
-		}
+	if s.config.Version >= SPLUNK_HEC_FIELDS_SUPPORT_VERSION {
+		event["fields"] = extraFields
+	} else {
+		fields["pcf-extra"] = extraFields
+	}
 	event["event"] = fields
 	return event
 }

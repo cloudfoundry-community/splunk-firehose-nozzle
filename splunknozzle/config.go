@@ -121,8 +121,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=6.6	").
 		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("6.6").StringVar(&c.SplunkVersion)
 
-	kingpin.Flag("enable-trace-logging", "Enable trace logging: Add splunk trace logging fields to events").
-		OverrideDefaultFromEnvar("ENABLE_TRACE_LOGGING").Default("false").BoolVar(&c.TraceLogging)
+	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
+		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
 
