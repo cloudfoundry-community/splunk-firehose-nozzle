@@ -73,6 +73,17 @@ var _ = Describe("Cache", func() {
 			Expect(app).NotTo(Equal(nil))
 			Expect(app.Guid).To(Equal(guid))
 		})
+
+		It("Expect new app not in cache", func() {
+			id := fmt.Sprintf("id_%d", time.Now().UnixNano())
+			client.CreateApp(id, id, id)
+
+			app, err := cache.GetApp(id)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Expect(app).NotTo(Equal(nil))
+			Expect(app.Guid).To(Equal(id))
+		})
 	})
 
 	Context("Get app bad case", func() {
