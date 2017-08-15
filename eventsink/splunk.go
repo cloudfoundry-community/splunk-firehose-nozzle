@@ -16,13 +16,16 @@ import (
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
 
 type SplunkConfig struct {
-	FlushInterval time.Duration
-	QueueSize     int // consumer queue buffer size
-	BatchSize     int
-	Retries       int // No of retries to post events to HEC before dropping events
-	Hostname      string
-	Version       string
-	ExtraFields   map[string]string
+	FlushInterval  time.Duration
+	QueueSize      int // consumer queue buffer size
+	BatchSize      int
+	Retries        int // No of retries to post events to HEC before dropping events
+	Hostname       string
+	Version        string
+	SubscriptionID string
+	ExtraFields    map[string]string
+	TraceLogging   bool
+	UUID           string
 
 	Logger lager.Logger
 }
@@ -157,7 +160,12 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 	}
 
 	extraFields := make(map[string]interface{})
-	extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
+
+	if s.config.TraceLogging {
+		extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
+		extraFields["subscription-id"] = s.config.SubscriptionID
+		extraFields["uuid"] = s.config.UUID
+	}
 	for k, v := range s.config.ExtraFields {
 		extraFields[k] = v
 	}

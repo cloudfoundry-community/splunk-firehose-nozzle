@@ -36,6 +36,7 @@ func newConfig() *Config {
 		IgnoreMissingApps:  true,
 		MissingAppCacheTTL: time.Second * 30,
 		AppCacheTTL:        time.Second * 30,
+		AppLimits:          0,
 
 		BoltDBPath:   "/tmp/boltdb.db",
 		WantedEvents: "LogMessage",
@@ -46,6 +47,7 @@ func newConfig() *Config {
 		BatchSize:     100,
 		Retries:       1,
 		HecWorkers:    8,
+		SplunkVersion: "6.4",
 
 		Version: "1.0",
 		Branch:  "develop",

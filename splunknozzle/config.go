@@ -49,7 +49,8 @@ type Config struct {
 	Commit  string `json:"commit"`
 	BuildOS string `json:"buildos"`
 
-	Debug bool `json:"debug"`
+	TraceLogging bool `json:"trace-logging"`
+	Debug        bool `json:"debug"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -92,7 +93,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("add-app-info", "Query API to fetch app details").
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
 	kingpin.Flag("ignore-missing-app", "If app is missing, if stop repeatly querying app info from PCF").
-		OverrideDefaultFromEnvar("IGNORE-MISSING-APP").Default("true").BoolVar(&c.IgnoreMissingApps)
+		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
 		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
 	kingpin.Flag("app-cache-invalidate-ttl", "How frequently the app info local cache invalidates").
@@ -118,8 +119,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
 		OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").IntVar(&c.HecWorkers)
 	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=6.6	").
-		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("6.4").StringVar(&c.SplunkVersion)
+		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("6.6").StringVar(&c.SplunkVersion)
 
+	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
+		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
 

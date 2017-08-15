@@ -32,7 +32,6 @@ var _ = Describe("eventrouter", func() {
 		memSink = &testing.MemorySinkMock{}
 		config := &Config{
 			SelectedEvents: "LogMessage,HttpStart,HttpStop,HttpStartStop,ValueMetric,CounterEvent,Error,ContainerMetric",
-			ExtraFields:    "tag:extra",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -84,7 +83,6 @@ var _ = Describe("eventrouter", func() {
 	It("Route un-selected message", func() {
 		config := &Config{
 			SelectedEvents: "HttpStart",
-			ExtraFields:    "tag:extra",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -99,7 +97,6 @@ var _ = Describe("eventrouter", func() {
 	It("Route default selected message", func() {
 		config := &Config{
 			SelectedEvents: "",
-			ExtraFields:    "tag:extra",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -129,7 +126,6 @@ var _ = Describe("eventrouter", func() {
 
 		config := &Config{
 			SelectedEvents: "invalid",
-			ExtraFields:    "tag:extra",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -163,19 +159,8 @@ var _ = Describe("eventrouter", func() {
 	It("Invalid event", func() {
 		config := &Config{
 			SelectedEvents: "invalid-event",
-			ExtraFields:    "tag:extra",
 		}
 		_, err = New(noCache, memSink, config)
 		Ω(err).Should(HaveOccurred())
 	})
-
-	It("Invalid extra fields", func() {
-		config := &Config{
-			SelectedEvents: "",
-			ExtraFields:    "tag extra",
-		}
-		_, err = New(noCache, memSink, config)
-		Ω(err).Should(HaveOccurred())
-	})
-
 })
