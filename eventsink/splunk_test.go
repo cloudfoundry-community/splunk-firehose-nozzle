@@ -39,6 +39,11 @@ var _ = Describe("Splunk", func() {
 		// Used for internal logging
 		mockClient2 *testing.EventWriterMock
 		eventRouter eventrouter.Router
+
+		// Configuration
+		config  *eventsink.SplunkConfig
+		uuidStr = "0a956421-f2e1-4215-9d88-d15633bb3023"
+		subID   = "splunk-nozzle"
 	)
 
 	BeforeEach(func() {
@@ -68,16 +73,17 @@ var _ = Describe("Splunk", func() {
 		mockClient2 = &testing.EventWriterMock{}
 
 		logger = lager.NewLogger("test")
-		config := &eventsink.SplunkConfig{
-			FlushInterval: time.Millisecond,
-			QueueSize:     1000,
-			BatchSize:     1,
-			Retries:       1,
-			Hostname:      "localhost",
-			Version:       "6.6",
-			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
-			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:        logger,
+		config = &eventsink.SplunkConfig{
+			FlushInterval:  time.Millisecond,
+			QueueSize:      1000,
+			BatchSize:      1,
+			Retries:        1,
+			Hostname:       "localhost",
+			Version:        "6.6",
+			ExtraFields:    map[string]string{"env": "dev", "test": "field"},
+			SubscriptionID: subID,
+			UUID:           uuidStr,
+			Logger:         logger,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
 	})
@@ -632,6 +638,58 @@ var _ = Describe("Splunk", func() {
 		event := envelope["event"].(map[string]interface{})
 		Expect(event["ip"]).ToNot(BeEmpty())
 		Expect(event["origin"]).To(Equal("splunk_nozzle"))
+	})
+
+	It("event tracing with old splunk version", func() {
+		eventType = events.Envelope_Error
+		config.TraceLogging = true
+		config.Version = "6.3"
+
+		eventRouter.Route(envelope)
+
+		sink.Open()
+		sink.Write(memSink.Events[0], memSink.Messages[0])
+
+		time.Sleep(time.Second)
+
+		Expect(mockClient.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient.CapturedEvents()[0]
+
+		Expect(envelope["event"]).ToNot(BeNil())
+		event := envelope["event"].(map[string]interface{})
+
+		Expect(event["pcf-extra"]).ToNot(BeNil())
+		extra := event["pcf-extra"].(map[string]interface{})
+
+		Expect(extra["env"]).To(Equal("dev"))
+		Expect(extra["test"]).To(Equal("field"))
+		Expect(extra["uuid"]).To(Equal(uuidStr))
+		Expect(extra["nozzle-event-counter"]).To(Equal("1"))
+		Expect(extra["subscription-id"]).To(Equal(subID))
+	})
+
+	It("event tracing with new splunk version", func() {
+		eventType = events.Envelope_Error
+		config.TraceLogging = true
+
+		eventRouter.Route(envelope)
+
+		sink.Open()
+		sink.Write(memSink.Events[0], memSink.Messages[0])
+
+		time.Sleep(time.Second)
+
+		Expect(mockClient.CapturedEvents()).To(HaveLen(1))
+		envelope := mockClient.CapturedEvents()[0]
+
+		Expect(envelope["fields"]).ToNot(BeNil())
+		extra := envelope["fields"].(map[string]interface{})
+
+		Expect(extra["env"]).To(Equal("dev"))
+		Expect(extra["test"]).To(Equal("field"))
+		Expect(extra["uuid"]).To(Equal(uuidStr))
+		Expect(extra["nozzle-event-counter"]).To(Equal("1"))
+		Expect(extra["subscription-id"]).To(Equal(subID))
 	})
 
 	It("std no error", func() {
