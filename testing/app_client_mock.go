@@ -46,7 +46,23 @@ func (m *AppClientMock) ListApps() ([]cfclient.App, error) {
 }
 
 func (m *AppClientMock) ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error) {
-	return m.ListApps()
+	if totalPages <= 0 {
+		return m.ListApps()
+	}
+
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	var apps []cfclient.App
+	count := 0
+	for k := range m.apps {
+		if count >= totalPages*100 {
+			break
+		}
+		count += 1
+		apps = append(apps, m.apps[k])
+	}
+	return apps, nil
 }
 
 func (m *AppClientMock) CreateApp(appID, spaceID, orgID string) {

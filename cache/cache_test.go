@@ -20,7 +20,7 @@ var _ = Describe("Cache", func() {
 		ignoreMissingApps  = true
 		appCacheTTL        = 2 * time.Second
 		missingAppCacheTTL = 2 * time.Second
-		n                  = 10
+		n                  = 200
 
 		nilApp *App = nil
 
@@ -57,7 +57,7 @@ var _ = Describe("Cache", func() {
 	})
 
 	Context("Get app good case", func() {
-		It("Have 10 apps", func() {
+		It("Have 200 apps", func() {
 			apps, err := cache.GetAllApps()
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -72,6 +72,17 @@ var _ = Describe("Cache", func() {
 
 			Expect(app).NotTo(Equal(nil))
 			Expect(app.Guid).To(Equal(guid))
+		})
+
+		It("Expect new app not in cache", func() {
+			id := fmt.Sprintf("id_%d", time.Now().UnixNano())
+			client.CreateApp(id, id, id)
+
+			app, err := cache.GetApp(id)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Expect(app).NotTo(Equal(nil))
+			Expect(app.Guid).To(Equal(id))
 		})
 	})
 
@@ -136,7 +147,7 @@ var _ = Describe("Cache", func() {
 	})
 
 	Context("Load from existing boltdb", func() {
-		It("Expect 10 apps from existing boltdb", func() {
+		It("Expect 200 apps from existing boltdb", func() {
 			dup := *config
 			dup.Path = fmt.Sprintf("/tmp/%d", time.Now().UnixNano())
 			bcache, err := NewBoltdb(client, &dup)
@@ -161,6 +172,25 @@ var _ = Describe("Cache", func() {
 
 			Expect(apps).NotTo(Equal(nil))
 			Expect(len(apps)).To(Equal(n))
+		})
+	})
+
+	Context("Limit App Query to 1 page", func() {
+		It("Expect 1 page app in boltdb", func() {
+			os.Remove(boltdbPath)
+			dup := *config
+			dup.AppLimits = 95
+
+			bcache, err := NewBoltdb(client, &dup)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = bcache.Open()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			apps, err := bcache.GetAllApps()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Expect(apps).NotTo(Equal(nil))
+			Expect(len(apps)).To(Equal(100))
 		})
 	})
 

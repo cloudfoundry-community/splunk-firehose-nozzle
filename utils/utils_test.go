@@ -17,6 +17,14 @@ var _ = Describe("Testing Utils packages", func() {
 			})
 
 		})
+
+		Context("Called with nil UUID", func() {
+			It("Should return empty String", func() {
+				Expect(FormatUUID(nil)).To(Equal(("")))
+			})
+
+		})
+
 	})
 
 	Describe("Concat String ", func() {
