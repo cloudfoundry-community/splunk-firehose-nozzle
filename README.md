@@ -84,8 +84,12 @@ Tag nozzle log events with job index.
 JOB_HOST -
 Tag nozzle log events with job host.
 
-SKIP_SSL_VALIDATION -
-Skip SSL certificate validation. Secure communications will not check SSL certificates against a trusted CA Authority.
+SKIP_SSL_VALIDATION_CF -
+Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority.
+(recommended for dev environments only).
+
+SKIP_SSL_VALIDATION_SPLUNK -
+Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted CA Authority.
 (recommended for dev environments only).
 
 FIREHOSE_SUBSCRIPTION_ID -

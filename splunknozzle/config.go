@@ -23,7 +23,8 @@ type Config struct {
 	JobIndex string `json:"job-index"`
 	JobHost  string `json:"job-host"`
 
-	SkipSSL        bool          `json:"skip-ssl"`
+	SkipSSLCF      bool          `json:"skip-ssl-cf"`
+	SkipSSLSplunk  bool          `json:"skip-ssl-splunk"`
 	SubscriptionID string        `json:"subscription-id"`
 	KeepAlive      time.Duration `json:"keep-alive"`
 
@@ -83,8 +84,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_HOST").Default("").StringVar(&c.JobHost)
 
-	kingpin.Flag("skip-ssl-validation", "Skip cert validation (for dev environments").
-		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Default("false").BoolVar(&c.SkipSSL)
+	kingpin.Flag("skip-ssl-validation-cf", "Skip cert validation (for dev environments").
+		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_CF").Default("false").BoolVar(&c.SkipSSLCF)
+	kingpin.Flag("skip-ssl-validation-splunk", "Skip cert validation (for dev environments").
+		OverrideDefaultFromEnvar("SKIP_CF_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
 	kingpin.Flag("subscription-id", "Id for the subscription.").
 		OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").StringVar(&c.SubscriptionID)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").

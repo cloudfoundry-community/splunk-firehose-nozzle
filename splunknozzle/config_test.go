@@ -39,7 +39,9 @@ var _ = Describe("Config", func() {
 			os.Setenv("JOB_INDEX", "2")
 			os.Setenv("JOB_HOST", "nozzle.example.com")
 
-			os.Setenv("SKIP_SSL_VALIDATION", "true")
+			os.Setenv("SKIP_SSL_VALIDATION_CF", "true")
+			os.Setenv("SKIP_CF_SSL_VALIDATION_SPLUNK", "true")
+
 			os.Setenv("FIREHOSE_SUBSCRIPTION_ID", "my-nozzle")
 			os.Setenv("FIREHOSE_KEEP_ALIVE", "42s")
 
@@ -76,7 +78,9 @@ var _ = Describe("Config", func() {
 			Expect(c.JobIndex).To(Equal("2"))
 			Expect(c.JobHost).To(Equal("nozzle.example.com"))
 
-			Expect(c.SkipSSL).To(BeTrue())
+			Expect(c.SkipSSLCF).To(BeTrue())
+			Expect(c.SkipSSLSplunk).To(BeTrue())
+
 			Expect(c.SubscriptionID).To(Equal("my-nozzle"))
 			Expect(c.KeepAlive).To(Equal(42 * time.Second))
 
@@ -113,7 +117,8 @@ var _ = Describe("Config", func() {
 			Expect(c.JobIndex).To(Equal("-1"))
 			Expect(c.JobHost).To(Equal(""))
 
-			Expect(c.SkipSSL).To(BeFalse())
+			Expect(c.SkipSSLCF).To(BeFalse())
+			Expect(c.SkipSSLCF).To(BeFalse())
 			Expect(c.SubscriptionID).To(Equal("splunk-firehose"))
 			Expect(c.KeepAlive).To(Equal(25 * time.Second))
 
@@ -161,7 +166,8 @@ var _ = Describe("Config", func() {
 				"--job-name=my-jobc",
 				"--job-index=3",
 				"--job-host=nozzle.example.comc",
-				"--skip-ssl-validation",
+				"--skip-ssl-validation-cf",
+				"--skip-ssl-validation-splunk",
 				"--subscription-id=my-nozzlec",
 				"--firehose-keep-alive=24s",
 				"--add-app-info",
@@ -199,7 +205,8 @@ var _ = Describe("Config", func() {
 			Expect(c.JobIndex).To(Equal("3"))
 			Expect(c.JobHost).To(Equal("nozzle.example.comc"))
 
-			Expect(c.SkipSSL).To(BeTrue())
+			Expect(c.SkipSSLCF).To(BeTrue())
+			Expect(c.SkipSSLSplunk).To(BeTrue())
 			Expect(c.SubscriptionID).To(Equal("my-nozzlec"))
 			Expect(c.KeepAlive).To(Equal(24 * time.Second))
 

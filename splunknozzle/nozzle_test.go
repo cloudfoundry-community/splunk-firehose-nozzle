@@ -28,7 +28,8 @@ func newConfig() *Config {
 		JobIndex: "-1",
 		JobHost:  "localhost",
 
-		SkipSSL:        true,
+		SkipSSLCF:      true,
+		SkipSSLSplunk:  true,
 		SubscriptionID: "splunk-sub",
 		KeepAlive:      time.Second * 25,
 
