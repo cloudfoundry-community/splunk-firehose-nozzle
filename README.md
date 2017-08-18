@@ -50,29 +50,10 @@ or later. Earlier versions should use `cloud_controller.admin` instead.
 
 #### Environment Parameters (declare parameters by making a copy of scripts/nozzle.sh.template)
 
-Cloud Foundry configuration parameters:
-
 DEBUG -
 Enable debug mode (forward to standard out instead of Splunk).
 
-SKIP_SSL_VALIDATION -
-Skip cert validation (for dev environments).
-
-JOB_NAME -
-Job name to tag nozzle's own log events with.
-
-JOB_INDEX -
-Job index to tag nozzle's own log events with.
-
-JOB_HOST -
-Job host to tag nozzle's own log events with.
-
-ADD_APP_INFO -
-Enrich raw data with app details.
-
-APP_LIMITS -
-Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache.
-
+Cloud Foundry configuration parameters:
 API_ENDPOINT -
 Cloud Foundry API endpoint address.
 
@@ -81,6 +62,52 @@ Cloud Foundry user name. (Must have scope described above)
 
 API_PASSWORD -
 Cloud Foundry user password.
+
+Splunk configuration parameters:
+SPLUNK_TOKEN -
+[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
+
+SPLUNK_HOST -
+Splunk HTTP event collector host.
+example: https://example.cloud.splunk.com:8088
+
+SPLUNK_INDEX -
+The Splunk index events will be sent to.
+Warning: Setting an invalid index will cause events to be lost.
+
+JOB_NAME -
+Tag nozzle log events with job name.
+
+JOB_INDEX -
+Tag nozzle log events with job index.
+
+JOB_HOST -
+Tag nozzle log events with job host.
+
+SKIP_SSL_VALIDATION -
+Skip SSL certificate validation. Secure communications will not check SSL certificates against a trusted CA Authority.
+(recommended for dev environments only).
+
+FIREHOSE_SUBSCRIPTION_ID -
+Tag nozzle events with a firehose subscription id. (More information on  - https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html).
+
+FIREHOSE_KEEP_ALIVE -
+Keep Alive duration for the firehose consumer.
+
+ADD_APP_INFO -
+Enrich raw data with app details.
+
+IGNORE_MISSING_APP -
+If application is missing, stop repeatedly querying application info from Cloud Foundry.
+
+MISSING_APP_CACHE_INVALIDATE_TTL -
+How frequently the missing app info cache invalidates.
+
+APP_CACHE_INVALIDATE_TTL -
+How frequently the app info local cache invalidates.
+
+APP_LIMITS -
+Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache.
 
 BOLTDB_PATH -
 Bolt Database path.
@@ -92,40 +119,26 @@ possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,Contain
 EXTRA_FIELDS -
 Extra fields you want to annotate your events with (format is key:value,key:value).
 
-FIREHOSE_KEEP_ALIVE -
-Keep Alive duration for the firehose consumer.
-
-FIREHOSE_SUBSCRIPTION_ID -
-Id for the firehose subscription.
-
-Splunk configuration parameters:
-
-SPLUNK_TOKEN -
-[Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/)
-
-SPLUNK_HOST -
-Splunk HTTP event collector host.
-example: https://example.cloud.splunk.com:8088
-
-SPLUNK_INDEX -
-The Splunk index events will be sent to.
-Warning: Setting an invalid index will cause events to be lost.
-
 FLUSH_INTERVAL -
-Set the interval for flushing to the heavy forwarder.
+Time interval for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
 
 CONSUMER_QUEUE_SIZE -
-Set the internal consumer queue buffer size.
+Set the internal consumer queue buffer size. Events wil be pushed to Splunk after queue is full.
 
 HEC_BATCH_SIZE -
 Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 
+HEC_RETRIES -
+Retry count for sending events to Splunk. After expiring events will begin dropping causing data loss.
+
 HEC_WORKERS -
 Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
 
+SPLUNK_VERSION - Splunk version will determine how metadata fields are ingested for HEC.(example: 6.6).
+
 ENABLE_EVENT_TRACING -
 Enable event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Count and Subscription-ID
-for correlation searches.
+for Splunk correlation searches.
 
 ### Push as an App to Cloud Foundry
 
