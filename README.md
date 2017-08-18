@@ -47,76 +47,48 @@ uaac -t member add doppler.firehose splunk-nozzle
 `cloud_controller.admin_read_only` will work for cf v241
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
+- - - -
+#### Environment Parameters
+(declare parameters by making a copy of scripts/nozzle.sh.template)
+* `DEBUG`: Enable debug mode (forward to standard out instead of Splunk).
 
-#### Environment Parameters (declare parameters by making a copy of scripts/nozzle.sh.template)
+__Cloud Foundry configuration parameters:__
+* `API_ENDPOINT`: Cloud Foundry API endpoint address.__
+* `API_USER`: Cloud Foundry user name. (Must have scope described above)
+* `API_PASSWORD`: Cloud Foundry user password.
 
-__DEBUG__ - Enable debug mode (forward to standard out instead of Splunk).
+__Splunk configuration parameters:__
+* `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
+* `SPLUNK_HOST`: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088
+* `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost.
 
-####Cloud Foundry configuration parameters:####
-
-__API_ENDPOINT__ -
-Cloud Foundry API endpoint address.
-
-__API_USER__ - Cloud Foundry user name. (Must have scope described above)
-
-__API_PASSWORD__ - Cloud Foundry user password.
-
-####Splunk configuration parameters:####
-
-__SPLUNK_TOKEN__ - [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
-
-__SPLUNK_HOST__ - Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088
-
-__SPLUNK_INDEX__ - The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost.
-
-####Advanced Configuration Features####
-
-__JOB_NAME__ - Tag nozzle log events with job name.
-
-__JOB_INDEX__ - Tag nozzle log events with job index.
-
-__JOB_HOST__ - Tag nozzle log events with job host.
-
-__SKIP_SSL_VALIDATION_CF__ - Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority.
+__Advanced Configuration Features:__
+* `JOB_NAME`: Tag nozzle log events with job name.
+* `JOB_INDEX`: Tag nozzle log events with job index.
+* `JOB_HOST`: Tag nozzle log events with job host.
+* `SKIP_SSL_VALIDATION_CF`: Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority.
 (recommended for dev environments only).
-
-__SKIP_SSL_VALIDATION_SPLUNK__ - Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted CA Authority.
+* `SKIP_SSL_VALIDATION_SPLUNK`: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted CA Authority.
 (recommended for dev environments only).
+* `FIREHOSE_SUBSCRIPTION_ID`: Tag nozzle events with a firehose subscription id. (More information on  - https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html).
+* `FIREHOSE_KEEP_ALIVE`: Keep Alive duration for the firehose consumer.
+* `ADD_APP_INFO`: Enrich raw data with app details.
+* `IGNORE_MISSING_APP`: If application is missing, stop repeatedly querying application info from Cloud Foundry.
+* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates.
+* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates.
+* `APP_LIMITS`: Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache.
+* `BOLTDB_PATH`: Bolt Database path.
+* `EVENTS`: Comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+* `EXTRA_FIELDS`: Extra fields you want to annotate your events with (format is key:value,key:value).
+* `FLUSH_INTERVAL`: Time interval for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
+* `CONSUMER_QUEUE_SIZE`: Set the internal consumer queue buffer size. Events wil be pushed to Splunk after queue is full.
+* `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
+* `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring events will begin dropping causing data loss.
+* `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
+* `SPLUNK_VERSION`: Splunk version will determine how metadata fields are ingested for HEC.(example: 6.6).
+* `ENABLE_EVENT_TRACING`: Enable event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Count and Subscription-ID for Splunk correlation searches.
 
-__FIREHOSE_SUBSCRIPTION_ID__ - Tag nozzle events with a firehose subscription id. (More information on  - https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html).
-
-__FIREHOSE_KEEP_ALIVE__ - Keep Alive duration for the firehose consumer.
-
-__ADD_APP_INFO__ - Enrich raw data with app details.
-
-__IGNORE_MISSING_APP__ - If application is missing, stop repeatedly querying application info from Cloud Foundry.
-
-__MISSING_APP_CACHE_INVALIDATE_TTL__ - How frequently the missing app info cache invalidates.
-
-__APP_CACHE_INVALIDATE_TTL__ - How frequently the app info local cache invalidates.
-
-__APP_LIMITS__ - Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache.
-
-__BOLTDB_PATH__ - Bolt Database path.
-
-__EVENTS__ - Comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
-
-__EXTRA_FIELDS__ - Extra fields you want to annotate your events with (format is key:value,key:value).
-
-__FLUSH_INTERVAL__ - Time interval for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
-
-__CONSUMER_QUEUE_SIZE__ - Set the internal consumer queue buffer size. Events wil be pushed to Splunk after queue is full.
-
-__HEC_BATCH_SIZE__ - Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
-
-__HEC_RETRIES__ - Retry count for sending events to Splunk. After expiring events will begin dropping causing data loss.
-
-__HEC_WORKERS__ - Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
-
-__SPLUNK_VERSION__ - Splunk version will determine how metadata fields are ingested for HEC.(example: 6.6).
-
-__ENABLE_EVENT_TRACING__ - Enable event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Count and Subscription-ID for Splunk correlation searches.
-
+- - - -
 ### Push as an App to Cloud Foundry
 
 [splunk-firehose-nozzle-release](https://github.com/cloudfoundry-community/splunk-firehose-nozzle-release)
