@@ -41,7 +41,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 		ApiAddress:        s.config.ApiEndpoint,
 		Username:          s.config.User,
 		Password:          s.config.Password,
-		SkipSslValidation: s.config.SkipSSL,
+		SkipSslValidation: s.config.SkipSSLCF,
 	}
 
 	return cfclient.NewClient(cfConfig)
@@ -74,7 +74,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Host:    s.config.SplunkHost,
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
-		SkipSSL: s.config.SkipSSL,
+		SkipSSL: s.config.SkipSSLSplunk,
 		Logger:  logger,
 	}
 
@@ -118,7 +118,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
 	config := &eventsource.FirehoseConfig{
 		KeepAlive:      s.config.KeepAlive,
-		SkipSSL:        s.config.SkipSSL,
+		SkipSSL:        s.config.SkipSSLCF,
 		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
 		SubscriptionID: s.config.SubscriptionID,
 	}
