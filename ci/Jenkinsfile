@@ -29,10 +29,11 @@ withSplunkWrapNode("master") {
         }
 
         stage("Orca run") {
-            splunkRunScript request:dockerReq,
+            splunkDockerStart imageName: 'docker', mountBindings: '/var/run/docker.sock:/var/run/docker.sock:ro',
                             script:
                                 """
                                 pwd
+                                cd /nozzle/splunk-firehose-nozzle
                                 bash ./ci/orca.sh
                                 """;
         }
