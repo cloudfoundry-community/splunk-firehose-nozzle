@@ -1,0 +1,44 @@
+@Library('jenkinstools@master') _
+
+import com.splunk.jenkins.DockerRequest;
+import com.splunk.tool.plugin.docker.extension.BadDockerExitCode;
+
+def dockerReq = new DockerRequest(steps,
+                                  currentBuild,
+                                  env,
+                                  [imageName: "repo.splunk.com/splunk/products/splact@sha256:70655897e02ac106a7d7726a13e767b9abf07535a101a76bb310c92d0b6a0c86",
+                                   userId: "10777",
+                                   repoName: "https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git",
+                                   runner: "yarn",
+                                   remotePath: "/ci"])
+
+withSplunkWrapNode("master") {
+    try {
+        stage("Prepare and Checkout") {
+            withCredentials([file(credentialsId: 'srv_releases_orca',
+                                 variable: 'ORCA_CREDENTIALS')]) {
+                sh "tar -ovxf $ORCA_CREDENTIALS";
+                splunkPrepareAndCheckOut request: dockerReq,
+                                         files: "${WORKSPACE}/.orca, ${WORKSPACE}/.ssh";
+            }
+            splunkRunScript request:dockerReq,
+                            script:
+                                """
+                                   ls -al /ci
+                                """;
+        }
+    }
+    catch (BadDockerExitCode e) {
+        currentBuild.result = "FAILURE";
+        echo "Exception Caught: ${e.getMessage()}";
+        echo "Stack Trace: ${e.printStackTrace()}";
+    }
+    catch (Exception e) {
+        currentBuild.result = "FAILURE";
+        echo "Exception Caught: ${e.getMessage()}";
+        echo "Stack Trace: ${e.printStackTrace()}";
+    }
+    finally {
+        steps.cleanWs();
+    }
+}
