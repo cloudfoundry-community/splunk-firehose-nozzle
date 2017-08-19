@@ -23,6 +23,8 @@ nozzle:
   environment:
     - SPLUNK_TOKEN=00000000-0000-0000-0000-000000000000
     - SPLUNK_HOST=https://so1:8088
+    - SKIP_SSL_VALIDATION_CF=true
+    - SKIP_CF_SSL_VALIDATION_SPLUNK=true
   depends_on:
     - trafficcontroller
   restart: always

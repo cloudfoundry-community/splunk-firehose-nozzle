@@ -24,7 +24,6 @@ withSplunkWrapNode("master") {
             splunkRunScript request:dockerReq,
                             script:
                                 """
-                                   ls /build/*
                                    pip install splunk_orca -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
                                    cd ci
                                    splunk_orca create --sc nozzle
