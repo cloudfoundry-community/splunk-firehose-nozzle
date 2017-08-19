@@ -32,6 +32,8 @@ withSplunkWrapNode("master") {
             splunkDockerStart imageName: 'docker', mountBindings: '/var/run/docker.sock:/var/run/docker.sock:ro',
                             script:
                                 """
+                                #!/bin/sh
+
                                 pwd
                                 cd /build/splunk-firehose-nozzle
                                 bash ./ci/orca.sh
