@@ -12,6 +12,16 @@ def dockerReq = new DockerRequest(steps,
                                    runner: "yarn",
                                    remotePath: "/build"])
 
+def dockerReq2 = new DockerRequest(steps,
+                                  currentBuild,
+                                  env,
+                                  [imageName: "docker",
+                                   userId: "10777",
+                                   repoName: "https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git",
+                                   runner: "yarn",
+                                   remotePath: "/build"])
+
+
 withSplunkWrapNode("master") {
     try {
         stage("Prepare and Checkout") {
@@ -25,10 +35,22 @@ withSplunkWrapNode("master") {
                             script:
                                 """
                                    ls -al /build
+                                   cat /build/splunk-firehose-nozzle/ci/Jenkinsfile
                                 """;
         }
 
-        stage("Orca run") {
+        stage("orca run") {
+            splunkRunScript request:dockerReq2,
+                            script:
+                                """
+                                    pwd
+                                    cd /build/splunk-firehose-nozzle
+                                    ./ci/orca.sh
+                                """;
+        }
+
+
+        /*stage("Orca run") {
             splunkDockerStart imageName: 'docker', mountBindings: '/var/run/docker.sock:/var/run/docker.sock:ro',
                             script:
                                 """
@@ -36,9 +58,9 @@ withSplunkWrapNode("master") {
 
                                 pwd
                                 cd /build/splunk-firehose-nozzle
-                                bash ./ci/orca.sh
+                                ./ci/orca.sh
                                 """;
-        }
+        }*/
     }
     catch (BadDockerExitCode e) {
         currentBuild.result = "FAILURE";
