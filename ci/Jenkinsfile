@@ -27,6 +27,16 @@ withSplunkWrapNode("master") {
                                    ls -al /ci
                                 """;
         }
+
+        stage("Orca run") {
+            splunkRunScript request:dockerReq,
+                            script:
+                                """
+                                pwd
+                                cd splunk-firehose-nozzle
+                                bash ./ci/orca.sh
+                                """;
+        }
     }
     catch (BadDockerExitCode e) {
         currentBuild.result = "FAILURE";
