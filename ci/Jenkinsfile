@@ -10,7 +10,7 @@ def dockerReq = new DockerRequest(steps,
                                    userId: "10777",
                                    repoName: "https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git",
                                    runner: "yarn",
-                                   remotePath: "/ci"])
+                                   remotePath: "/nozzle"])
 
 withSplunkWrapNode("master") {
     try {
@@ -24,7 +24,7 @@ withSplunkWrapNode("master") {
             splunkRunScript request:dockerReq,
                             script:
                                 """
-                                   ls -al /ci
+                                   ls -al /nozzle
                                 """;
         }
 
@@ -33,7 +33,6 @@ withSplunkWrapNode("master") {
                             script:
                                 """
                                 pwd
-                                cd splunk-firehose-nozzle
                                 bash ./ci/orca.sh
                                 """;
         }
