@@ -6,16 +6,7 @@ import com.splunk.tool.plugin.docker.extension.BadDockerExitCode;
 def dockerReq = new DockerRequest(steps,
                                   currentBuild,
                                   env,
-                                  [imageName: "repo.splunk.com/splunk/products/splact@sha256:70655897e02ac106a7d7726a13e767b9abf07535a101a76bb310c92d0b6a0c86",
-                                   userId: "10777",
-                                   repoName: "https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git",
-                                   runner: "yarn",
-                                   remotePath: "/build"])
-
-def dockerReq2 = new DockerRequest(steps,
-                                  currentBuild,
-                                  env,
-                                  [imageName: "docker",
+                                  [imageName: "repo.splunk.com/splunk/products/splact",
                                    userId: "10777",
                                    repoName: "https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git",
                                    runner: "yarn",
@@ -24,9 +15,8 @@ def dockerReq2 = new DockerRequest(steps,
 
 withSplunkWrapNode("master") {
     try {
-        stage("Prepare and Checkout") {
-            withCredentials([file(credentialsId: 'srv_releases_orca',
-                                 variable: 'ORCA_CREDENTIALS')]) {
+        stage("run orca") {
+            withCredentials([file(credentialsId: 'srv_releases_orca', variable: 'ORCA_CREDENTIALS')]) {
                 sh "tar -ovxf $ORCA_CREDENTIALS";
                 splunkPrepareAndCheckOut request: dockerReq,
                                          files: "${WORKSPACE}/.orca, ${WORKSPACE}/.ssh";
@@ -34,33 +24,13 @@ withSplunkWrapNode("master") {
             splunkRunScript request:dockerReq,
                             script:
                                 """
-                                   ls -al /build
-                                   cat /build/splunk-firehose-nozzle/ci/Jenkinsfile
+                                   ls /build
+                                   pip install splunk_orca -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
+                                   tar xzvf /build/jenkins_bot_orca.tar.gz -C $HOME
+                                   cd ci
+                                   splunk_orca create --sc nozzle
                                 """;
         }
-
-        stage("orca run") {
-            splunkRunScript request:dockerReq2,
-                            script:
-                                """
-                                    pwd
-                                    cd /build/splunk-firehose-nozzle
-                                    ./ci/orca.sh
-                                """;
-        }
-
-
-        /*stage("Orca run") {
-            splunkDockerStart imageName: 'docker', mountBindings: '/var/run/docker.sock:/var/run/docker.sock:ro',
-                            script:
-                                """
-                                #!/bin/sh
-
-                                pwd
-                                cd /build/splunk-firehose-nozzle
-                                ./ci/orca.sh
-                                """;
-        }*/
     }
     catch (BadDockerExitCode e) {
         currentBuild.result = "FAILURE";
