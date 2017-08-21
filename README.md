@@ -48,7 +48,7 @@ uaac -t member add doppler.firehose splunk-nozzle
 or later. Earlier versions should use `cloud_controller.admin` instead.
 
 
-#### Environment Parameters (declare parameters by making a copy of scripts/nozzle.sh.template)
+#### Environment Parameters (declare parameters by making a copy of tools/nozzle.sh.template)
 
 DEBUG -
 Enable debug mode (forward to standard out instead of Splunk).
@@ -168,14 +168,13 @@ on making a user and credentials.
 1. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    cp manifest.yml.template manifest.yml
-    vim manifest.yml
+    vim ci/nozzle_manifest.yml
     ```
 
 1. Push the nozzle
 
     ```shell
-    cf push
+    make deploy-nozzle
     ```
 
 #### Dump application info to boltdb ####
@@ -189,7 +188,7 @@ Users can run this tool to generate a copy of all application meta data and copy
 Example of how to run the dump application info tool:
 
 ```
-$ cd scripts
+$ cd tools/dump_app_info
 $ go build dump_app_info.go
 $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoint> --user=<api endpoint login username> --password=<api endpoint login password>
 ```
@@ -286,11 +285,11 @@ $ make installdeps
 #### Environment
 
 For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
-copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
+copy `tools/nozzle.sh.template` to `tools/nozzle.sh` and supply missing values:
 
 ```
-$ cp script/dev.sh.template scripts/nozzle.sh
-$ chmod +x scripts/nozzle.sh
+$ cp script/dev.sh.template tools/nozzle.sh
+$ chmod +x tools/nozzle.sh
 ```
 
 Build project:
@@ -323,7 +322,7 @@ Run app
 
 ```
 # this will run: go run main.go
-$ ./scripts/nozzle.sh
+$ ./tools/nozzle.sh
 ```
 
 #### CI

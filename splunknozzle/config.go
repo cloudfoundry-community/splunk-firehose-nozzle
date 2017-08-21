@@ -111,7 +111,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
 
-	kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every").
+	kingpin.Flag("flush-interval", "Every interval flushes to Splunk Http Event Collector server").
 		OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").DurationVar(&c.FlushInterval)
 	kingpin.Flag("consumer-queue-size", "Consumer queue buffer size").
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)

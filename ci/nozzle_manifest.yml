@@ -4,28 +4,33 @@ applications:
     memory: 512M
     instances: 2
     buildpack: go_buildpack
+    cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
       API_ENDPOINT:
       API_USER:
       API_PASSWORD:
-      SPLUNK_TOKEN:
       SPLUNK_HOST:
+      SPLUNK_TOKEN:
       SPLUNK_INDEX:
-      DEBUG: false
-      SKIP_SSL_VALIDATION: true
+      SKIP_SSL_VALIDATION_CF: true
+      SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle
       JOB_INDEX: -1
-#      JOB_HOST:
-      ADD_APP_INFO: false
+      JOB_HOST: localhost
+      ADD_APP_INFO: true
+      IGNORE_MISSING_APP: true
+      MISSING_APP_CACHE_INVALIDATE_TTL: 3600s
+      APP_CACHE_INVALIDATE_TTL: 86440s
+      APP_LIMITS: 1000
       BOLTDB_PATH: cache.db
       EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
-#      EXTRA_FIELDS:
-      FIREHOSE_KEEP_ALIVE: 25s
+      EXTRA_FIELDS: longevity:testing,name:kchen
       FIREHOSE_SUBSCRIPTION_ID: splunk-firehose
       FLUSH_INTERVAL: 5s
       CONSUMER_QUEUE_SIZE: 10000
       HEC_BATCH_SIZE: 1000
       HEC_RETRIES: 5
       HEC_WORKERS: 8
-
+      DEBUG: false
+      ENABLE_EVENT_TRACING: true

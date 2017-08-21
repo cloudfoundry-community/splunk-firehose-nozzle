@@ -12,18 +12,17 @@ endif
 default: installdeps build
 
 installdeps:
-	glide --debug install --strip-vendor
+	glide install --strip-vendor
 
 updatedeps:
-	glide --debug update
+	glide update
 
 initdeps:
-	glide --debug create
+	glide create
 
-# -gcflags -N -l for debug
+# -gcflags '-N -l' for debug
 # -ldflags -w for prod
-#
-#
+
 linux:
 	GOOS=linux GOARCH=amd64 make
 
@@ -33,7 +32,7 @@ mac:
 build-linux:
 	GOOS=linux GOARCH=amd64 make build
 
-build: build-nozzle build-app-dump
+build: build-nozzle build-app-dump build-data-gen
 
 debug:
 	DEBUG_FLAGS="-gcflags '-N -l'" make build
@@ -44,16 +43,20 @@ build-nozzle: fmt
 	go build -o splunk-firehose-nozzle  -ldflags ${LDFLAGS} ${DEBUG_FLAGS} ./main.go
 
 build-app-dump:
-	go build -o scripts/dump_app_info ./scripts/dump_app_info.go
+	go build -o tools/dump_app_info/dump_app_info ./tools/dump_app_info/dump_app_info.go
 
+build-data-gen:
+	go build -o ci/data_gen/data_gen tools/data_gen/data_gen.go
 
-PKGS=$(shell go list ./... | grep -v vendor | grep -v scripts | grep -v testing | grep -v "splunk-firehose-nozzle$$")
+PKGS=$(shell go list ./... | grep -v vendor | grep -v tools | grep -v testing | grep -v "splunk-firehose-nozzle$$")
+
+deploy: deploy-nozzle deploy-data-gen
 
 deploy-nozzle:
-	@cf push -f ci/splunk_nozzle_manifest.yml -u process --random-route
+	@cf push -f ci/nozzle_manifest.yml -u process --random-route
 
-deploy-data-generation-app:
-	@cf push -f ci/data_generation_app.yml -u process -p ci/data-generation-app --random-route
+deploy-data-gen:
+	@cf push -f ci/data_gen_manifest.yml -u process -p tools/data_gen --random-route
 
 integration-test: deploy-nozzle deploy-data-generation-app test
 
