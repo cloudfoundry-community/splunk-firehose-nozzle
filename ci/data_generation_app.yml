@@ -1,0 +1,9 @@
+---
+applications:
+  - name: spl-data-gen
+    memory: 128M
+    instances: 2
+    buildpack: go_buildpack
+    path: ci/data-generation-app
+    env:
+      GOPACKAGENAME: main
