@@ -87,7 +87,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("skip-ssl-validation-cf", "Skip cert validation (for dev environments").
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_CF").Default("false").BoolVar(&c.SkipSSLCF)
 	kingpin.Flag("skip-ssl-validation-splunk", "Skip cert validation (for dev environments").
-		OverrideDefaultFromEnvar("SKIP_CF_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
+		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
 	kingpin.Flag("subscription-id", "Id for the subscription.").
 		OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").StringVar(&c.SubscriptionID)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").

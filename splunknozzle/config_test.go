@@ -40,7 +40,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("JOB_HOST", "nozzle.example.com")
 
 			os.Setenv("SKIP_SSL_VALIDATION_CF", "true")
-			os.Setenv("SKIP_CF_SSL_VALIDATION_SPLUNK", "true")
+			os.Setenv("SKIP_SSL_VALIDATION_SPLUNK", "true")
 
 			os.Setenv("FIREHOSE_SUBSCRIPTION_ID", "my-nozzle")
 			os.Setenv("FIREHOSE_KEEP_ALIVE", "42s")
