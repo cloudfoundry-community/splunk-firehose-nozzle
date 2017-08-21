@@ -54,7 +54,7 @@ forms:
   - name: api_endpoint
     type: string
     label: API Endpoint
-    description: Cloud foundry API endpoint. See https://appseg.syseg.example.cfplatformeng.com for an example. 
+    description: Cloud Foundry API endpoint. See https://appseg.syseg.example.cfplatformeng.com for an example. 
   - name: api_user
     type: string
     label: API User
@@ -89,7 +89,7 @@ forms:
 
 - name: advanced
   label: Advanced
-  description: Advance Nozzle configuration.
+  description: Additional Nozzle Configuration
   properties: 
   - name: firehose_subscription_id
     type: string
