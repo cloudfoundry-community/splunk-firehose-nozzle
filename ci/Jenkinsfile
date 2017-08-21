@@ -24,6 +24,9 @@ withSplunkWrapNode("master") {
             splunkRunScript request:dockerReq,
                             script:
                                 """
+                                   # Workaround to use 0.8.0
+                                   sed -i"" "s/^splunk_image_version/#splunk_image_version/g" /build/.orca/orca.conf
+                                   sed -i"" "s/^splunk_ansible_version/#splunk_ansible_version/g" /build/.orca/orca.conf
                                    cat /build/.orca/orca.conf
                                    pip install splunk_orca==0.8.0 -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
                                    cd ci
