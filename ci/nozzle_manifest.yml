@@ -7,12 +7,12 @@ applications:
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT: https://api.sys.pie-ci-1-11.cfplatformeng.com
-      API_USER: admin
-      API_PASSWORD: FEhs3WCuzWVv7kmTVVt-piUlrHsSInjM
-      SPLUNK_HOST: https://heclb-1795869775.us-west-1.elb.amazonaws.com:8088
-      SPLUNK_TOKEN: 536AF219-CF36-4C8C-AA0C-FD9793A0F4DD
-      SPLUNK_INDEX: main
+      API_ENDPOINT:
+      API_USER:
+      API_PASSWORD:
+      SPLUNK_HOST:
+      SPLUNK_TOKEN:
+      SPLUNK_INDEX:
       SKIP_SSL_VALIDATION_CF: true
       SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle
