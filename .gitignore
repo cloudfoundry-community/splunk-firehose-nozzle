@@ -2,15 +2,17 @@
 
 nozzle.sh
 
-scripts/*
-!scripts/*.template
-!scripts/*.go
+tools/*
+!tools/*.template
+!tools/*.go
 
 cache.db
 *.out
 
 main
 splunk-firehose-nozzle
+env.sh
+data_gen
 
 manifest*.yml
 splunk-firehose-nozzle.iml
