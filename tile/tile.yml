@@ -19,112 +19,59 @@ properties:
 - name: author
   type: string
   label: Author
-  value: Matt Cholick & Roy Arsan
+  value: Shubham Jain
 
 forms:
 - name: splunk-config
-  label: Splunk Destination
-  description: Splunk target configuration
+  label: Splunk Settings
+  description: Splunk HTTP Event Collector Settings
   markdown: |
-    Configure your Splunk target destination of one or more servers
+    Configure your Splunk HTTP Event Collector 
   properties:
-  - name: splunk_server
+  - name: splunk_host
     type: string
-    label: Remote Splunk server(s)
-    description: Comma-separated list of Splunk indexers to send data to. Each Splunk indexer specified as <address>:<port>, where address is either FQDN or IP address, and port is the port on which Splunk indexer is listening
+    label: HTTP Event Collector Endpoint URL
+    description: HTTP Event Collector endpoint. See https://example.cloud.splunk.com:8088 for an example.
+  - name: splunk_token
+    type: secret
+    label: HTTP Event Collector Token
+    description: Splunk HTTP Event Collector token. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector for more information.
+  - name: skip_ssl_validation_splunk
+    type: boolean
+    label: Skip SSL Validation
+    default: false
+    description: Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority.
   - name: splunk_index
     type: string
     label: Index
-    description: Splunk index
-    default: main
-  - name: extra_fields
-    type: string
-    label: Additional fields for metadata
-    description: Arbitrary set of key:value pairs in the form "key1:value1,key2:value2,key3:value3" that do not occur in event payload itself. These fields are added to every event payload for indexing by Splunk, and are used to tag all events from this foundation.
-    optional: true
-
-- name: splunk-config-ssl
-  label: Splunk SSL Settings
-  description: Splunk connection encryption & authentication
-  markdown: |
-    You can configure Splunk forwarding to use your own SSL certificates to ensure that your data is securely encrypted when in transit.
-    This is not required for using the Splunk Nozzle but it is highly recommended.
-
-    Follow Splunk documented instructions on [how to prepare your signed certificates into single PEM file](http://docs.splunk.com/Documentation/Splunk/6.5.1/Security/HowtoprepareyoursignedcertificatesforSplunk) to be provided as `Client certificate` in this form.
-
-    Refer to Splunk Docs for more background on [securing data from forwarders](http://docs.splunk.com/Documentation/Splunk/6.5.1/Security/Aboutsecuringdatafromforwarders)
-  properties:
-  - name: splunk_ssl
-    type: boolean
-    label: Enable Splunk SSL
-    description: Enable SSL authentication
-    default: false
-  - name: splunk_ssl_cert
-    type: text
-    label: Client certificate (PEM format)
-    description: Properly concatenated client certificate, client private key & public certificate as single PEM file
-    optional: true
-  - name: splunk_ssl_password
-    type: secret
-    label: Client certificate password
-    description: Passphrase for client private key (if applicable)
-    optional: true
-  - name: splunk_ssl_root_ca
-    type: text
-    label: Root CA certificate(s) (PEM format)
-    description: One or more root CA certificates concatenated together. This will be used to verify target Splunk indexer(s) certificates.
-    optional: true
-  - name: splunk_ssl_common_name
-    type: string
-    label: Common name(s) of server(s) certificates
-    description: Comma-separated list of common names. The common name of Splunk server(s) certificates will be checked against this list.
-    optional: true
-  - name: splunk_ssl_alt_name
-    type: string
-    label: Alternate name(s) of server(s) certificates
-    description: Comma-separated list of alternate names. The alternate name of Splunk server(s) certificates will be checked against this list.
-    optional: true
+    description: The name of the Splunk index that events will be sent to. Warning:-Setting an invalid index will cause events to be lost.
+    default: main      
 
 - name: cf-config
   label: Cloud Foundry Settings
-  description: Cloud Foundry connection details
-  markdown: |
-    On deployments with runtimes 1.8.9/1.7.29 and above,
-    the built in user `splunk-firehose` will be used when no user is specified.
-
-    API user is **required** for earlier versions of the Elastic Runtimes.
-    Failing to specify the API user on versions without `splunk-firehose` will result in:
-
-    ```
-    unknown property "splunk_firehose_credentials"...
-    ```
-
-    See the docs for detailed instructions on creating a user.
+  description: Cloud Foundry Connection Settings
   properties:
-  - name: skip_ssl_validation
-    type: boolean
-    label: Skip SSL validation
-    default: false
-    description: Skip SSL validation (to allow things like self-signed certs). Do not set to true in production.
-  - name: add_app_info
-    type: boolean
-    default: false
-    label: Add app info
-    description: When true, nozzle will query cloud controller to add name, space, org. This will greatly increase load on the cloud controller.
+  - name: api_endpoint
+    type: string
+    label: API Endpoint
+    description: Cloud foundry API endpoint. See https://appseg.syseg.example.cfplatformeng.com for an example. 
   - name: api_user
     type: string
-    label: API user
-    description: Nozzle user (a user having both "cloud_controller.admin_read_only" and "doppler.firehose splunk-nozzle"
-    optional: true
+    label: API User
+    description: API username
   - name: api_password
     type: secret
-    label: API password
+    label: API Password
     description: Password for API user
-    optional: true
-  - name: selected_events
+  - name: skip_ssl_validation_cf
+    type: boolean
+    label: Skip SSL Validation
+    default: false
+    description: Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority. Do not set to true in production. 
+  - name: events
     type: multi_select_options
-    label: Event types
-    default: ['ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
+    label: Event Types
+    default: ['HttpStartStop', 'LogMessage', 'ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
     options:
       - name: HttpStartStop
         label: HttpStartStop
@@ -138,47 +85,33 @@ forms:
         label: Error
       - name: ContainerMetric
         label: ContainerMetric
-    description: Event types to forward to Splunk
+    description: Event types to forward to Splunk.     
 
 - name: advanced
   label: Advanced
-  description: Internal Splunk nozzle configuration (for advanced usage or debug)
-  properties:
-  - name: splunk_admin_user
-    type: string
-    label: Splunk Forwarder admin username
-    default: admin
-    description: admin username for internal Splunk Forwarder
-  - name: splunk_admin_pass
-    type: string
-    label: Splunk Forwarder admin password
-    description: password for internal Splunk Forwarder
-    default: AdminPass1
-  - name: token
-    type: string
-    label: Splunk Forwarder HEC Token
-    description: HTTP Event Collector (HEC) token to be internally used by Splunk Forwarder to accept events from firehose
-    default: Splunk-HEC-Token-1
+  description: Advance Nozzle configuration.
+  properties: 
   - name: firehose_subscription_id
     type: string
-    label: Firehose subscription id
-    default: splunk-firehose-subscription-id
-    description: Subscription id unique to nozzle; firehose balances across socket connections having same id.
-  - name: api_endpoint
+    label: Firehose Subscription ID
+    description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID. 
+    optional: true
+  - name: extra_fields
     type: string
-    label: CF API ENDPOINT
-    default: api.sys.pie-27.cfplatformeng.com
-    description: Cloud foundry api endpoint 
-  - name: splunk_token
-    type: string
-    label: SPLUNK HEC TOKEN
-    default: EE05A31A-3563-4ED4-909D-6F4F1FD965D5
-    description: Splunk HEC token. 
-  - name: splunk_host
-    type: string
-    label: SPLUNK HEC host
-    default: 52.53.254.149:9997
-    description: Splunk HEC token.        
+    label: Additional Fields
+    description: A set of key:value pairs formatted as "key1:value1, key2:value2, key3:value3" that do not occur in the event payload. These fields are added to every event payload for indexing by Splunk and are used to tag all events. 
+    optional: true
+  - name: add_app_info
+    type: boolean
+    default: false
+    label: Add App Information
+    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
+  - name: enable_event_tracing
+    type: boolean
+    label: Enable Event Tracing
+    default: false
+    description: Enables data loss tracing.
+    
 
 packages:
 - name: splunk-firehose-nozzle
@@ -187,13 +120,11 @@ packages:
   manifest:
     memory: 512M
     instances: 2
-    #buildpack: go_buildpack
     buildpack: binary_buildpack
     path: ../splunk-firehose-nozzle
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      #add more environment variables
       
 
      
