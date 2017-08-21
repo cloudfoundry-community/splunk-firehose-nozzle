@@ -3,7 +3,7 @@ applications:
   - name: splunk-firehose-nozzle
     memory: 512M
     instances: 2
-    buildpack: binary_buildpack
+    buildpack: go_buildpack
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main

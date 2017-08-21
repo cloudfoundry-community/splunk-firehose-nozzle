@@ -3,7 +3,7 @@ applications:
   - name: data_gen
     memory: 128M
     instances: 2
-    buildpack: binary_buildpack
+    buildpack: go_buildpack
     cmd: data_gen
     env:
       GOPACKAGENAME: main

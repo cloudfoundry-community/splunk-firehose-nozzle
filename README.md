@@ -188,7 +188,7 @@ Users can run this tool to generate a copy of all application meta data and copy
 Example of how to run the dump application info tool:
 
 ```
-$ cd tools
+$ cd tools/dump_app_info
 $ go build dump_app_info.go
 $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoint> --user=<api endpoint login username> --password=<api endpoint login password>
 ```
