@@ -121,23 +121,15 @@ forms:
 packages:
 - name: splunk-firehose-nozzle
   type: app
-  label: Splunk-Firehose-Nozzle     
+  label: Splunk-Firehose-Nozzle
   manifest:
-    memory: 512M  
-    instances: (( .properties.scale_out_nozzle.value ))
+    memory: 512M
+    instances: MY_INSTANCE_COUNT
     buildpack: binary_buildpack
     path: ../splunk-firehose-nozzle
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      
 
-     
- 
-
-
-
-
-
-
-
+  pre_deploy:
+    sed -i "s/MY_INSTANCE_COUNT/$SCALE_OUT_NOZZLE/g" $PACKAGE_PATH/splunk_firehose_nozzle/manifest.yml
