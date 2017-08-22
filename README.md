@@ -60,7 +60,7 @@ __Cloud Foundry configuration parameters:__
 __Splunk configuration parameters:__
 * `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
 * `SPLUNK_HOST`: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088
-* `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost.
+* `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter.
 
 __Advanced Configuration Features:__
 * `JOB_NAME`: Tag nozzle log events with job name.
