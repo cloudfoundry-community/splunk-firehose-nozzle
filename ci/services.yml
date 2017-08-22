@@ -1,18 +1,9 @@
-etcd:
-  image: zlchen/etcd:1.0
-  hostname: etcd
-  ports:
-    - "2379"
-  restart: always
-
 trafficcontroller:
-  image: zlchen/trafficcontroller:1.0
+  image: zlchen/trafficcontroller:1.1
   hostname: trafficcontroller
   ports:
     - "8081"
     - "9911"
-  depends_on:
-    - etcd
   restart: always
 
 nozzle:
