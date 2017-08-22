@@ -1,5 +1,5 @@
 ---
-name: splunk-firehose-nozzle
+name: splunk-nozzle
 label: Splunk Firehose Nozzle for PCF
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
@@ -26,25 +26,25 @@ forms:
   label: Splunk Settings
   description: Splunk HTTP Event Collector Settings
   markdown: |
-    Configure your Splunk HTTP Event Collector 
+    Configure your Splunk HTTP Event Collector. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
   properties:
   - name: splunk_host
     type: string
     label: HTTP Event Collector Endpoint URL
-    description: HTTP Event Collector endpoint. See https://example.cloud.splunk.com:8088 for an example.
+    description: HTTP Event Collector endpoint URL. 
   - name: splunk_token
     type: secret
     label: HTTP Event Collector Token
-    description: Splunk HTTP Event Collector token. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector for more information.
+    description: Splunk HTTP Event Collector token.
   - name: skip_ssl_validation_splunk
     type: boolean
     label: Skip SSL Validation
     default: false
-    description: Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority.
+    description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority.
   - name: splunk_index
     type: string
     label: Index
-    description: The name of the Splunk index that events will be sent to. Warning:-Setting an invalid index will cause events to be lost.
+    description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
     default: main      
 
 - name: cf-config
@@ -54,7 +54,7 @@ forms:
   - name: api_endpoint
     type: string
     label: API Endpoint
-    description: Cloud Foundry API endpoint. See https://appseg.syseg.example.cfplatformeng.com for an example. 
+    description: Cloud Foundry API endpoint.
   - name: api_user
     type: string
     label: API User
@@ -67,7 +67,7 @@ forms:
     type: boolean
     label: Skip SSL Validation
     default: false
-    description: Skip SSL certificate validation for connection to CF. Secure communications will not check SSL certificates against a trusted CA Authority. Do not set to true in production. 
+    description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Do not set to true in production. 
   - name: events
     type: multi_select_options
     label: Event Types
@@ -91,6 +91,11 @@ forms:
   label: Advanced
   description: Additional Nozzle Configuration
   properties: 
+  - name: scale_out_nozzle
+    type: integer
+    label: Scale Out Nozzle
+    description: Scale out Splunk nozzle. Recommendation:Run 2 or more nozzles for high availability.
+    default: 2
   - name: firehose_subscription_id
     type: string
     label: Firehose Subscription ID
@@ -118,8 +123,8 @@ packages:
   type: app
   label: Splunk-Firehose-Nozzle     
   manifest:
-    memory: 512M
-    instances: 2
+    memory: 512M  
+    instances: (( .properties.scale_out_nozzle.value ))
     buildpack: binary_buildpack
     path: ../splunk-firehose-nozzle
     command: ./splunk-firehose-nozzle
