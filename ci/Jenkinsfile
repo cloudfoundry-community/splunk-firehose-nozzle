@@ -24,15 +24,12 @@ withSplunkWrapNode("master") {
             splunkRunScript request:dockerReq,
                             script:
                                 """
-                                   pip install splunk_orca --upgrade -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
-                                   # pip install splunk_orca==0.8.0 -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
+                                   pip install splunk_orca==0.7.5 -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
                                    cd ci
 
                                    # Workaround to use 0.8.0
-                                   sed -i"" "s/^splunk_image_version = 0.7/splunk_image_version = 0.8/g" /build/.orca/orca.conf
-                                   sed -i"" "s/^splunk_ansible_version/#splunk_ansible_version/g" /build/.orca/orca.conf
-                                   cat /build/.orca/orca.conf
-
+                                   # sed -i"" "s/^splunk_image_version = 0.7/splunk_image_version = 0.8/g" /build/.orca/orca.conf
+                                   #sed -i"" "s/^splunk_ansible_version/#splunk_ansible_version/g" /build/.orca/orca.conf
                                    splunk_orca create --sc nozzle
                                 """;
         }
