@@ -4,8 +4,7 @@ label: Splunk Firehose Nozzle for PCF
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
-# org: test-org                       # Optional
-# space: test-space                   # Optional
+
 org_quota: 4096                       # Optional, memory quota in mb
 apply_open_security_group: true       # Apply open security group, default: false
 allow_paid_service_plans: true        # Allow paid service plans, default: false
@@ -13,7 +12,7 @@ allow_paid_service_plans: true        # Allow paid service plans, default: false
 stemcell_criteria:
   os: ubuntu-trusty
   requires_cpi: false
-  version: '3263'
+  version: '3421'
 
 properties:
 - name: author
@@ -67,7 +66,7 @@ forms:
     type: boolean
     label: Skip SSL Validation
     default: false
-    description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Do not set to true in production. 
+    description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
   - name: events
     type: multi_select_options
     label: Event Types
@@ -85,11 +84,6 @@ forms:
         label: Error
       - name: ContainerMetric
         label: ContainerMetric
-      - name: HttpStart
-        label: HttpStart
-      - name: HttpStop
-        label: HttpStop    
-
     description: Event types to forward to Splunk.     
 
 - name: advanced
