@@ -11,7 +11,7 @@ echo "building go binary"
 pushd ..
 curdir=`pwd`
 go get github.com/cloudfoundry-community/splunk-firehose-nozzle
-cd $GOPATH/src/github.com/cloudfoundry-community/splunk-firehose-nozzle && git checkout master && env GOOS=linux GOARCH=amd64 make build VERSION=1.0
+cd $GOPATH/src/github.com/cloudfoundry-community/splunk-firehose-nozzle && git checkout master && env GOOS=linux GOARCH=amd64 make build VERSION=1.0.0
 cp $GOPATH/src/github.com/cloudfoundry-community/splunk-firehose-nozzle/splunk-firehose-nozzle ${curdir}/../splunk-firehose-nozzle/
 cd ${curdir}
 popd
