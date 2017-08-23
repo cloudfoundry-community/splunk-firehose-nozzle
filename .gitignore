@@ -1,10 +1,18 @@
 .idea
 
-scripts/*
-!scripts/*.template
+nozzle.sh
+
+tools/*
+!tools/*.template
+!tools/*.go
 
 cache.db
+*.out
 
 main
 splunk-firehose-nozzle
+env.sh
+data_gen
+
 manifest*.yml
+splunk-firehose-nozzle.iml
