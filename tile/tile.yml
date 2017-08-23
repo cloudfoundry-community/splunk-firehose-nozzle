@@ -85,6 +85,11 @@ forms:
         label: Error
       - name: ContainerMetric
         label: ContainerMetric
+      - name: HttpStart
+        label: HttpStart
+      - name: HttpStop
+        label: HttpStop    
+
     description: Event types to forward to Splunk.     
 
 - name: advanced
@@ -111,7 +116,7 @@ forms:
     default: false
     label: Add App Information
     description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
-  - name: enable_event_tracing
+  - name: enable_event_tracing  
     type: boolean
     label: Enable Event Tracing
     default: false
@@ -126,6 +131,8 @@ packages:
     memory: 512M
     instances: MY_INSTANCE_COUNT
     buildpack: binary_buildpack
+    health-check-type: process
+    no-route: true
     path: ../splunk-firehose-nozzle
     command: ./splunk-firehose-nozzle
     env:
