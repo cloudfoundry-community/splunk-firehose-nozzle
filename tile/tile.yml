@@ -1,0 +1,135 @@
+---
+name: splunk-nozzle
+label: Splunk Firehose Nozzle for PCF
+description: Forward firehose logs & metrics to Splunk
+icon_file: icon.png
+
+
+org_quota: 4096                       # Optional, memory quota in mb
+apply_open_security_group: true       # Apply open security group, default: false
+allow_paid_service_plans: true        # Allow paid service plans, default: false
+
+stemcell_criteria:
+  os: ubuntu-trusty
+  requires_cpi: false
+  version: '3421'
+
+properties:
+- name: author
+  type: string
+  label: Author
+  value: Shubham Jain
+
+forms:
+- name: splunk-config
+  label: Splunk Settings
+  description: Splunk HTTP Event Collector Settings
+  markdown: |
+    Configure your Splunk HTTP Event Collector. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
+  properties:
+  - name: splunk_host
+    type: string
+    label: HTTP Event Collector Endpoint URL
+    description: HTTP Event Collector endpoint URL. 
+  - name: splunk_token
+    type: secret
+    label: HTTP Event Collector Token
+    description: Splunk HTTP Event Collector token.
+  - name: skip_ssl_validation_splunk
+    type: boolean
+    label: Skip SSL Validation
+    default: false
+    description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority.
+  - name: splunk_index
+    type: string
+    label: Index
+    description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
+    default: main      
+
+- name: cf-config
+  label: Cloud Foundry Settings
+  description: Cloud Foundry Connection Settings
+  properties:
+  - name: api_endpoint
+    type: string
+    label: API Endpoint
+    description: Cloud Foundry API endpoint.
+  - name: api_user
+    type: string
+    label: API User
+    description: API username
+  - name: api_password
+    type: secret
+    label: API Password
+    description: Password for API user
+  - name: skip_ssl_validation_cf
+    type: boolean
+    label: Skip SSL Validation
+    default: false
+    description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
+  - name: events
+    type: multi_select_options
+    label: Event Types
+    default: ['HttpStartStop', 'LogMessage', 'ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
+    options:
+      - name: HttpStartStop
+        label: HttpStartStop
+      - name: LogMessage
+        label: LogMessage
+      - name: ValueMetric
+        label: ValueMetric
+      - name: CounterEvent
+        label: CounterEvent
+      - name: Error
+        label: Error
+      - name: ContainerMetric
+        label: ContainerMetric
+    description: Event types to forward to Splunk.     
+
+- name: advanced
+  label: Advanced
+  description: Additional Nozzle Configuration
+  properties: 
+  - name: scale_out_nozzle
+    type: integer
+    label: Scale Out Nozzle
+    description: Scale out Splunk nozzle. Recommendation:Run 2 or more nozzles for high availability.
+    default: 2
+  - name: firehose_subscription_id
+    type: string
+    label: Firehose Subscription ID
+    description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID. 
+    optional: true
+  - name: extra_fields
+    type: string
+    label: Additional Fields
+    description: A set of key:value pairs formatted as "key1:value1, key2:value2, key3:value3" that do not occur in the event payload. These fields are added to every event payload for indexing by Splunk and are used to tag all events. 
+    optional: true
+  - name: add_app_info
+    type: boolean
+    default: false
+    label: Add App Information
+    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
+  - name: enable_event_tracing  
+    type: boolean
+    label: Enable Event Tracing
+    default: false
+    description: Enables data loss tracing.
+    
+
+packages:
+- name: splunk-firehose-nozzle
+  type: app
+  label: Splunk-Firehose-Nozzle
+  manifest:
+    memory: 512M
+    instances: MY_INSTANCE_COUNT
+    buildpack: binary_buildpack
+    health-check-type: process
+    no-route: true
+    path: ../splunk-firehose-nozzle
+    command: ./splunk-firehose-nozzle
+    env:
+      GOPACKAGENAME: main
+  pre_deploy: |
+    sed -i "s/MY_INSTANCE_COUNT/$SCALE_OUT_NOZZLE/g" $PACKAGE_PATH/splunk_firehose_nozzle/manifest.yml
