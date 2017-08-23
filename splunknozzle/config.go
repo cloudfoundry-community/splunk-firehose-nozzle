@@ -87,7 +87,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("skip-ssl-validation-cf", "Skip cert validation (for dev environments").
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_CF").Default("false").BoolVar(&c.SkipSSLCF)
 	kingpin.Flag("skip-ssl-validation-splunk", "Skip cert validation (for dev environments").
-		OverrideDefaultFromEnvar("SKIP_CF_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
+		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
 	kingpin.Flag("subscription-id", "Id for the subscription.").
 		OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").StringVar(&c.SubscriptionID)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
@@ -111,7 +111,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
 
-	kingpin.Flag("flush-interval", "Every interval flushes to heavy forwarder every").
+	kingpin.Flag("flush-interval", "Every interval flushes to Splunk Http Event Collector server").
 		OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").DurationVar(&c.FlushInterval)
 	kingpin.Flag("consumer-queue-size", "Consumer queue buffer size").
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)

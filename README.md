@@ -59,7 +59,6 @@ __Cloud Foundry configuration parameters:__
 
 __Splunk configuration parameters:__
 * `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
-
 * `SPLUNK_HOST`: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088
 * `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter.
 
@@ -90,11 +89,11 @@ This is recommended for dev environments only.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
 
 - - - -
+
 ### Push as an App to Cloud Foundry
 
 [splunk-firehose-nozzle-release](https://github.com/cloudfoundry-community/splunk-firehose-nozzle-release)
-packages this code into a
-[BOSH](https://bosh.io) release for deployment. The code could also be run on
+packages this code into a [BOSH](https://bosh.io) release for deployment. The code could also be run on
 Cloud Foundry as an application. See the **Setup** section for details
 on making a user and credentials.
 
@@ -114,14 +113,13 @@ on making a user and credentials.
 1. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    cp manifest.yml.template manifest.yml
-    vim manifest.yml
+    vim ci/nozzle_manifest.yml
     ```
 
 1. Push the nozzle
 
     ```shell
-    cf push
+    make deploy-nozzle
     ```
 
 #### Dump application info to boltdb ####
@@ -135,7 +133,7 @@ Users can run this tool to generate a copy of all application meta data and copy
 Example of how to run the dump application info tool:
 
 ```
-$ cd scripts
+$ cd tools/dump_app_info
 $ go build dump_app_info.go
 $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoint> --user=<api endpoint login username> --password=<api endpoint login password>
 ```
@@ -232,11 +230,11 @@ $ make installdeps
 #### Environment
 
 For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
-copy `scripts/nozzle.sh.template` to `scripts/nozzle.sh` and supply missing values:
+copy `tools/nozzle.sh.template` to `tools/nozzle.sh` and supply missing values:
 
 ```
-$ cp script/dev.sh.template scripts/nozzle.sh
-$ chmod +x scripts/nozzle.sh
+$ cp script/dev.sh.template tools/nozzle.sh
+$ chmod +x tools/nozzle.sh
 ```
 
 Build project:
@@ -269,7 +267,7 @@ Run app
 
 ```
 # this will run: go run main.go
-$ ./scripts/nozzle.sh
+$ ./tools/nozzle.sh
 ```
 
 #### CI

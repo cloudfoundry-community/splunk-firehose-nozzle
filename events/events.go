@@ -1,6 +1,7 @@
 package events
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -235,13 +236,19 @@ func AuthorizedEvents() string {
 }
 
 func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
+	wantedEvents = strings.TrimSpace(wantedEvents)
 	selectedEvents := make(map[string]bool)
 	if wantedEvents == "" {
 		selectedEvents["LogMessage"] = true
 		return selectedEvents, nil
 	}
 
-	for _, event := range strings.Split(wantedEvents, ",") {
+	var events []string
+	if err := json.Unmarshal([]byte(wantedEvents), &events); err != nil {
+		events = strings.Split(wantedEvents, ",")
+	}
+
+	for _, event := range events {
 		event = strings.TrimSpace(event)
 		if IsAuthorizedEvent(event) {
 			selectedEvents[event] = true
