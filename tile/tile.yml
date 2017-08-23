@@ -4,8 +4,6 @@ label: Splunk Firehose Nozzle for PCF
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
-
-org_quota: 4096                       # Optional, memory quota in mb
 apply_open_security_group: true       # Apply open security group, default: false
 allow_paid_service_plans: true        # Allow paid service plans, default: false
 
@@ -79,6 +77,7 @@ forms:
       - name: ValueMetric
         label: ValueMetric
       - name: CounterEvent
+
         label: CounterEvent
       - name: Error
         label: Error
@@ -122,7 +121,7 @@ packages:
   type: app
   label: Splunk-Firehose-Nozzle
   manifest:
-    memory: 512M
+    memory: 256M
     instances: MY_INSTANCE_COUNT
     buildpack: binary_buildpack
     health-check-type: process
