@@ -37,7 +37,7 @@ forms:
     type: boolean
     label: Skip SSL Validation
     default: false
-    description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority.
+    description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
   - name: splunk_index
     type: string
     label: Index
@@ -102,7 +102,7 @@ forms:
   - name: extra_fields
     type: string
     label: Additional Fields
-    description: A set of key:value pairs formatted as "key1:value1, key2:value2, key3:value3" that do not occur in the event payload. These fields are added to every event payload for indexing by Splunk and are used to tag all events. 
+    description: A set of user defined key:value pairs that are added to all Splunk events that do not occur in the event payload. Expected format - key1:value1, key2:value2, key3:value3
     optional: true
   - name: add_app_info
     type: boolean
