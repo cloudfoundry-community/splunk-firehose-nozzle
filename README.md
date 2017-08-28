@@ -19,8 +19,7 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 ### Setup
 
 The Nozzle requires a user with the scope `doppler.firehose` and
-`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). If `cloud_controller.admin` is not
-available in the system, switch to use `cloud_controller.admin`.
+`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true).
 
 You can either
 * Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
@@ -43,10 +42,8 @@ uaac -t user add splunk-nozzle --password password123 --emails na
 uaac -t member add cloud_controller.admin_read_only splunk-nozzle
 uaac -t member add doppler.firehose splunk-nozzle
 ```
-
-`cloud_controller.admin_read_only` will work for cf v241
-or later. Earlier versions should use `cloud_controller.admin` instead.
-
+  
+`cloud_controller.admin_read_only` will work for cf v241 or later. Earlier versions should use `cloud_controller.admin` instead.
 - - - -
 #### Environment Parameters
 You can declare parameters by making a copy of the scripts/nozzle.sh.template. 
