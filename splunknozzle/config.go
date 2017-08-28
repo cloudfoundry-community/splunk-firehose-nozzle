@@ -116,7 +116,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("consumer-queue-size", "Consumer queue buffer size").
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
-		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("1000").IntVar(&c.BatchSize)
+		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").

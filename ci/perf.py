@@ -47,6 +47,7 @@ def run_nozzle_perf(config):
         for case in suite["cases"]:
             kvs = ",".join("{}:{}".format(k, v) for k, v in case.iteritems())
             extra_fields = "{},{}".format(suite["extra-fields"], kvs)
+
             cmd = [
                 "./splunk-firehose-nozzle",
                 "--api-endpoint", config["api-endpoint"],
@@ -99,13 +100,17 @@ def execute(cmd, duration):
 
 def run_trafficcontroller(duration):
     for suite in nozzle_perf_suites:
-        for _ in suite["cases"]:
+        for case in suite["cases"]:
+            ip = "pcf_{}_{}".format(
+                suite["message-type"],
+                "_".join("{}-{}".format(k, v) for k, v in case.iteritems()))
             cmd = [
                 "./trafficcontroller",
                 "--config", "loggregator_trafficcontroller.json",
                 "--disableAccessControl",
                 "--duration", str(duration),
                 "--message-type", suite["message-type"],
+                "--ip", ip,
             ]
 
             execute(cmd, duration)
