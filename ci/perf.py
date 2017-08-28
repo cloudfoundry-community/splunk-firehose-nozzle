@@ -101,7 +101,9 @@ def execute(cmd, duration):
 def run_trafficcontroller(duration):
     for suite in nozzle_perf_suites:
         for case in suite["cases"]:
-            ip = "pcf_{}".format("_".join("{}-{}".format(k, v) for k, v in case.iteritems()))
+            ip = "pcf_{}_{}".format(
+                suite["message-type"],
+                "_".join("{}-{}".format(k, v) for k, v in case.iteritems()))
             cmd = [
                 "./trafficcontroller",
                 "--config", "loggregator_trafficcontroller.json",
