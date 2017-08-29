@@ -27,7 +27,6 @@ withSplunkWrapNode("master") {
                                    pip install splunk_orca==0.8.0 -i https://repo.splunk.com/artifactory/api/pypi/pypi-virtual/simple
                                    cd ci
 
-                                   cat /build/.orca/orca.conf
                                    splunk_orca create --sc nozzle
                                 """;
         }
