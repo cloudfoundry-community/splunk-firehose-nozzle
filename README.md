@@ -19,7 +19,7 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 ### Setup
 
 The Nozzle requires a user with the scope `doppler.firehose` and
-`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). If `cloud_controller.admin` is not
+`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). If `cloud_controller.admin_read_only` is not
 available in the system, switch to use `cloud_controller.admin`.
 
 You can either
@@ -49,7 +49,7 @@ or later. Earlier versions should use `cloud_controller.admin` instead.
 
 - - - -
 #### Environment Parameters
-You can declare parameters by making a copy of the scripts/nozzle.sh.template. 
+You can declare parameters by making a copy of the scripts/nozzle.sh.template.
 * `DEBUG`: Enable debug mode (forward to standard out instead of Splunk).
 
 __Cloud Foundry configuration parameters:__
@@ -68,7 +68,7 @@ __Advanced Configuration Features:__
 * `JOB_HOST`: Tags nozzle log events with job host.
 * `SKIP_SSL_VALIDATION_CF`: Skips SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted certificate authority.
 This is recommended for dev environments only.
-* `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. 
+* `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority.
 This is recommended for dev environments only.
 * `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html.
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer.
