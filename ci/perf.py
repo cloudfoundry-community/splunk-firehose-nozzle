@@ -1,6 +1,7 @@
 import subprocess
 import argparse
 import time
+import os
 
 
 nozzle_perf_params = [
@@ -125,12 +126,12 @@ def main():
 
     if args.run == "nozzle":
         config = {
-            "api-endpoint": "http://ghost:9911",
-            "user": "admin",
-            "password": "admin",
-            "splunk-host": "https://localhost:8088",
-            "splunk-token": "1CB57F19-DC23-419A-8EDA-BA545DD3674D",
-            "splunk-index": "main",
+            "api-endpoint": os.environ.get("API_ENDPOINT", "http://trafficcontroller:9911"),
+            "user": os.environ.get("API_USER", "admin"),
+            "password": os.environ.get("API_PASSWORD", "admin"),
+            "splunk-host": os.environ.get("SPLUNK_HOST", "https://heclb1:8088"),
+            "splunk-token": os.environ.get("SPLUNK_TOKEN", "00000000-0000-0000-0000-000000000000"),
+            "splunk-index": os.environ.get("SPLUNK_INDEX", "main"),
             "duration": args.duration,
         }
         run_nozzle_perf(config)
