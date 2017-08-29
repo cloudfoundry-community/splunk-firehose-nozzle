@@ -1,5 +1,5 @@
 trafficcontroller:
-  image: zlchen/trafficcontroller:1.1
+  image: zlchen/trafficcontroller:latest
   hostname: trafficcontroller
   ports:
     - "8081"
@@ -7,7 +7,7 @@ trafficcontroller:
   restart: always
 
 nozzle:
-  image: zlchen/nozzle:1.1
+  image: zlchen/nozzle:latest
   hostname: nozzle
   ports:
     - "9912"
@@ -20,6 +20,4 @@ nozzle:
     - SPLUNK_INDEX=main
     - SKIP_SSL_VALIDATION_CF=true
     - SKIP_SSL_VALIDATION_SPLUNK=true
-  depends_on:
-    - trafficcontroller
   restart: always
