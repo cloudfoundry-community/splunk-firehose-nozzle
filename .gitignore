@@ -1,7 +1,5 @@
 .idea
 
-nozzle.sh
-
 tools/*
 !tools/*.template
 !tools/*.go
