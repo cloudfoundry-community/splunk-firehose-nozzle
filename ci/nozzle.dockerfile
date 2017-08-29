@@ -13,8 +13,9 @@ RUN pip install psutil && pip install requests --upgrade
 ENV GOPATH /go
 
 ENV HEC_WORKERS=8
-ENV SKIP_SSL_VALIDATION=true
 ENV ADD_APP_INFO=true
+ENV SKIP_SSL_VALIDATION_CF=true
+ENV SKIP_SSL_VALIDATION_SPLUNK=true
 
 ENV API_ENDPOINT=http://trafficcontroller:9911
 ENV API_USER=admin
