@@ -6,22 +6,23 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-type MockEventRouter struct {
+type EventRouterMock struct {
 	lock   sync.Mutex
 	events []*events.Envelope
 }
 
-func NewMockEventRouter() *MockEventRouter {
-	return &MockEventRouter{}
+func NewEventRouterMock() *EventRouterMock {
+	return &EventRouterMock{}
 }
 
-func (router *MockEventRouter) RouteEvent(msg *events.Envelope) {
+func (router *EventRouterMock) Route(msg *events.Envelope) error {
 	router.lock.Lock()
 	router.events = append(router.events, msg)
 	router.lock.Unlock()
+	return nil
 }
 
-func (router *MockEventRouter) Events() []*events.Envelope {
+func (router *EventRouterMock) Events() []*events.Envelope {
 	var events []*events.Envelope
 
 	router.lock.Lock()

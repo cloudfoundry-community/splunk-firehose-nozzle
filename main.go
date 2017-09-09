@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"code.cloudfoundry.org/cflager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 )
 
 var (
@@ -20,14 +23,13 @@ func main() {
 	logger, _ := cflager.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
-	config, err := splunknozzle.NewConfigFromCmdFlags(version, branch, commit, buildos)
-	if err != nil {
-		logger.Error("Failed to get configuration", err)
-		return
-	}
+	shutdownChan := make(chan os.Signal, 2)
+	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGTERM)
+
+	config := splunknozzle.NewConfigFromCmdFlags(version, branch, commit, buildos)
 
 	splunkNozzle := splunknozzle.NewSplunkFirehoseNozzle(config)
-	err = splunkNozzle.Run(logger)
+	err := splunkNozzle.Run(shutdownChan, logger)
 	if err != nil {
 		logger.Error("Failed to run splunk-firehose-nozzle", err)
 	}
