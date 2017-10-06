@@ -32,6 +32,7 @@ var _ = Describe("Splunk", func() {
 			Index:   "",
 			Fields:  nil,
 			SkipSSL: true,
+			DisableKeepAlive: false,
 			Logger:  logger,
 		}
 	})

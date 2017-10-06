@@ -23,10 +23,11 @@ type Config struct {
 	JobIndex string `json:"job-index"`
 	JobHost  string `json:"job-host"`
 
-	SkipSSLCF      bool          `json:"skip-ssl-cf"`
-	SkipSSLSplunk  bool          `json:"skip-ssl-splunk"`
-	SubscriptionID string        `json:"subscription-id"`
-	KeepAlive      time.Duration `json:"keep-alive"`
+	SkipSSLCF       bool          `json:"skip-ssl-cf"`
+	SkipSSLSplunk   bool          `json:"skip-ssl-splunk"`
+	SubscriptionID  string        `json:"subscription-id"`
+	KeepAlive       time.Duration `json:"keep-alive"`
+	HecKeepAliveOff bool          `json:"hec-keep-alive-off"`
 
 	AddAppInfo         bool          `json:"add-app-info"`
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
@@ -92,6 +93,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").StringVar(&c.SubscriptionID)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 		OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").DurationVar(&c.KeepAlive)
+	kingpin.Flag("hec-keep-alive-off", "Disable Keep Alive for HTTP(s) Connections from Nozzle to Splunk HEC").
+		OverrideDefaultFromEnvar("HEC_KEEP_ALIVE_OFF").Default("false").BoolVar(&c.HecKeepAliveOff)
 
 	kingpin.Flag("add-app-info", "Query API to fetch app details").
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)

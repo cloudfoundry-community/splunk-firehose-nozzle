@@ -19,6 +19,8 @@ type SplunkConfig struct {
 	Index   string
 	Fields  map[string]string
 	SkipSSL bool
+	DisableKeepAlive bool
+
 
 	Logger lager.Logger
 }
@@ -32,6 +34,7 @@ func NewSplunk(config *SplunkConfig) Writer {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipSSL},
+		DisableKeepAlives: config.DisableKeepAlive,
 	}
 	httpClient.Transport = tr
 

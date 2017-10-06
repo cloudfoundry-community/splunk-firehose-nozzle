@@ -41,9 +41,9 @@ var _ = Describe("Config", func() {
 
 			os.Setenv("SKIP_SSL_VALIDATION_CF", "true")
 			os.Setenv("SKIP_SSL_VALIDATION_SPLUNK", "true")
-
 			os.Setenv("FIREHOSE_SUBSCRIPTION_ID", "my-nozzle")
 			os.Setenv("FIREHOSE_KEEP_ALIVE", "42s")
+			os.Setenv("HEC_KEEP_ALIVE_OFF", "false")
 
 			os.Setenv("ADD_APP_INFO", "true")
 			os.Setenv("IGNORE_MISSING_APP", "true")
@@ -80,9 +80,9 @@ var _ = Describe("Config", func() {
 
 			Expect(c.SkipSSLCF).To(BeTrue())
 			Expect(c.SkipSSLSplunk).To(BeTrue())
-
 			Expect(c.SubscriptionID).To(Equal("my-nozzle"))
 			Expect(c.KeepAlive).To(Equal(42 * time.Second))
+			Expect(c.HecKeepAliveOff).To(BeFalse())
 
 			Expect(c.AddAppInfo).To(BeTrue())
 			Expect(c.IgnoreMissingApps).To(BeTrue())
@@ -118,9 +118,10 @@ var _ = Describe("Config", func() {
 			Expect(c.JobHost).To(Equal(""))
 
 			Expect(c.SkipSSLCF).To(BeFalse())
-			Expect(c.SkipSSLCF).To(BeFalse())
+			Expect(c.SkipSSLSplunk).To(BeFalse())
 			Expect(c.SubscriptionID).To(Equal("splunk-firehose"))
 			Expect(c.KeepAlive).To(Equal(25 * time.Second))
+			Expect(c.HecKeepAliveOff).To(BeFalse())
 
 			Expect(c.AddAppInfo).To(BeFalse())
 			Expect(c.IgnoreMissingApps).To(BeTrue())
@@ -170,6 +171,7 @@ var _ = Describe("Config", func() {
 				"--skip-ssl-validation-splunk",
 				"--subscription-id=my-nozzlec",
 				"--firehose-keep-alive=24s",
+				"--hec-keep-alive-off=true",
 				"--add-app-info",
 				"--ignore-missing-app",
 				"--missing-app-cache-invalidate-ttl=15s",
@@ -209,6 +211,8 @@ var _ = Describe("Config", func() {
 			Expect(c.SkipSSLSplunk).To(BeTrue())
 			Expect(c.SubscriptionID).To(Equal("my-nozzlec"))
 			Expect(c.KeepAlive).To(Equal(24 * time.Second))
+			Expect(c.HecKeepAliveOff).To(BeTrue())
+
 
 			Expect(c.AddAppInfo).To(BeTrue())
 			Expect(c.IgnoreMissingApps).To(BeTrue())
