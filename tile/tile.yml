@@ -28,7 +28,7 @@ forms:
   - name: splunk_host
     type: string
     label: HTTP Event Collector Endpoint URL
-    description: HTTP Event Collector endpoint URL. 
+    description: HTTP Event Collector endpoint URL.
   - name: splunk_token
     type: secret
     label: HTTP Event Collector Token
@@ -42,7 +42,12 @@ forms:
     type: string
     label: Index
     description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
-    default: main      
+    default: main
+  - name: splunk_version
+    type: string
+    label: Splunk Version
+    description: If using Splunk Enterprise, enter the version in `major.minor` format to inform how fields are sent to Splunk.
+    default: '6.6'
 
 - name: cf-config
   label: Cloud Foundry Settings
@@ -83,12 +88,12 @@ forms:
         label: Error
       - name: ContainerMetric
         label: ContainerMetric
-    description: Event types to forward to Splunk.     
+    description: Event types to forward to Splunk.
 
 - name: advanced
   label: Advanced
   description: Additional Nozzle Configuration
-  properties: 
+  properties:
   - name: scale_out_nozzle
     type: integer
     label: Scale Out Nozzle
@@ -97,7 +102,7 @@ forms:
   - name: firehose_subscription_id
     type: string
     label: Firehose Subscription ID
-    description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID. 
+    description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
     optional: true
   - name: extra_fields
     type: string
@@ -109,12 +114,12 @@ forms:
     default: false
     label: Add App Information
     description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
-  - name: enable_event_tracing  
+  - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing
     default: false
     description: Enables data loss tracing.
-    
+
 
 packages:
 - name: splunk-firehose-nozzle
