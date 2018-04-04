@@ -119,7 +119,51 @@ forms:
     label: Enable Event Tracing
     default: false
     description: Enables data loss tracing.
-
+  - name: hec_retries
+    type: integer
+    label: HEC Retries
+    default: 5
+    description: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
+  - name: hec_batch_size
+    type: integer
+    label: HEC Batch Size
+    default: 100
+    description: Set the batch size for the events to push to Splunk HTTP Event Collector
+  - name: hec_workers
+    type: integer
+    label: HEC Workers
+    default: 8
+    description: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
+  - name: consumer_queue_size
+    type: integer
+    label: Consumer Queue Size
+    default: 10000
+    description: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.
+  - name: flush_interval
+    type: string
+    label: Flush Interval
+    default: 5s
+    description: Time interval for flushing queue to Splunk regardless of Consumer Queue Size. Protects against stale events in low throughput systems.    
+  - name: missing_app_cache_invalidate_ttl
+    type: string
+    label: Missing App Cache Invalidate TTL
+    default: 0s
+    description: How frequently the missing app info cache invalidates.    
+  - name: app_cache_invalidate_ttl
+    type: string
+    label: App Cache Invalidate TTL
+    default: 0s
+    description: Time interval for flushing queue to Splunk regardless of Consumer Queue Size. Protects against stale events in low throughput systems.    
+  - name: app_limits
+    type: integer
+    label: App Limits
+    default: 0
+    description: Restrict to App limits to the most updated apps per request when populating the app metadata cache.    
+  - name: ignore_missing_app
+    type: boolean
+    label: Ignore Missing App
+    default: true
+    description: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. 
 
 packages:
 - name: splunk-firehose-nozzle
