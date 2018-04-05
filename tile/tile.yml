@@ -171,7 +171,7 @@ packages:
   label: Splunk-Firehose-Nozzle
   manifest:
     memory: 256M
-    instances: MY_INSTANCE_COUNT
+    instances: (( .properties.scale_out_nozzle.value ))
     buildpack: binary_buildpack
     health-check-type: process
     no-route: true
@@ -179,5 +179,13 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-  pre_deploy: |
-    sed -i "s/MY_INSTANCE_COUNT/$SCALE_OUT_NOZZLE/g" $PACKAGE_PATH/splunk_firehose_nozzle/manifest.yml
+
+
+
+
+
+
+
+
+
+
