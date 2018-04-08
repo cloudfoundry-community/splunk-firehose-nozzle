@@ -21,6 +21,7 @@ type SplunkFirehoseNozzle struct {
 	config *Config
 }
 
+//create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
@@ -78,10 +79,12 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Logger:  logger,
 	}
 
+
 	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {
 		splunkWriter := eventwriter.NewSplunk(writerConfig)
 		writers = append(writers, splunkWriter)
+		print("AKP-  " ,(writerConfig))
 	}
 
 	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)

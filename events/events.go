@@ -20,7 +20,6 @@ type Event struct {
 
 func HttpStart(msg *events.Envelope) *Event {
 	httpStart := msg.GetHttpStart()
-
 	fields := logrus.Fields{
 		"timestamp":         httpStart.GetTimestamp(),
 		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
@@ -150,6 +149,7 @@ func ErrorEvent(msg *events.Envelope) *Event {
 func ContainerMetric(msg *events.Envelope) *Event {
 	containerMetric := msg.GetContainerMetric()
 
+
 	fields := logrus.Fields{
 		"cf_app_id":          containerMetric.GetApplicationId(),
 		"cpu_percentage":     containerMetric.GetCpuPercentage(),
@@ -175,14 +175,19 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 		if err != nil || appInfo == nil {
 			return
 		}
-
+/*
+		if err := json.Unmarshal(appInfo.Environment, &cf_env); err != {
+			panic(err)
+		}
+*/
 		cf_app_name := appInfo.Name
 		cf_space_id := appInfo.SpaceGuid
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
 		cf_ignored_app := appInfo.IgnoredApp
-
+		cf_sys_env := appInfo.SysEnv
+		splunk_index := appInfo.Environment["SPLUNK_INDEX"]
 		if cf_app_name != "" {
 			e.Fields["cf_app_name"] = cf_app_name
 		}
@@ -203,6 +208,10 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 			e.Fields["cf_org_name"] = cf_org_name
 		}
 
+		if splunk_index != "" {
+			e.Fields["splunk_index"] = splunk_index
+		}
+		e.Fields["cf_sys_env"] = cf_sys_env
 		e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }

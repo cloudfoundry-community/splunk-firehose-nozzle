@@ -7,13 +7,15 @@ import (
 )
 
 type App struct {
-	Name       string
-	Guid       string
-	SpaceName  string
-	SpaceGuid  string
-	OrgName    string
-	OrgGuid    string
-	IgnoredApp bool
+	Name        string
+	Guid        string
+	SpaceName   string
+	SpaceGuid   string
+	OrgName     string
+	OrgGuid     string
+	Environment map[string]interface{}
+	SysEnv      map[string]interface{}
+	IgnoredApp  bool
 }
 
 type Cache interface {
@@ -26,6 +28,7 @@ type Cache interface {
 
 type AppClient interface {
 	AppByGuid(appGuid string) (cfclient.App, error)
+	GetAppEnv(appGuid string) (cfclient.AppEnv, error)
 	ListApps() ([]cfclient.App, error)
 	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
 }
