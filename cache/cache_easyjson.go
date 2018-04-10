@@ -42,42 +42,22 @@ func easyjsonA591d1bcDecodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 			out.OrgName = string(in.String())
 		case "OrgGuid":
 			out.OrgGuid = string(in.String())
-		case "Environment":
+		case "CfAppEnv":
 			if in.IsNull() {
 				in.Skip()
 			} else {
 				in.Delim('{')
 				if !in.IsDelim('}') {
-					out.Environment = make(map[string]interface{})
+					out.CfAppEnv = make(map[string]interface{})
 				} else {
-					out.Environment = nil
+					out.CfAppEnv = nil
 				}
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
 					var v1 interface{}
 					v1 = in.Interface()
-					(out.Environment)[key] = v1
-					in.WantComma()
-				}
-				in.Delim('}')
-			}
-		case "SysEnv":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.SysEnv = make(map[string]interface{})
-				} else {
-					out.SysEnv = nil
-				}
-				for !in.IsDelim('}') {
-					key := string(in.String())
-					in.WantColon()
-					var v2 interface{}
-					v2 = in.Interface()
-					(out.SysEnv)[key] = v2
+					(out.CfAppEnv)[key] = v1
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -135,41 +115,20 @@ func easyjsonA591d1bcEncodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 		out.RawByte(',')
 	}
 	first = false
-	out.RawString("\"Environment\":")
-	if in.Environment == nil {
+	out.RawString("\"CfAppEnv\":")
+	if in.CfAppEnv == nil {
 		out.RawString(`null`)
 	} else {
 		out.RawByte('{')
-		v3First := true
-		for v3Name, v3Value := range in.Environment {
-			if !v3First {
+		v2First := true
+		for v2Name, v2Value := range in.CfAppEnv {
+			if !v2First {
 				out.RawByte(',')
 			}
-			v3First = false
-			out.String(string(v3Name))
+			v2First = false
+			out.String(string(v2Name))
 			out.RawByte(':')
-			out.Raw(json.Marshal(v3Value))
-		}
-		out.RawByte('}')
-	}
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"SysEnv\":")
-	if in.SysEnv == nil {
-		out.RawString(`null`)
-	} else {
-		out.RawByte('{')
-		v4First := true
-		for v4Name, v4Value := range in.SysEnv {
-			if !v4First {
-				out.RawByte(',')
-			}
-			v4First = false
-			out.String(string(v4Name))
-			out.RawByte(':')
-			out.Raw(json.Marshal(v4Value))
+			out.Raw(json.Marshal(v2Value))
 		}
 		out.RawByte('}')
 	}
