@@ -123,47 +123,47 @@ forms:
     type: integer
     label: HEC Retries
     default: 5
-    description: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
+    description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
   - name: hec_batch_size
     type: integer
     label: HEC Batch Size
     default: 100
-    description: Set the batch size for the events to push to Splunk HTTP Event Collector
+    description: The number of events per batch sent to Splunk HTTP Event Collector.
   - name: hec_workers
     type: integer
     label: HEC Workers
     default: 8
-    description: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
+    description: The number of concurrent workers sending data to Splunk HTTP Event Collector. Scale this number to your Splunk platform data collection capacity accordingly.
   - name: consumer_queue_size
     type: integer
     label: Consumer Queue Size
     default: 10000
-    description: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.
+    description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
   - name: flush_interval
     type: string
     label: Flush Interval
     default: 5s
-    description: Time interval for flushing queue to Splunk regardless of Consumer Queue Size. Protects against stale events in low throughput systems.    
+    description: Time interval (in sec) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
   - name: missing_app_cache_invalidate_ttl
     type: string
     label: Missing App Cache Invalidate TTL
     default: 0s
-    description: How frequently the missing app info cache invalidates.    
+    description: Time interval (in sec) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
   - name: app_cache_invalidate_ttl
     type: string
     label: App Cache Invalidate TTL
     default: 0s
-    description: Time interval for flushing queue to Splunk regardless of Consumer Queue Size. Protects against stale events in low throughput systems.    
+    description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
   - name: app_limits
     type: integer
     label: App Limits
     default: 0
-    description: Restrict to App limits to the most updated apps per request when populating the app metadata cache.    
+    description: The number of apps for which metadata is gathered when refreshing the app metadata cache (order based on app creation date). Set to 0 to remove limit.
   - name: ignore_missing_app
     type: boolean
     label: Ignore Missing App
     default: true
-    description: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. 
+    description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 packages:
 - name: splunk-firehose-nozzle
