@@ -119,7 +119,51 @@ forms:
     label: Enable Event Tracing
     default: false
     description: Enables data loss tracing.
-
+  - name: hec_retries
+    type: integer
+    label: HEC Retries
+    default: 5
+    description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
+  - name: hec_batch_size
+    type: integer
+    label: HEC Batch Size
+    default: 100
+    description: The number of events per batch sent to Splunk HTTP Event Collector.
+  - name: hec_workers
+    type: integer
+    label: HEC Workers
+    default: 8
+    description: The number of concurrent workers sending data to Splunk HTTP Event Collector. Scale this number to your Splunk platform data collection capacity accordingly.
+  - name: consumer_queue_size
+    type: integer
+    label: Consumer Queue Size
+    default: 10000
+    description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
+  - name: flush_interval
+    type: string
+    label: Flush Interval
+    default: 5s
+    description: Time interval (in sec) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+  - name: missing_app_cache_invalidate_ttl
+    type: string
+    label: Missing App Cache Invalidate TTL
+    default: 0s
+    description: Time interval (in sec) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
+  - name: app_cache_invalidate_ttl
+    type: string
+    label: App Cache Invalidate TTL
+    default: 0s
+    description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
+  - name: app_limits
+    type: integer
+    label: App Limits
+    default: 0
+    description: The number of apps for which metadata is gathered when refreshing the app metadata cache (order based on app creation date). Set to 0 to remove limit.
+  - name: ignore_missing_app
+    type: boolean
+    label: Ignore Missing App
+    default: true
+    description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 packages:
 - name: splunk-firehose-nozzle
@@ -127,7 +171,7 @@ packages:
   label: Splunk-Firehose-Nozzle
   manifest:
     memory: 256M
-    instances: MY_INSTANCE_COUNT
+    instances: (( .properties.scale_out_nozzle.value ))
     buildpack: binary_buildpack
     health-check-type: process
     no-route: true
@@ -135,5 +179,13 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-  pre_deploy: |
-    sed -i "s/MY_INSTANCE_COUNT/$SCALE_OUT_NOZZLE/g" $PACKAGE_PATH/splunk_firehose_nozzle/manifest.yml
+
+
+
+
+
+
+
+
+
+
