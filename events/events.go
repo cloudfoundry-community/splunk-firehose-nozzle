@@ -172,10 +172,12 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 
 	if cf_app_id != nil && appGuid != "<nil>" && cf_app_id != "" {
 		appInfo, err := appCache.GetApp(appGuid)
-		if err != nil || appInfo == nil {
+		if err != nil {
+			logrus.Error("Failed to fetch application metadata: ", err)
+			return
+		} else if appInfo == nil {
 			return
 		}
-
 		cf_app_name := appInfo.Name
 		cf_space_id := appInfo.SpaceGuid
 		cf_space_name := appInfo.SpaceName
