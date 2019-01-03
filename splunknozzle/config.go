@@ -32,6 +32,7 @@ type Config struct {
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
 	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
+	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
 
 	BoltDBPath   string `json:"boltdb-path"`
@@ -101,6 +102,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
 	kingpin.Flag("app-cache-invalidate-ttl", "How frequently the app info local cache invalidates").
 		OverrideDefaultFromEnvar("APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.AppCacheTTL)
+	kingpin.Flag("org-space-cache-invalidate-ttl", "How frequently the org and space cache invalidates").
+		OverrideDefaultFromEnvar("ORG_SPACE_CACHE_INVALIDATE_TTL").Default("72h").DurationVar(&c.OrgSpaceCacheTTL)
 	kingpin.Flag("app-limits", "Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache").
 		OverrideDefaultFromEnvar("APP_LIMITS").Default("0").IntVar(&c.AppLimits)
 

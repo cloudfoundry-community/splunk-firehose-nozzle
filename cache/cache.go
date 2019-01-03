@@ -28,4 +28,6 @@ type AppClient interface {
 	AppByGuid(appGuid string) (cfclient.App, error)
 	ListApps() ([]cfclient.App, error)
 	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
+	GetSpaceByGuid(spaceGUID string) (cfclient.Space, error)
+	GetOrgByGuid(orgGUID string) (cfclient.Org, error)
 }
