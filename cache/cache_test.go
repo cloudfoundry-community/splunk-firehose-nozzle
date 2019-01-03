@@ -20,6 +20,7 @@ var _ = Describe("Cache", func() {
 		ignoreMissingApps  = true
 		appCacheTTL        = 2 * time.Second
 		missingAppCacheTTL = 2 * time.Second
+		orgSpaceCacheTTL   = 2 * time.Second
 		n                  = 10
 
 		nilApp *App = nil
@@ -29,6 +30,7 @@ var _ = Describe("Cache", func() {
 			IgnoreMissingApps:  ignoreMissingApps,
 			AppCacheTTL:        appCacheTTL,
 			MissingAppCacheTTL: missingAppCacheTTL,
+			OrgSpaceCacheTTL:   orgSpaceCacheTTL,
 			Logger:             lager.NewLogger("test"),
 		}
 
@@ -103,17 +105,90 @@ var _ = Describe("Cache", func() {
 
 	Context("Cache invalidation", func() {
 		It("Expect new app", func() {
-			id := fmt.Sprintf("id_%d", time.Now().UnixNano())
-			client.CreateApp(id, id, id)
+			now := time.Now().UnixNano()
+			id := fmt.Sprintf("id_%d", now)
+			client.CreateApp(id, fmt.Sprintf("cf_space_id_%d", now))
+
+			client.ResetCallCounts()
 
 			// Sleep for AppCacheTTL interval to make sure the cache
 			// invalidation happens
-			time.Sleep(appCacheTTL + 1)
+			time.Sleep(appCacheTTL + time.Second)
 
 			app, err := cache.GetApp(id)
 			Ω(err).ShouldNot(HaveOccurred())
 			Expect(app).NotTo(Equal(nilApp))
 			Expect(app.Guid).To(Equal(id))
+
+			Expect(app.SpaceGuid).NotTo(BeEmpty())
+			Expect(app.SpaceName).NotTo(BeEmpty())
+			Expect(client.GetSpaceByGUIDCallCount()).To(Equal(11)) // this will be 11 because `invalidateCache` will have been called between ResetCallCounts and now
+
+			Expect(app.OrgGuid).NotTo(BeEmpty())
+			Expect(app.OrgName).NotTo(BeEmpty())
+			Expect(client.GetOrgByGUIDCallCount()).To(Equal(11))
+
+			apps, err := cache.GetAllApps()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Expect(apps).NotTo(Equal(nil))
+			Expect(len(apps)).To(Equal(n + 1))
+		})
+	})
+
+	Context("App Cache Invalidation but not Org/Space Cache Invalidation", func() {
+		var (
+			config *BoltdbConfig
+			cache  *Boltdb
+			client *testing.AppClientMock
+		)
+
+		BeforeEach(func() {
+			boltdbPath := "/tmp/boltdb2"
+			config = &BoltdbConfig{
+				Path:               boltdbPath,
+				IgnoreMissingApps:  ignoreMissingApps,
+				AppCacheTTL:        appCacheTTL,
+				MissingAppCacheTTL: missingAppCacheTTL,
+				OrgSpaceCacheTTL:   48 * time.Hour,
+				Logger:             lager.NewLogger("test"),
+			}
+
+			client = testing.NewAppClientMock(n)
+
+			os.Remove(boltdbPath)
+			cache, gerr = NewBoltdb(client, config)
+			Ω(gerr).ShouldNot(HaveOccurred())
+
+			gerr = cache.Open()
+			Ω(gerr).ShouldNot(HaveOccurred())
+		})
+
+		It("Expects new app but no org space calls", func() {
+			now := time.Now().UnixNano()
+			id := fmt.Sprintf("id_%d", now)
+			client.CreateApp(id, fmt.Sprintf("cf_space_id_%d", now))
+
+			client.ResetCallCounts()
+
+			// Sleep for AppCacheTTL interval to make sure the cache
+			// invalidation happens
+			time.Sleep(appCacheTTL + time.Second)
+
+			app, err := cache.GetApp(id)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(app).NotTo(Equal(nilApp))
+			Expect(app.Guid).To(Equal(id))
+
+			Expect(app.SpaceGuid).NotTo(BeEmpty())
+			Expect(app.SpaceName).NotTo(BeEmpty())
+
+			Expect(app.OrgGuid).NotTo(BeEmpty())
+			Expect(app.OrgName).NotTo(BeEmpty())
+
+			// this will be 1 because `invalidateCache` will have been called between ResetCallCounts and now but the org and space cache has not reached its TTL
+			Expect(client.GetSpaceByGUIDCallCount()).To(Equal(1))
+			Expect(client.GetOrgByGUIDCallCount()).To(Equal(1))
 
 			apps, err := cache.GetAllApps()
 			Ω(err).ShouldNot(HaveOccurred())

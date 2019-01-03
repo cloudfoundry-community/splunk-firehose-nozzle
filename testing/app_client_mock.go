@@ -10,9 +10,13 @@ import (
 )
 
 type AppClientMock struct {
-	lock sync.RWMutex
-	apps map[string]cfclient.App
-	n    int
+	lock                    sync.RWMutex
+	apps                    map[string]cfclient.App
+	n                       int
+	listAppsCallCount       int
+	appByGUIDCallCount      int
+	getOrgByGUIDCallCount   int
+	getSpaceByGUIDCallCount int
 }
 
 func NewAppClientMock(n int) *AppClientMock {
@@ -27,6 +31,8 @@ func (m *AppClientMock) AppByGuid(guid string) (cfclient.App, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	m.appByGUIDCallCount++
+
 	app, ok := m.apps[guid]
 	if ok {
 		return app, nil
@@ -37,6 +43,8 @@ func (m *AppClientMock) AppByGuid(guid string) (cfclient.App, error) {
 func (m *AppClientMock) ListApps() ([]cfclient.App, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
+
+	m.listAppsCallCount++
 
 	var apps []cfclient.App
 	for k := range m.apps {
@@ -49,25 +57,39 @@ func (m *AppClientMock) ListAppsByQueryWithLimits(query url.Values, totalPages i
 	return m.ListApps()
 }
 
-func (m *AppClientMock) CreateApp(appID, spaceID, orgID string) {
+func (m *AppClientMock) GetSpaceByGuid(spaceGUID string) (cfclient.Space, error) {
+	m.getSpaceByGUIDCallCount++
+
+	var id int
+	fmt.Sscanf(spaceGUID, "cf_space_id_%d", &id)
+
+	return cfclient.Space{
+		Guid:             spaceGUID,
+		Name:             fmt.Sprintf("cf_space_name_%d", id),
+		OrganizationGuid: fmt.Sprintf("cf_org_id_%d", id),
+	}, nil
+}
+
+func (m *AppClientMock) GetOrgByGuid(orgGUID string) (cfclient.Org, error) {
+	m.getOrgByGUIDCallCount++
+
+	var id int
+	fmt.Sscanf(orgGUID, "cf_org_id_%d", &id)
+
+	return cfclient.Org{
+		Guid: orgGUID,
+		Name: fmt.Sprintf("cf_org_name_%d", id),
+	}, nil
+}
+
+func (m *AppClientMock) CreateApp(appID, spaceID string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	app := cfclient.App{
-		Guid: appID,
-		Name: appID,
-		SpaceData: cfclient.SpaceResource{
-			Entity: cfclient.Space{
-				Guid: spaceID,
-				Name: spaceID,
-				OrgData: cfclient.OrgResource{
-					Entity: cfclient.Org{
-						Guid: orgID,
-						Name: orgID,
-					},
-				},
-			},
-		},
+		Guid:      appID,
+		Name:      appID,
+		SpaceGuid: spaceID,
 	}
 
 	m.apps[appID] = app
@@ -77,22 +99,23 @@ func getApps(n int) map[string]cfclient.App {
 	apps := make(map[string]cfclient.App, n)
 	for i := 0; i < n; i++ {
 		app := cfclient.App{
-			Guid: fmt.Sprintf("cf_app_id_%d", i),
-			Name: fmt.Sprintf("cf_app_name_%d", i),
-			SpaceData: cfclient.SpaceResource{
-				Entity: cfclient.Space{
-					Guid: fmt.Sprintf("cf_space_id_%d", i%50),
-					Name: fmt.Sprintf("cf_space_name_%d", i%50),
-					OrgData: cfclient.OrgResource{
-						Entity: cfclient.Org{
-							Guid: fmt.Sprintf("cf_org_id_%d", i%100),
-							Name: fmt.Sprintf("cf_org_name_%d", i%100),
-						},
-					},
-				},
-			},
+			Guid:      fmt.Sprintf("cf_app_id_%d", i),
+			Name:      fmt.Sprintf("cf_app_name_%d", i),
+			SpaceGuid: fmt.Sprintf("cf_space_id_%d", i%50),
 		}
 		apps[app.Guid] = app
 	}
 	return apps
+}
+
+func (m *AppClientMock) ListAppsCallCount() int       { return m.listAppsCallCount }
+func (m *AppClientMock) AppByGUIDCallCount() int      { return m.appByGUIDCallCount }
+func (m *AppClientMock) GetOrgByGUIDCallCount() int   { return m.getOrgByGUIDCallCount }
+func (m *AppClientMock) GetSpaceByGUIDCallCount() int { return m.getSpaceByGUIDCallCount }
+
+func (m *AppClientMock) ResetCallCounts() {
+	m.listAppsCallCount = 0
+	m.appByGUIDCallCount = 0
+	m.getOrgByGUIDCallCount = 0
+	m.getSpaceByGUIDCallCount = 0
 }
