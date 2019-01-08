@@ -118,7 +118,6 @@ var _ = Describe("Splunk", func() {
 		var envelopeHttpStartStop *events.HttpStartStop
 		var startTimestamp, stopTimestamp int64
 		var requestId events.UUID
-		var requestIdHex, applicationIdHex string
 		var peerType events.PeerType
 		var method events.Method
 		var uri, remoteAddress, userAgent string
@@ -149,7 +148,6 @@ var _ = Describe("Splunk", func() {
 				Low:  &requestIdLow,
 				High: &requestIdHigh,
 			}
-			requestIdHex = "b12a3f87-83ab-4cf2-554b-042dc36e28f1"
 
 			applicationIdLow := uint64(10539615360601842564)
 			applicationIdHigh := uint64(3160954123591206558)
@@ -157,7 +155,6 @@ var _ = Describe("Splunk", func() {
 				Low:  &applicationIdLow,
 				High: &applicationIdHigh,
 			}
-			applicationIdHex = "8463ec45-543c-4492-9ec6-f52707f7dd2b"
 
 			envelopeHttpStartStop = &events.HttpStartStop{
 				StartTimestamp: &startTimestamp,
