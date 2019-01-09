@@ -52,14 +52,14 @@ forms:
     type: string
     label: API Endpoint
     description: Cloud Foundry API endpoint.
-  - name: api_user
+  - name: client_id
     type: string
-    label: API User
-    description: API username
-  - name: api_password
+    label: Client ID
+    description: CF UAA client ID
+  - name: client_secret
     type: secret
-    label: API Password
-    description: Password for API user
+    label: Client Secret
+    description: CF UAA client secret
   - name: skip_ssl_validation_cf
     type: boolean
     label: Skip SSL Validation
