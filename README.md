@@ -19,30 +19,37 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 
 ### Setup
 
-The Nozzle requires a user with the scope `doppler.firehose` and
-`cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true). If `cloud_controller.admin_read_only` is not
+The Nozzle requires a client with the authorities `doppler.firehose` and `cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true) and grant-types `client_credentials` and `refresh_token`. If `cloud_controller.admin_read_only` is not
 available in the system, switch to use `cloud_controller.admin`.
 
 You can either
-* Add the user manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
-* Add a new user to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
+* Add the client manually using [uaac](https://github.com/cloudfoundry/cf-uaac)
+* Add the client to the deployment manifest; see [uaa.scim.users](https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec)
 
 Manifest example:
 
 ```yaml
-uaa:
-  scim:
-    users:
-      - splunk-firehose|password123|cloud_controller.admin_read_only,doppler.firehose
+
+# Clients
+uaa.clients:
+    splunk-firehose:
+      id: splunk-firehose
+      override: true
+      secret: splunk-firehose-secret
+      authorized-grant-types: client_credentials,refresh_token
+      authorities: doppler.firehose,cloud_controller.admin_read_only
+      
 ```
 
 `uaac` example:
 ```shell
 uaac target https://uaa.[system domain url]
 uaac token client get admin -s [admin client credentials secret]
-uaac -t user add splunk-nozzle --password password123 --emails na
-uaac -t member add cloud_controller.admin_read_only splunk-nozzle
-uaac -t member add doppler.firehose splunk-nozzle
+uaac client add splunk-firehose --name splunk-firehose
+uaac client add splunk-firehose --secret [your_client_secret]
+uaac client add splunk-firehose --authorized_grant_types client_credentials,refresh_token
+uaac client add splunk-firehose --authorities doppler.firehose,cloud_controller.admin_read_only
+
 ```
 
 `cloud_controller.admin_read_only` will work for cf v241
@@ -55,8 +62,8 @@ You can declare parameters by making a copy of the scripts/nozzle.sh.template.
 
 __Cloud Foundry configuration parameters:__
 * `API_ENDPOINT`: Cloud Foundry API endpoint address.
-* `API_USER`: Cloud Foundry user name. (Must have scope described above)
-* `API_PASSWORD`: Cloud Foundry user password.
+* `CLIENT_ID`: UAA Client ID (Must have authorities and grant_types described above).
+* `CLIENT_SECRET`: Secret for Client ID.
 
 __Splunk configuration parameters:__
 * `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).

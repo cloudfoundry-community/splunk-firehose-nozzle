@@ -28,6 +28,8 @@ var _ = Describe("Config", func() {
 			os.Setenv("API_ENDPOINT", "api.bosh-lite.com")
 			os.Setenv("API_USER", "admin")
 			os.Setenv("API_PASSWORD", "abc123")
+			os.Setenv("CLIENT_ID", "client123")
+			os.Setenv("CLIENT_SECRET", "secret123")
 
 			os.Setenv("SPLUNK_TOKEN", "sometoken")
 			os.Setenv("SPLUNK_HOST", "splunk.example.com")
@@ -69,6 +71,8 @@ var _ = Describe("Config", func() {
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.com"))
 			Expect(c.User).To(Equal("admin"))
 			Expect(c.Password).To(Equal("abc123"))
+			Expect(c.ClientID).To(Equal("client123"))
+			Expect(c.ClientSecret).To(Equal("secret123"))
 
 			Expect(c.SplunkHost).To(Equal("splunk.example.com"))
 			Expect(c.SplunkToken).To(Equal("sometoken"))
@@ -160,6 +164,8 @@ var _ = Describe("Config", func() {
 				"--api-endpoint=api.bosh-lite.comc",
 				"--user=adminc",
 				"--password=abc123c",
+				"--client-id=client123",
+				"--client-secret=secret123",
 				"--splunk-host=splunk.example.comc",
 				"--splunk-token=sometokenc",
 				"--splunk-index=splunk_indexc",
@@ -196,6 +202,8 @@ var _ = Describe("Config", func() {
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.comc"))
 			Expect(c.User).To(Equal("adminc"))
 			Expect(c.Password).To(Equal("abc123c"))
+			Expect(c.ClientID).To(Equal("client123"))
+			Expect(c.ClientSecret).To(Equal("secret123"))
 
 			Expect(c.SplunkHost).To(Equal("splunk.example.comc"))
 			Expect(c.SplunkToken).To(Equal("sometokenc"))

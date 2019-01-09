@@ -43,6 +43,8 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 		Username:          s.config.User,
 		Password:          s.config.Password,
 		SkipSslValidation: s.config.SkipSSLCF,
+		ClientID:          s.config.ClientID,
+		ClientSecret:      s.config.ClientSecret,
 	}
 
 	return cfclient.NewClient(cfConfig)
@@ -79,7 +81,6 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		SkipSSL: s.config.SkipSSLSplunk,
 		Logger:  logger,
 	}
-
 
 	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {

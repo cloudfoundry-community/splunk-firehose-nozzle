@@ -11,9 +11,11 @@ import (
 )
 
 type Config struct {
-	ApiEndpoint string `json:"api-endpoint"`
-	User        string `json:"-"`
-	Password    string `json:"-"`
+	ApiEndpoint  string `json:"api-endpoint"`
+	User         string `json:"-"`
+	Password     string `json:"-"`
+	ClientID     string `json:"-"`
+	ClientSecret string `json:"-"`
 
 	SplunkToken string `json:"-"`
 	SplunkHost  string `json:"splunk-host"`
@@ -67,9 +69,13 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("api-endpoint", "API endpoint address").
 		OverrideDefaultFromEnvar("API_ENDPOINT").Required().StringVar(&c.ApiEndpoint)
 	kingpin.Flag("user", "Admin user.").
-		OverrideDefaultFromEnvar("API_USER").Required().StringVar(&c.User)
+		OverrideDefaultFromEnvar("API_USER").StringVar(&c.User)
 	kingpin.Flag("password", "Admin password.").
-		OverrideDefaultFromEnvar("API_PASSWORD").Required().StringVar(&c.Password)
+		OverrideDefaultFromEnvar("API_PASSWORD").StringVar(&c.Password)
+	kingpin.Flag("client-id", "Client ID.").
+		OverrideDefaultFromEnvar("CLIENT_ID").Required().StringVar(&c.ClientID)
+	kingpin.Flag("client-secret", "Client secret.").
+		OverrideDefaultFromEnvar("CLIENT_SECRET").Required().StringVar(&c.ClientSecret)
 
 	kingpin.Flag("splunk-host", "Splunk HTTP event collector host").
 		OverrideDefaultFromEnvar("SPLUNK_HOST").Required().StringVar(&c.SplunkHost)
