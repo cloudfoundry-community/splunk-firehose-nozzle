@@ -8,9 +8,9 @@ apply_open_security_group: true       # Apply open security group, default: fals
 allow_paid_service_plans: true        # Allow paid service plans, default: false
 
 stemcell_criteria:
-  os: ubuntu-trusty
+  os: ubuntu-xenial
   requires_cpi: false
-  version: '3421'
+  version: '97'
 
 properties:
 - name: author
@@ -109,16 +109,6 @@ forms:
     label: Additional Fields
     description: A set of user defined key:value pairs that are added to all Splunk events that do not occur in the event payload. Expected format - key1:value1, key2:value2, key3:value3
     optional: true
-  - name: add_app_info
-    type: boolean
-    default: false
-    label: Add App Information
-    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
-  - name: enable_event_tracing
-    type: boolean
-    label: Enable Event Tracing
-    default: false
-    description: Enables data loss tracing.
   - name: hec_retries
     type: integer
     label: HEC Retries
@@ -159,6 +149,21 @@ forms:
     label: App Limits
     default: 0
     description: The number of apps for which metadata is gathered when refreshing the app metadata cache (order based on app creation date). Set to 0 to remove limit.
+  - name: nozzle_memory
+    type: string
+    label: Nozzle Memory
+    description: Nozzle memory in MB.
+    default: 256M
+  - name: add_app_info
+    type: boolean
+    default: false
+    label: Add App Information
+    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
+  - name: enable_event_tracing
+    type: boolean
+    label: Enable Event Tracing
+    default: false
+    description: Enables data loss tracing.
   - name: ignore_missing_app
     type: boolean
     label: Ignore Missing App
@@ -170,7 +175,7 @@ packages:
   type: app
   label: Splunk-Firehose-Nozzle
   manifest:
-    memory: 256M
+    memory: (( .properties.nozzle_memory.value ))
     instances: (( .properties.scale_out_nozzle.value ))
     buildpack: binary_buildpack
     health-check-type: process
@@ -179,13 +184,3 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-
-
-
-
-
-
-
-
-
-
