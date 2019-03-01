@@ -85,9 +85,9 @@ This is recommended for dev environments only.
 * `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 * `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
-* `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. For example: 6.6.
+* `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. For example: 7.0.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
-
+* `NOZZLE_MEMORY`: Nozzle memory in MB.
 - - - -
 
 ### Push as an App to Cloud Foundry
