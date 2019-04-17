@@ -35,6 +35,8 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses config from environment", func() {
+			os.Setenv("SPLUNK_HEC_ENDPOINT", "hec-endpoint")
+
 			os.Setenv("JOB_NAME", "my-job")
 			os.Setenv("JOB_INDEX", "2")
 			os.Setenv("JOB_HOST", "nozzle.example.com")
@@ -73,6 +75,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SplunkHost).To(Equal("splunk.example.com"))
 			Expect(c.SplunkToken).To(Equal("sometoken"))
 			Expect(c.SplunkIndex).To(Equal("splunk_index"))
+			Expect(c.SplunkHecEndpoint).To(Equal("hec_endpoint"))
 
 			Expect(c.JobName).To(Equal("my-job"))
 			Expect(c.JobIndex).To(Equal("2"))
