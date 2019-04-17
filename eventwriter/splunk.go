@@ -14,11 +14,12 @@ import (
 )
 
 type SplunkConfig struct {
-	Host    string
-	Token   string
-	Index   string
-	Fields  map[string]string
-	SkipSSL bool
+	Host     string
+	Token    string
+	Index    string
+	Fields   map[string]string
+	SkipSSL  bool
+	Endpoint string
 
 	Logger lager.Logger
 }
@@ -72,7 +73,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 }
 
 func (s *splunkClient) send(postBody *[]byte) error {
-	endpoint := fmt.Sprintf("%s/services/collector", s.config.Host)
+	endpoint := s.config.Host + s.config.Endpoint
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
 	if err != nil {
 		return err

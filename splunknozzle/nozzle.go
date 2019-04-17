@@ -71,11 +71,12 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
-		Host:    s.config.SplunkHost,
-		Token:   s.config.SplunkToken,
-		Index:   s.config.SplunkIndex,
-		SkipSSL: s.config.SkipSSLSplunk,
-		Logger:  logger,
+		Host:     s.config.SplunkHost,
+		Token:    s.config.SplunkToken,
+		Index:    s.config.SplunkIndex,
+		SkipSSL:  s.config.SkipSSLSplunk,
+		Endpoint: s.config.SplunkHecEndpoint,
+		Logger:   logger,
 	}
 
 	var writers []eventwriter.Writer

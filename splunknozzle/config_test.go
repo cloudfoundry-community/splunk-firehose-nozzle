@@ -113,7 +113,9 @@ var _ = Describe("Config", func() {
 		It("check defaults", func() {
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
+			Expect(c.SplunkHecEndpoint).To(Equal("/services/collector"))
 			Expect(c.JobName).To(Equal("splunk-nozzle"))
+
 			Expect(c.JobIndex).To(Equal("-1"))
 			Expect(c.JobHost).To(Equal(""))
 
@@ -163,6 +165,7 @@ var _ = Describe("Config", func() {
 				"--splunk-host=splunk.example.comc",
 				"--splunk-token=sometokenc",
 				"--splunk-index=splunk_indexc",
+				"--splunk-hec-endpoint=my-hec-endpointc",
 				"--job-name=my-jobc",
 				"--job-index=3",
 				"--job-host=nozzle.example.comc",
@@ -200,6 +203,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SplunkHost).To(Equal("splunk.example.comc"))
 			Expect(c.SplunkToken).To(Equal("sometokenc"))
 			Expect(c.SplunkIndex).To(Equal("splunk_indexc"))
+			Expect(c.SplunkHecEndpoint).To(Equal("my-hec-endpointc"))
 
 			Expect(c.JobName).To(Equal("my-jobc"))
 			Expect(c.JobIndex).To(Equal("3"))
