@@ -35,7 +35,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses config from environment", func() {
-			os.Setenv("SPLUNK_HEC_ENDPOINT", "hec-endpoint")
+			os.Setenv("SPLUNK_HEC_ENDPOINT", "hec_endpoint")
 
 			os.Setenv("JOB_NAME", "my-job")
 			os.Setenv("JOB_INDEX", "2")
