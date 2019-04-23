@@ -15,9 +15,10 @@ type Config struct {
 	User        string `json:"-"`
 	Password    string `json:"-"`
 
-	SplunkToken string `json:"-"`
-	SplunkHost  string `json:"splunk-host"`
-	SplunkIndex string `json:"splunk-index"`
+	SplunkToken       string `json:"-"`
+	SplunkHost        string `json:"splunk-host"`
+	SplunkIndex       string `json:"splunk-index"`
+	SplunkHecEndpoint string `json:"splunk-hec-endpoint"`
 
 	JobName  string `json:"job-name"`
 	JobIndex string `json:"job-index"`
@@ -76,6 +77,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("SPLUNK_TOKEN").Required().StringVar(&c.SplunkToken)
 	kingpin.Flag("splunk-index", "Splunk index").
 		OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().StringVar(&c.SplunkIndex)
+	kingpin.Flag("splunk-hec-endpoint", "Splunk HTTP event collector endpoint").
+		OverrideDefaultFromEnvar("SPLUNK_HEC_ENDPOINT").Default("/services/collector").StringVar(&c.SplunkHecEndpoint)
 
 	kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").StringVar(&c.JobName)
