@@ -284,7 +284,10 @@ func (c *Boltdb) invalidateCache() {
 					c.lock.Lock()
 					c.cache = apps
 					c.lock.Unlock()
+				} else {
+					c.config.Logger.Error("Unable to fetch copy of cache from remote", err)
 				}
+
 			case <-c.closing:
 				return
 			}

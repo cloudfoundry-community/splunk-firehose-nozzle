@@ -1,0 +1,62 @@
+version: 2 # use CircleCI 2.0
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12 #
+    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    steps: # steps that comprise the `build` job
+      - checkout # check out source code to working directory
+      - run:
+          name: Install Dependencies
+          command: |
+            curl https://glide.sh/get | sh
+            go get -t ./...
+      - run:
+          name: Builder
+          command: make build
+      - run:
+          name: Run tests
+          command: make testall
+
+  deploy:
+    docker:
+      - image: circleci/golang:1.12 #
+    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    steps: # steps that comprise the `build` job
+      - checkout # check out source code to working directory
+      - run:
+          name: Install Dependencies
+          command: |
+            curl https://glide.sh/get | sh
+            go get -t ./...
+      - run:
+          name: Builder
+          command: make build
+      - run:
+          name: Run tests
+          command: make testall
+      - run:
+          name: Deploy Splunk Firehose Nozzle
+          command: |
+            .circleci/update_manifest.sh
+            .circleci/pre-req.sh
+            cf push -f .circleci/ci_nozzle_manifest.yml -u process --random-route
+      - run:
+          name: Teardown deployment env
+          command: |
+            sleep 10
+            echo "Teardown deployment env"
+            cf delete splunk-firehose-nozzle -f
+            cf delete-org splunk-ci -f
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: develop
