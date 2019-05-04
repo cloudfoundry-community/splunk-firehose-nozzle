@@ -59,4 +59,4 @@ workflows:
             - build
           filters:
             branches:
-              only: develop
+              only: per-app-indexes-update 
