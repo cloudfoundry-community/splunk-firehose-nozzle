@@ -13,3 +13,4 @@ import:
 - package: github.com/kelseyhightower/envconfig
 - package: github.com/pkg/errors
   version: ~0.8.0
+- name: github.com/Sirupsen/logrus
