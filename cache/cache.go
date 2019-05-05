@@ -26,7 +26,6 @@ type Cache interface {
 
 type AppClient interface {
 	AppByGuid(appGuid string) (cfclient.App, error)
-	GetAppEnv(appGuid string) (cfclient.AppEnv, error)
 	ListApps() ([]cfclient.App, error)
 	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
 }
