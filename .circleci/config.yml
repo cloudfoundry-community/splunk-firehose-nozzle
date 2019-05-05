@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.12 #
-    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    working_directory: /go/src/github.com/anishp55/splunk-firehose-nozzle
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
       - run:
@@ -21,7 +21,7 @@ jobs:
   deploy:
     docker:
       - image: circleci/golang:1.12 #
-    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    working_directory: /go/src/github.com/anishp55/splunk-firehose-nozzle
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
       - run:
