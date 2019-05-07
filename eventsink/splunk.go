@@ -26,8 +26,7 @@ type SplunkConfig struct {
 	ExtraFields    map[string]string
 	TraceLogging   bool
 	UUID           string
-
-	Logger lager.Logger
+	Logger         lager.Logger
 }
 
 type Splunk struct {
@@ -73,6 +72,7 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 	if len(msg) > 0 {
 		fields["msg"] = msg
 	}
+
 	s.events <- fields
 	return nil
 }

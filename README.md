@@ -142,6 +142,24 @@ $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoin
 After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 
+###Per application index routing (deprecates instructions below)
+in your app manifest provide an env var called SPLUNK_INDEX and assign it the index you would like to send the data to
+
+```
+applications:
+- name: console
+  memory: 256M
+  disk_quota: 256M
+  host: console
+  timeout: 180
+  buildpack: https://github.com/SUSE/stratos-buildpack
+  health-check-type: port
+  services:
+  - splunk-index
+  env:
+    SPLUNK_INDEX: testing_index
+```
+
 #### Index routing
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.

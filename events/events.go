@@ -20,7 +20,6 @@ type Event struct {
 
 func HttpStart(msg *events.Envelope) *Event {
 	httpStart := msg.GetHttpStart()
-
 	fields := logrus.Fields{
 		"timestamp":         httpStart.GetTimestamp(),
 		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
@@ -150,6 +149,7 @@ func ErrorEvent(msg *events.Envelope) *Event {
 func ContainerMetric(msg *events.Envelope) *Event {
 	containerMetric := msg.GetContainerMetric()
 
+
 	fields := logrus.Fields{
 		"cf_app_id":          containerMetric.GetApplicationId(),
 		"cpu_percentage":     containerMetric.GetCpuPercentage(),
@@ -184,6 +184,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
 		cf_ignored_app := appInfo.IgnoredApp
+		app_env := appInfo.CfAppEnv
 
 		if cf_app_name != "" {
 			e.Fields["cf_app_name"] = cf_app_name
@@ -205,6 +206,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 			e.Fields["cf_org_name"] = cf_org_name
 		}
 
+		e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }

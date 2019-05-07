@@ -320,6 +320,7 @@ func (c *Boltdb) fromPCFApp(app *cfclient.App) *App {
 		app.SpaceData.Entity.Guid,
 		app.SpaceData.Entity.OrgData.Entity.Name,
 		app.SpaceData.Entity.OrgData.Entity.Guid,
+		app.Environment,
 		c.isOptOut(app.Environment),
 	}
 }
@@ -329,7 +330,6 @@ func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	app := c.fromPCFApp(&cfApp)
 	c.fillDatabase(map[string]*App{app.Guid: app})
 
