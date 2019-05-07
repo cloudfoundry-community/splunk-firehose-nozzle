@@ -2,7 +2,7 @@ version: 2 # use CircleCI 2.0
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12 #
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
@@ -16,27 +16,30 @@ jobs:
           command: make build
       - run:
           name: Run tests
-          command: make testall
+          command: |
+            make testall
+            cp splunk-firehose-nozzle /tmp
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - splunk-firehose-nozzle
 
-  deploy:
+  deploy-nozzle:
     docker:
-      - image: circleci/golang:1.12 #
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
-    steps: # steps that comprise the `build` job
+    steps: # steps that comprise the `deploy` job
+      - attach_workspace:
+          at: /tmp
       - checkout # check out source code to working directory
       - run:
-          name: Install Dependencies
+          name: Install dependencies
           command: |
             curl https://glide.sh/get | sh
             go get -t ./...
+            cp -R /tmp/splunk-firehose-nozzle .
       - run:
-          name: Builder
-          command: make build
-      - run:
-          name: Run tests
-          command: make testall
-      - run:
-          name: Deploy Splunk Firehose Nozzle
+          name: Deploy nozzle
           command: |
             .circleci/update_manifest.sh
             .circleci/pre-req.sh
@@ -49,14 +52,41 @@ jobs:
             cf delete splunk-firehose-nozzle -f
             cf delete-org splunk-ci -f
 
+  tile-builder:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - checkout
+      - run:
+          name: Tile builder
+          command: |
+            cp -R /tmp/splunk-firehose-nozzle .
+            .circleci/tile-builder.sh
+      - run:
+          name: Push tile to internal s3
+          command: |
+            cp -R /tmp/splunk-firehose-nozzle .
+            .circleci/push_tile.sh
+
 workflows:
   version: 2
-  build-and-deploy:
+  build-and-deploy-nozzle:
     jobs:
       - build
-      - deploy:
+      - deploy-nozzle:
           requires:
             - build
           filters:
             branches:
-              only: develop 
+              only:
+                - develop
+                - master
+      - tile-builder:
+          requires:
+            - deploy-nozzle
+          filters:
+            branches:
+              only: master
