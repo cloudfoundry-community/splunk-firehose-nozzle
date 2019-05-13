@@ -15,4 +15,3 @@ data_gen
 
 manifest*.yml
 splunk-firehose-nozzle.iml
-vendor/*
