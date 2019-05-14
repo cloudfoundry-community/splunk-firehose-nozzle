@@ -58,6 +58,9 @@ func (m *AppClientMock) ListAppsByQueryWithLimits(query url.Values, totalPages i
 }
 
 func (m *AppClientMock) GetSpaceByGuid(spaceGUID string) (cfclient.Space, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.getSpaceByGUIDCallCount++
 
 	var id int
@@ -71,6 +74,9 @@ func (m *AppClientMock) GetSpaceByGuid(spaceGUID string) (cfclient.Space, error)
 }
 
 func (m *AppClientMock) GetOrgByGuid(orgGUID string) (cfclient.Org, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.getOrgByGUIDCallCount++
 
 	var id int
@@ -108,12 +114,34 @@ func getApps(n int) map[string]cfclient.App {
 	return apps
 }
 
-func (m *AppClientMock) ListAppsCallCount() int       { return m.listAppsCallCount }
-func (m *AppClientMock) AppByGUIDCallCount() int      { return m.appByGUIDCallCount }
-func (m *AppClientMock) GetOrgByGUIDCallCount() int   { return m.getOrgByGUIDCallCount }
-func (m *AppClientMock) GetSpaceByGUIDCallCount() int { return m.getSpaceByGUIDCallCount }
+func (m *AppClientMock) ListAppsCallCount() int {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.listAppsCallCount
+}
+
+func (m *AppClientMock) AppByGUIDCallCount() int {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.appByGUIDCallCount
+}
+
+func (m *AppClientMock) GetOrgByGUIDCallCount() int {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.getOrgByGUIDCallCount
+}
+
+func (m *AppClientMock) GetSpaceByGUIDCallCount() int {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.getSpaceByGUIDCallCount
+}
 
 func (m *AppClientMock) ResetCallCounts() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.listAppsCallCount = 0
 	m.appByGUIDCallCount = 0
 	m.getOrgByGUIDCallCount = 0
