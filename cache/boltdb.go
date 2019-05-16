@@ -179,6 +179,22 @@ func (c *Boltdb) GetAllApps() (map[string]*App, error) {
 	return apps, nil
 }
 
+func (c *Boltdb) ManuallyInvalidateCaches() error {
+	c.lock.Lock()
+	c.orgNameCache = make(map[string]Org)
+	c.spaceNameCache = make(map[string]Space)
+	c.lock.Unlock()
+
+	apps, err := c.getAllAppsFromRemote()
+	if err != nil {
+		return err
+	}
+	c.lock.Lock()
+	c.cache = apps
+	c.lock.Unlock()
+	return nil
+}
+
 func (c *Boltdb) getAppFromCache(appGuid string) (*App, error) {
 	c.lock.RLock()
 	if app, ok := c.cache[appGuid]; ok {
@@ -291,6 +307,7 @@ func (c *Boltdb) invalidateMissingAppCache() {
 // and update boltdb and in-memory cache
 func (c *Boltdb) invalidateCache() {
 	ticker := time.NewTicker(c.config.AppCacheTTL)
+	orgSpaceTicker := time.NewTicker(c.config.OrgSpaceCacheTTL)
 
 	c.wg.Add(1)
 	go func() {
@@ -307,7 +324,11 @@ func (c *Boltdb) invalidateCache() {
 				} else {
 					c.config.Logger.Error("Unable to fetch copy of cache from remote", err)
 				}
-
+			case <-orgSpaceTicker.C:
+				c.lock.Lock()
+				c.orgNameCache = make(map[string]Org)
+				c.spaceNameCache = make(map[string]Space)
+				c.lock.Unlock()
 			case <-c.closing:
 				return
 			}

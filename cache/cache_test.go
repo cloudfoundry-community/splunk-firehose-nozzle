@@ -55,7 +55,8 @@ var _ = Describe("Cache", func() {
 
 		time.Sleep(1 * time.Second)
 		gerr = os.Remove(boltdbPath)
-		Ω(gerr).ShouldNot(HaveOccurred())
+		Ω(gerr == nil || os.IsNotExist(gerr)).Should(BeTrue())
+		// Ω(gerr).ShouldNot(HaveOccurred())
 	})
 
 	Context("Get app good case", func() {
@@ -104,6 +105,18 @@ var _ = Describe("Cache", func() {
 	})
 
 	Context("Cache invalidation", func() {
+		BeforeEach(func() {
+			// close the cache created in the outer BeforeEach
+			cache.Close()
+
+			config.AppCacheTTL = 0
+			config.OrgSpaceCacheTTL = time.Second
+			cache, gerr = NewBoltdb(client, config)
+			Ω(gerr).ShouldNot(HaveOccurred())
+
+			gerr = cache.Open()
+			Ω(gerr).ShouldNot(HaveOccurred())
+		})
 		It("Expect new app", func() {
 			now := time.Now().UnixNano()
 			id := fmt.Sprintf("id_%d", now)
@@ -111,9 +124,7 @@ var _ = Describe("Cache", func() {
 
 			client.ResetCallCounts()
 
-			// Sleep for AppCacheTTL interval to make sure the cache
-			// invalidation happens
-			time.Sleep(appCacheTTL + time.Second)
+			cache.ManuallyInvalidateCaches()
 
 			app, err := cache.GetApp(id)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -122,7 +133,7 @@ var _ = Describe("Cache", func() {
 
 			Expect(app.SpaceGuid).NotTo(BeEmpty())
 			Expect(app.SpaceName).NotTo(BeEmpty())
-			Expect(client.GetSpaceByGUIDCallCount()).To(Equal(11)) // this will be 11 because `invalidateCache` will have been called between ResetCallCounts and now
+			Expect(client.GetSpaceByGUIDCallCount()).To(Equal(11))
 
 			Expect(app.OrgGuid).NotTo(BeEmpty())
 			Expect(app.OrgName).NotTo(BeEmpty())
@@ -171,9 +182,8 @@ var _ = Describe("Cache", func() {
 
 			client.ResetCallCounts()
 
-			// Sleep for AppCacheTTL interval to make sure the cache
-			// invalidation happens
-			time.Sleep(appCacheTTL + time.Second)
+			// wait for the cache to invalidate and repopulate
+			time.Sleep(appCacheTTL + (250 * time.Millisecond))
 
 			app, err := cache.GetApp(id)
 			Ω(err).ShouldNot(HaveOccurred())
