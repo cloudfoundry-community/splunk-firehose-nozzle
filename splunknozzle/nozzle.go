@@ -56,6 +56,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
+			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
 			Logger:             logger,
 		}
 		return cache.NewBoltdb(client, &c)
