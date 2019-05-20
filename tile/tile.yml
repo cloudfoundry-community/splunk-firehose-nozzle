@@ -43,11 +43,6 @@ forms:
     label: Index
     description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
     default: main
-  - name: splunk_version
-    type: string
-    label: Splunk Version
-    description: If using Splunk Enterprise, enter the version in `major.minor` format to inform how fields are sent to Splunk.
-    default: '6.6'
 
 - name: cf-config
   label: Cloud Foundry Settings
