@@ -55,6 +55,8 @@ imports:
   - jwriter
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/sirupsen/logrus
+  version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: golang.org/x/net
   version: 7dbad50ab5b31073856416cdcfeb2796d682f844
   subpackages:
