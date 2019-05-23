@@ -11,16 +11,24 @@ import (
 
 type Config struct {
 	SelectedEvents string
+	SelectedDeployments string
 }
 
 type router struct {
 	appCache       cache.Cache
 	sink           eventsink.Sink
 	selectedEvents map[string]bool
+	selectedDeployments map[string]bool
 }
 
 func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, error) {
 	selectedEvents, err := fevents.ParseSelectedEvents(config.SelectedEvents)
+
+
+	if err != nil {
+		return nil, err
+	}
+	selectedDeployments,err := fevents.ParseSelectedDeployments(config.SelectedDeployments)
 
 	if err != nil {
 		return nil, err
@@ -30,11 +38,18 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 		appCache:       appCache,
 		sink:           sink,
 		selectedEvents: selectedEvents,
+		selectedDeployments: selectedDeployments,
 	}, nil
 }
 
 func (r *router) Route(msg *events.Envelope) error {
 	eventType := msg.GetEventType()
+	deployment := msg.GetDeployment()
+
+	//Filter the deployments (cf,redis,rabbitmq,etc) (bosh deployments)
+	if ! (r.selectedDeployments["all"]) &&  ! (r.selectedDeployments[deployment]) {
+		return nil
+	}
 
 	if _, ok := r.selectedEvents[eventType.String()]; !ok {
 		// Ignore this event since we are not interested

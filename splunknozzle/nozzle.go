@@ -32,6 +32,7 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
 	config := &eventrouter.Config{
 		SelectedEvents: s.config.WantedEvents,
+		SelectedDeployments: s.config.WantedDeployments,
 	}
 	return eventrouter.New(cache, eventSink, config)
 }

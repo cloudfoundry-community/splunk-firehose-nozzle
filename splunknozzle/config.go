@@ -35,9 +35,10 @@ type Config struct {
 	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
 
-	BoltDBPath   string `json:"boltdb-path"`
-	WantedEvents string `json:"wanted-events"`
-	ExtraFields  string `json:"extra-fields"`
+	BoltDBPath   		string `json:"boltdb-path"`
+	WantedEvents 		string `json:"wanted-events"`
+	WantedDeployments 	string `json:"wanted-deployments"`
+	ExtraFields  		string `json:"extra-fields"`
 
 	FlushInterval time.Duration `json:"flush-interval"`
 	QueueSize     int           `json:"queue-size"`
@@ -111,6 +112,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").StringVar(&c.BoltDBPath)
 	kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", events.AuthorizedEvents())).
 		OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
+	kingpin.Flag("deployments", fmt.Sprintf("Comma separated list of deployments you would like (bosh deployments")).
+		OverrideDefaultFromEnvar("DEPLOYMENTS").Default("all").StringVar(&c.WantedDeployments)
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
 

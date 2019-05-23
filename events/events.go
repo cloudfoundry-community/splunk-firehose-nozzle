@@ -263,6 +263,26 @@ func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
 	return selectedEvents, nil
 }
 
+func ParseSelectedDeployments(wantedDeployments string) (map[string]bool, error) {
+	wantedDeployments = strings.TrimSpace(wantedDeployments)
+	selectedDeployments := make(map[string]bool)
+
+	if wantedDeployments == "" ||  strings.ToLower(wantedDeployments) == "all" {
+		selectedDeployments["all"] = true
+		return selectedDeployments, nil
+	}
+
+	var deployments []string
+	if err := json.Unmarshal([]byte(wantedDeployments), &deployments); err != nil {
+		deployments = strings.Split(wantedDeployments, ",")
+	}
+
+	for _, deployment := range deployments {
+		deployment = strings.TrimSpace(deployment)
+		selectedDeployments[deployment] = true
+	}
+	return selectedDeployments, nil
+}
 func getKeyValueFromString(kvPair string) (string, string, error) {
 	values := strings.Split(kvPair, ":")
 	if len(values) != 2 {

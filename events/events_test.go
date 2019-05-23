@@ -178,6 +178,15 @@ var _ = Describe("Events", func() {
 		})
 	})
 
+	Context("ParseSelectedEvents, empty select deployments passed in", func() {
+		It("should return a hash of only the default deployment(all)", func() {
+			results, err := fevents.ParseSelectedDeployments("")
+			Ω(err).ShouldNot(HaveOccurred())
+			expected := map[string]bool{"all": true}
+			Expect(results).To(Equal(expected))
+		})
+	})
+
 	Context("ParseSelectedEvents, bogus event names", func() {
 		It("should err out", func() {
 			_, err := fevents.ParseSelectedEvents("bogus, invalid")

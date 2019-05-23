@@ -41,6 +41,7 @@ func newConfig() *Config {
 
 		BoltDBPath:   "/tmp/boltdb.db",
 		WantedEvents: "LogMessage",
+		WantedDeployments: "all",
 		ExtraFields:  "tag:value",
 
 		FlushInterval: time.Second * 5,
