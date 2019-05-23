@@ -36,7 +36,7 @@ import (
 func main() {
 	req := command.Read()
 	files := req.GetProtoFile()
-	files = vanity.FilterFiles(files, vanity.NotInPackageGoogleProtobuf)
+	files = vanity.FilterFiles(files, vanity.NotGoogleProtobufDescriptorProto)
 
 	vanity.ForEachFile(files, vanity.TurnOnMarshalerAll)
 	vanity.ForEachFile(files, vanity.TurnOnSizerAll)
@@ -44,6 +44,8 @@ func main() {
 
 	vanity.ForEachFieldInFilesExcludingExtensions(vanity.OnlyProto2(files), vanity.TurnOffNullableForNativeTypesWithoutDefaultsOnly)
 	vanity.ForEachFile(files, vanity.TurnOffGoUnrecognizedAll)
+	vanity.ForEachFile(files, vanity.TurnOffGoUnkeyedAll)
+	vanity.ForEachFile(files, vanity.TurnOffGoSizecacheAll)
 
 	vanity.ForEachFile(files, vanity.TurnOffGoEnumPrefixAll)
 	vanity.ForEachFile(files, vanity.TurnOffGoEnumStringerAll)

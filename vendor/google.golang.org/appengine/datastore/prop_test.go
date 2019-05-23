@@ -6,6 +6,7 @@ package datastore
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -97,6 +98,7 @@ func TestStructCodec(t *testing.T) {
 			"R": {path: []int{0}},
 			"S": {path: []int{1}, structCodec: pStructCodec},
 			"T": {path: []int{2}, structCodec: oStructCodec},
+			"O": {path: []int{3, 0}},
 		},
 		complete: true,
 	}
@@ -209,6 +211,7 @@ func TestStructCodec(t *testing.T) {
 					"B":   {path: []int{1}},
 					"CC":  {path: []int{2}, structCodec: oStructCodec},
 					"DDD": {path: []int{3}, structCodec: rStructCodec},
+					"O":   {path: []int{4, 0}},
 				},
 				complete: true,
 			},
@@ -224,9 +227,10 @@ func TestStructCodec(t *testing.T) {
 			}{},
 			&structCodec{
 				fields: map[string]fieldCodec{
-					"w":  {path: []int{1}},
-					"xx": {path: []int{2}, structCodec: oStructCodec},
-					"y":  {path: []int{3}, structCodec: rStructCodec},
+					"w":   {path: []int{1}},
+					"xx":  {path: []int{2}, structCodec: oStructCodec},
+					"y":   {path: []int{3}, structCodec: rStructCodec},
+					"z.O": {path: []int{4, 0}},
 				},
 				complete: true,
 			},
@@ -244,6 +248,7 @@ func TestStructCodec(t *testing.T) {
 				fields: map[string]fieldCodec{
 					"B": {path: []int{1}},
 					"D": {path: []int{3}, structCodec: uStructCodec},
+					"U": {path: []int{4, 0}},
 				},
 				complete: true,
 			},
@@ -540,4 +545,128 @@ func TestNilKeyIsStored(t *testing.T) {
 	if x.I != 0 {
 		t.Errorf("I field was not zero")
 	}
+}
+
+func TestSaveStructOmitEmpty(t *testing.T) {
+	// Expected props names are sorted alphabetically
+	expectedPropNamesForSingles := []string{"EmptyValue", "NonEmptyValue", "OmitEmptyWithValue"}
+	expectedPropNamesForSlices := []string{"NonEmptyValue", "NonEmptyValue", "OmitEmptyWithValue", "OmitEmptyWithValue"}
+
+	testOmitted := func(expectedPropNames []string, src interface{}) {
+		// t.Helper() - this is available from Go version 1.9, but we also support Go versions 1.6, 1.7, 1.8
+		if props, err := SaveStruct(src); err != nil {
+			t.Fatal(err)
+		} else {
+			// Collect names for reporting if diffs from expected and for easier sorting
+			actualPropNames := make([]string, len(props))
+			for i := range props {
+				actualPropNames[i] = props[i].Name
+			}
+			// Sort actuals for comparing with already sorted expected names
+			sort.Sort(sort.StringSlice(actualPropNames))
+			if !reflect.DeepEqual(actualPropNames, expectedPropNames) {
+				t.Errorf("Expected this properties: %v, got: %v", expectedPropNames, actualPropNames)
+			}
+		}
+	}
+
+	testOmitted(expectedPropNamesForSingles, &struct {
+		EmptyValue         int
+		NonEmptyValue      int
+		OmitEmptyNoValue   int `datastore:",omitempty"`
+		OmitEmptyWithValue int `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      1,
+		OmitEmptyWithValue: 2,
+	})
+
+	testOmitted(expectedPropNamesForSlices, &struct {
+		EmptyValue         []int
+		NonEmptyValue      []int
+		OmitEmptyNoValue   []int `datastore:",omitempty"`
+		OmitEmptyWithValue []int `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      []int{1, 2},
+		OmitEmptyWithValue: []int{3, 4},
+	})
+
+	testOmitted(expectedPropNamesForSingles, &struct {
+		EmptyValue         bool
+		NonEmptyValue      bool
+		OmitEmptyNoValue   bool `datastore:",omitempty"`
+		OmitEmptyWithValue bool `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      true,
+		OmitEmptyWithValue: true,
+	})
+
+	testOmitted(expectedPropNamesForSlices, &struct {
+		EmptyValue         []bool
+		NonEmptyValue      []bool
+		OmitEmptyNoValue   []bool `datastore:",omitempty"`
+		OmitEmptyWithValue []bool `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      []bool{true, true},
+		OmitEmptyWithValue: []bool{true, true},
+	})
+
+	testOmitted(expectedPropNamesForSingles, &struct {
+		EmptyValue         string
+		NonEmptyValue      string
+		OmitEmptyNoValue   string `datastore:",omitempty"`
+		OmitEmptyWithValue string `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      "s",
+		OmitEmptyWithValue: "s",
+	})
+
+	testOmitted(expectedPropNamesForSlices, &struct {
+		EmptyValue         []string
+		NonEmptyValue      []string
+		OmitEmptyNoValue   []string `datastore:",omitempty"`
+		OmitEmptyWithValue []string `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      []string{"s1", "s2"},
+		OmitEmptyWithValue: []string{"s3", "s4"},
+	})
+
+	testOmitted(expectedPropNamesForSingles, &struct {
+		EmptyValue         float32
+		NonEmptyValue      float32
+		OmitEmptyNoValue   float32 `datastore:",omitempty"`
+		OmitEmptyWithValue float32 `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      1.1,
+		OmitEmptyWithValue: 1.2,
+	})
+
+	testOmitted(expectedPropNamesForSlices, &struct {
+		EmptyValue         []float32
+		NonEmptyValue      []float32
+		OmitEmptyNoValue   []float32 `datastore:",omitempty"`
+		OmitEmptyWithValue []float32 `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      []float32{1.1, 2.2},
+		OmitEmptyWithValue: []float32{3.3, 4.4},
+	})
+
+	testOmitted(expectedPropNamesForSingles, &struct {
+		EmptyValue         time.Time
+		NonEmptyValue      time.Time
+		OmitEmptyNoValue   time.Time `datastore:",omitempty"`
+		OmitEmptyWithValue time.Time `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      now,
+		OmitEmptyWithValue: now,
+	})
+
+	testOmitted(expectedPropNamesForSlices, &struct {
+		EmptyValue         []time.Time
+		NonEmptyValue      []time.Time
+		OmitEmptyNoValue   []time.Time `datastore:",omitempty"`
+		OmitEmptyWithValue []time.Time `datastore:",omitempty"`
+	}{
+		NonEmptyValue:      []time.Time{now, now},
+		OmitEmptyWithValue: []time.Time{now, now},
+	})
 }
