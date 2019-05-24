@@ -89,7 +89,9 @@ This is recommended for dev environments only.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
 * `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. Only required for Splunk version 6.3 or below.
 
-   `Please note`: [Tile](https://network.pivotal.io/products/splunk-nozzle/) only supports deployment against Splunk version 6.4 or above, so if using Splunk version 6.3 or below, please deploy nozzle via CLI. Make sure to update the nozzle_manifest.yml with splunk_version (eg:- SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry)_
+    > **`Please note`**: , SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
+    So if using Splunk version 6.3 or below, please deploy nozzle via CLI. Make sure to update the nozzle_manifest.yml with splunk_version (eg:- SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
+    **[Tile](https://network.pivotal.io/products/splunk-nozzle/)** only supports deployment for Splunk version 6.4 or above
 
 - - - -
 
