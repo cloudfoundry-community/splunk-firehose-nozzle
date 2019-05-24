@@ -86,8 +86,12 @@ This is recommended for dev environments only.
 * `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 * `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
-* `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. For example: 6.6.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
+* `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. Only required for Splunk version 6.3 or below.
+
+    > **`Please note`**: , SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
+    So if using Splunk version 6.3 or below, please deploy nozzle via CLI. Make sure to update the nozzle_manifest.yml with splunk_version (eg:- SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
+    **[Tile](https://network.pivotal.io/products/splunk-nozzle/)** only supports deployment for Splunk version 6.4 or above
 
 - - - -
 
@@ -142,8 +146,11 @@ $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoin
 After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 
-###Per application index routing (deprecates instructions below)
-in your app manifest provide an env var called SPLUNK_INDEX and assign it the index you would like to send the data to
+### Index routing
+Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
+
+#### Per application index routing via application manifest
+In your app manifest provide an environment variable called SPLUNK_INDEX and assign it the index you would like to send the data to
 
 ```
 applications:
@@ -160,8 +167,7 @@ applications:
     SPLUNK_INDEX: testing_index
 ```
 
-#### Index routing
-Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
+#### Index routing via splunk configuration
 Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
 Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.
 

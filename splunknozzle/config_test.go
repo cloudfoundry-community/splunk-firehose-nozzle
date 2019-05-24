@@ -137,7 +137,7 @@ var _ = Describe("Config", func() {
 			Expect(c.BatchSize).To(Equal(100))
 			Expect(c.Retries).To(Equal(5))
 			Expect(c.HecWorkers).To(Equal(8))
-			Expect(c.SplunkVersion).To(Equal("6.6"))
+			Expect(c.SplunkVersion).To(Equal("7.2"))
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
