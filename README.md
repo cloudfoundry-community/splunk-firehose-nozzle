@@ -248,7 +248,7 @@ This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundr
 </ol>
 
 
-##Here are a few common errors and possible resolutions:
+### Here are a few common errors and possible resolutions:
 
 #### Splunk configuration related errors:
 
