@@ -166,7 +166,7 @@ forms:
     description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 packages:
-- name: splunk-firehose-nozzle
+- name: splunk_firehose_nozzle
   type: app
   label: Splunk-Firehose-Nozzle
   manifest:
