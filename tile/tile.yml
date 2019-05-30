@@ -43,11 +43,6 @@ forms:
     label: Index
     description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
     default: main
-  - name: splunk_version
-    type: string
-    label: Splunk Version
-    description: If using Splunk Enterprise, enter the version in `major.minor` format to inform how fields are sent to Splunk.
-    default: '6.6'
 
 - name: cf-config
   label: Cloud Foundry Settings
@@ -144,6 +139,11 @@ forms:
     label: App Cache Invalidate TTL
     default: 0s
     description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
+  - name: org_space_cache_invalidate_ttl
+    type: string
+    label: Org Space Cache Invalidate TTL
+    default: 0s
+    description: Time interval (in sec) between refreshing the org and space cache.
   - name: app_limits
     type: integer
     label: App Limits
@@ -171,7 +171,7 @@ forms:
     description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 packages:
-- name: splunk-firehose-nozzle
+- name: splunk_firehose_nozzle
   type: app
   label: Splunk-Firehose-Nozzle
   manifest:

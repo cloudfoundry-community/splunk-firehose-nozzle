@@ -27,9 +27,23 @@ type BoltdbConfig struct {
 	IgnoreMissingApps  bool
 	MissingAppCacheTTL time.Duration
 	AppCacheTTL        time.Duration
+	OrgSpaceCacheTTL   time.Duration
 	AppLimits          int
 
 	Logger lager.Logger
+}
+
+// Org is a CAPI org
+type Org struct {
+	Name        string
+	LastUpdated time.Time
+}
+
+// Space is a CAPI space with a reference to its org's GUID
+type Space struct {
+	Name        string
+	OrgGUID     string
+	LastUpdated time.Time
 }
 
 type Boltdb struct {
@@ -40,6 +54,9 @@ type Boltdb struct {
 	cache       map[string]*App
 	missingApps map[string]struct{}
 
+	orgNameCache   map[string]Org   // caches org guid->org name mapping
+	spaceNameCache map[string]Space // caches space guid->space name mapping
+
 	closing chan struct{}
 	wg      sync.WaitGroup
 	config  *BoltdbConfig
@@ -47,11 +64,13 @@ type Boltdb struct {
 
 func NewBoltdb(client AppClient, config *BoltdbConfig) (*Boltdb, error) {
 	return &Boltdb{
-		appClient:   client,
-		cache:       make(map[string]*App),
-		missingApps: make(map[string]struct{}),
-		closing:     make(chan struct{}),
-		config:      config,
+		appClient:      client,
+		cache:          make(map[string]*App),
+		missingApps:    make(map[string]struct{}),
+		orgNameCache:   make(map[string]Org),
+		spaceNameCache: make(map[string]Space),
+		closing:        make(chan struct{}),
+		config:         config,
 	}, nil
 }
 
@@ -108,7 +127,7 @@ func (c *Boltdb) Close() error {
 	return c.appdb.Close()
 }
 
-// GetAppInfo tries first get app info from cache. If caches doesn't have this
+// GetApp tries first get app info from cache. If caches doesn't have this
 // app info (cache miss), it issues API to retrieve the app info from remote
 // if the app is not already missing and clients don't ignore the missing app
 // info, and then add the app info to the cache
@@ -123,6 +142,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 
 	// Find in cache
 	if app != nil {
+		c.fillOrgAndSpace(app)
 		return app, nil
 	}
 
@@ -157,6 +177,22 @@ func (c *Boltdb) GetAllApps() (map[string]*App, error) {
 	c.lock.RUnlock()
 
 	return apps, nil
+}
+
+func (c *Boltdb) ManuallyInvalidateCaches() error {
+	c.lock.Lock()
+	c.orgNameCache = make(map[string]Org)
+	c.spaceNameCache = make(map[string]Space)
+	c.lock.Unlock()
+
+	apps, err := c.getAllAppsFromRemote()
+	if err != nil {
+		return err
+	}
+	c.lock.Lock()
+	c.cache = apps
+	c.lock.Unlock()
+	return nil
 }
 
 func (c *Boltdb) getAppFromCache(appGuid string) (*App, error) {
@@ -208,7 +244,7 @@ func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 
 	totalPages := 0
 	q := url.Values{}
-	q.Set("inline-relations-depth", "2")
+	q.Set("inline-relations-depth", "0")
 	if c.config.AppLimits > 0 {
 		// Latest N apps
 		q.Set("order-direction", "desc")
@@ -271,6 +307,7 @@ func (c *Boltdb) invalidateMissingAppCache() {
 // and update boltdb and in-memory cache
 func (c *Boltdb) invalidateCache() {
 	ticker := time.NewTicker(c.config.AppCacheTTL)
+	orgSpaceTicker := time.NewTicker(c.config.OrgSpaceCacheTTL)
 
 	c.wg.Add(1)
 	go func() {
@@ -287,7 +324,11 @@ func (c *Boltdb) invalidateCache() {
 				} else {
 					c.config.Logger.Error("Unable to fetch copy of cache from remote", err)
 				}
-
+			case <-orgSpaceTicker.C:
+				c.lock.Lock()
+				c.orgNameCache = make(map[string]Org)
+				c.spaceNameCache = make(map[string]Space)
+				c.lock.Unlock()
 			case <-c.closing:
 				return
 			}
@@ -313,15 +354,68 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 }
 
 func (c *Boltdb) fromPCFApp(app *cfclient.App) *App {
-	return &App{
-		app.Name,
-		app.Guid,
-		app.SpaceData.Entity.Name,
-		app.SpaceData.Entity.Guid,
-		app.SpaceData.Entity.OrgData.Entity.Name,
-		app.SpaceData.Entity.OrgData.Entity.Guid,
-		c.isOptOut(app.Environment),
+	cachedApp := &App{
+		Name:       app.Name,
+		Guid:       app.Guid,
+		SpaceGuid:  app.SpaceGuid,
+		IgnoredApp: c.isOptOut(app.Environment),
 	}
+
+	c.fillOrgAndSpace(cachedApp)
+
+	return cachedApp
+}
+
+func (c *Boltdb) fillOrgAndSpace(app *App) error {
+	now := time.Now()
+
+	c.lock.RLock()
+	space, ok := c.spaceNameCache[app.SpaceGuid]
+	c.lock.RUnlock()
+
+	if !ok || now.Sub(space.LastUpdated) > c.config.OrgSpaceCacheTTL {
+		cfspace, err := c.appClient.GetSpaceByGuid(app.SpaceGuid)
+		if err != nil {
+			return err
+		}
+
+		space = Space{
+			Name:        cfspace.Name,
+			OrgGUID:     cfspace.OrganizationGuid,
+			LastUpdated: now,
+		}
+
+		c.lock.Lock()
+		c.spaceNameCache[app.SpaceGuid] = space
+		c.lock.Unlock()
+	}
+
+	app.SpaceName = space.Name
+	app.OrgGuid = space.OrgGUID
+
+	c.lock.RLock()
+	org, ok := c.orgNameCache[space.OrgGUID]
+	c.lock.RUnlock()
+	if !ok || now.Sub(org.LastUpdated) > c.config.OrgSpaceCacheTTL {
+		cforg, err := c.appClient.GetOrgByGuid(space.OrgGUID)
+		if err != nil {
+			return err
+		}
+
+		org = Org{
+			Name:        cforg.Name,
+			LastUpdated: now,
+		}
+
+		c.lock.Lock()
+		c.orgNameCache[space.OrgGUID] = org
+		c.lock.Unlock()
+	}
+
+	app.OrgGuid = space.OrgGUID
+	app.OrgName = org.Name
+
+	return nil
 }
 
 func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
@@ -329,7 +423,6 @@ func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	app := c.fromPCFApp(&cfApp)
 	c.fillDatabase(map[string]*App{app.Guid: app})
 

@@ -42,6 +42,26 @@ func easyjsonA591d1bcDecodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 			out.OrgName = string(in.String())
 		case "OrgGuid":
 			out.OrgGuid = string(in.String())
+		case "CfAppEnv":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.CfAppEnv = make(map[string]interface{})
+				} else {
+					out.CfAppEnv = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v1 interface{}
+					v1 = in.Interface()
+					(out.CfAppEnv)[key] = v1
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
 		case "IgnoredApp":
 			out.IgnoredApp = bool(in.Bool())
 		default:
@@ -91,6 +111,27 @@ func easyjsonA591d1bcEncodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 	first = false
 	out.RawString("\"OrgGuid\":")
 	out.String(string(in.OrgGuid))
+	if !first {
+		out.RawByte(',')
+	}
+	first = false
+	out.RawString("\"CfAppEnv\":")
+	if in.CfAppEnv == nil {
+		out.RawString(`null`)
+	} else {
+		out.RawByte('{')
+		v2First := true
+		for v2Name, v2Value := range in.CfAppEnv {
+			if !v2First {
+				out.RawByte(',')
+			}
+			v2First = false
+			out.String(string(v2Name))
+			out.RawByte(':')
+			out.Raw(json.Marshal(v2Value))
+		}
+		out.RawByte('}')
+	}
 	if !first {
 		out.RawByte(',')
 	}

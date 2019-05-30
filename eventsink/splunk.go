@@ -2,15 +2,17 @@ package eventsink
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"sync/atomic"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
-	"sync/atomic"
 )
 
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
@@ -26,8 +28,7 @@ type SplunkConfig struct {
 	ExtraFields    map[string]string
 	TraceLogging   bool
 	UUID           string
-
-	Logger lager.Logger
+	Logger         lager.Logger
 }
 
 type Splunk struct {
@@ -73,6 +74,7 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 	if len(msg) > 0 {
 		fields["msg"] = msg
 	}
+
 	s.events <- fields
 	return nil
 }
@@ -124,7 +126,7 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 			return nil
 		}
 		s.config.Logger.Error("Unable to talk to Splunk", err)
-		time.Sleep(5 * time.Second)
+		time.Sleep(getRetryInterval(i))
 	}
 	s.config.Logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
 	return nil
@@ -209,4 +211,10 @@ func (s *Splunk) Log(message lager.LogFormat) {
 
 	events := []map[string]interface{}{event}
 	s.writers[len(s.writers)-1].Write(events)
+}
+
+func getRetryInterval(attempt int) time.Duration {
+	// algorithm taken from https://en.wikipedia.org/wiki/Exponential_backoff
+	timeInSec := 5 + (0.5 * (math.Exp2(float64(attempt)) - 1.0))
+	return time.Millisecond * time.Duration(1000*timeInSec)
 }

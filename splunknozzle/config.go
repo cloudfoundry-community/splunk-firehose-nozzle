@@ -32,6 +32,7 @@ type Config struct {
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
 	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
+	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
 
 	BoltDBPath   string `json:"boltdb-path"`
@@ -101,6 +102,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
 	kingpin.Flag("app-cache-invalidate-ttl", "How frequently the app info local cache invalidates").
 		OverrideDefaultFromEnvar("APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.AppCacheTTL)
+	kingpin.Flag("org-space-cache-invalidate-ttl", "How frequently the org and space cache invalidates").
+		OverrideDefaultFromEnvar("ORG_SPACE_CACHE_INVALIDATE_TTL").Default("72h").DurationVar(&c.OrgSpaceCacheTTL)
 	kingpin.Flag("app-limits", "Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache").
 		OverrideDefaultFromEnvar("APP_LIMITS").Default("0").IntVar(&c.AppLimits)
 
@@ -121,8 +124,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
 		OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").IntVar(&c.HecWorkers)
-	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=6.6	").
-		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("6.6").StringVar(&c.SplunkVersion)
+	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=7.2	").
+		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("7.2").StringVar(&c.SplunkVersion)
 
 	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)

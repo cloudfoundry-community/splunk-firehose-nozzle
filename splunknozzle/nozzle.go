@@ -21,6 +21,7 @@ type SplunkFirehoseNozzle struct {
 	config *Config
 }
 
+//create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
@@ -55,6 +56,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
+			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
 			Logger:             logger,
 		}
 		return cache.NewBoltdb(client, &c)
@@ -77,6 +79,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		SkipSSL: s.config.SkipSSLSplunk,
 		Logger:  logger,
 	}
+
 
 	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {

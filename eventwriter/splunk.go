@@ -44,7 +44,11 @@ func NewSplunk(config *SplunkConfig) Writer {
 func (s *splunkClient) Write(events []map[string]interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
-		if s.config.Index != "" {
+
+
+		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
+			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
+		} else if s.config.Index != "" {
 			event["index"] = s.config.Index
 		}
 
