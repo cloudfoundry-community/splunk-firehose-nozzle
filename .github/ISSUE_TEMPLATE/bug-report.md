@@ -1,9 +1,9 @@
 ---
-Name: Bug report
-About: Report a bug encountered while operating Splunk Firehose Nozzle
-Title: "[BUG]"
-Labels: ''
-Assignees: ''
+name: Bug Report
+about: Report a bug encountered while operating Splunk Firehose Nozzle
+title: '"[BUG]"'
+labels: ''
+assignees: ''
 
 ---
 

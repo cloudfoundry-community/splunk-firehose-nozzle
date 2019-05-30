@@ -1,9 +1,9 @@
 ---
-name: 
-about: 
-title: 
-labels: 
-assignees: 
+name: Enhancement Request
+about: Suggest an enhancement to the Splunk Firehose Nozzle project
+title: '"[ENHANCEMENT]"'
+labels: ''
+assignees: ''
 
 ---
 
