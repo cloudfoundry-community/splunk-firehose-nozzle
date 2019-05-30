@@ -225,7 +225,7 @@ REGEX = (sourcetype::cf:splunknozzle)
 FORMAT = new_index
 ```
 
-## <a id='walkthrough'></a> Troubleshooting Walkthrough
+## <a id='walkthrough'></a> Troubleshooting
 This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.
 
 #### 1. I can't find my data!
@@ -240,14 +240,15 @@ This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundr
   <pre class="terminal">cf target -o SPLUNK-NOZZLE-ORG</pre>
   </li>
   <li>View the recent app Splunk Nozzle logs (the version number installed by the tile will vary).<br/>
-  <pre class="terminal">cf logs --recent splunk-firehoze-nozzle-1.0.0</pre>
+  <pre class="terminal">cf logs --recent splunk-firehoze-nozzle</pre>
   </li>
   <li>Alternatively, you can stream the app logs as they're emitted.<br/>
-  <pre class="terminal">cf logs splunk-firehose-nozzle-1.0.0</pre>
+  <pre class="terminal">cf logs splunk-firehose-nozzle</pre>
   </li>
 </ol>
 
-Here are a few common errors and possible resolutions:
+
+##Here are a few common errors and possible resolutions:
 
 #### Splunk configuration related errors:
 
