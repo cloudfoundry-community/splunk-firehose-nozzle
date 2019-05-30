@@ -139,6 +139,11 @@ forms:
     label: App Cache Invalidate TTL
     default: 0s
     description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
+  - name: org_space_cache_invalidate_ttl
+    type: string
+    label: Org Space Cache Invalidate TTL
+    default: 0s
+    description: Time interval (in sec) between refreshing the org and space cache.
   - name: app_limits
     type: integer
     label: App Limits
