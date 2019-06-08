@@ -49,6 +49,24 @@ func TestListSharedDomains(t *testing.T) {
 		So(domains[0].RouterGroupGuid, ShouldEqual, "my-random-guid")
 		So(domains[0].RouterGroupType, ShouldEqual, "tcp")
 	})
+
+	Convey("List shared domain by guid", t, func() {
+		setup(MockRoute{"GET", "/v2/shared_domains/91977695-8ad9-40db-858f-4df782603ec3", listSharedDomainByGuidPayload, "", 200, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		domain, err := client.GetSharedDomainByGuid("91977695-8ad9-40db-858f-4df782603ec3")
+		So(err, ShouldBeNil)
+
+		So(domain.Guid, ShouldEqual, "91977695-8ad9-40db-858f-4df782603ec3")
+		So(domain.Name, ShouldEqual, "apps.some.random.cf.installation.example.com")
+	})
+
 }
 
 func TestGetDomainByName(t *testing.T) {
@@ -159,6 +177,40 @@ func TestCreateDomain(t *testing.T) {
 	})
 }
 
+func TestCreateSharedDomain(t *testing.T) {
+	Convey("Create external shared domain", t, func() {
+		setup(MockRoute{"POST", "/v2/shared_domains", postExternalSharedDomainPayload, "", 201, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		domain, err := client.CreateSharedDomain("shared-example.com", false, "8483e4f1-d3a3-43e2-ab8c-b05ea40ef8db")
+		So(err, ShouldBeNil)
+		So(domain.Internal, ShouldBeFalse)
+		So(domain.RouterGroupType, ShouldEqual, "tcp")
+	})
+
+	Convey("Create external shared domain", t, func() {
+		setup(MockRoute{"POST", "/v2/shared_domains", postInternalSharedDomainPayload, "", 201, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		domain, err := client.CreateSharedDomain("shared-example.com", false, "8483e4f1-d3a3-43e2-ab8c-b05ea40ef8db")
+		So(err, ShouldBeNil)
+		So(domain.Internal, ShouldBeTrue)
+		So(domain.RouterGroupType, ShouldBeBlank)
+	})
+}
+
 func TestDeleteDomain(t *testing.T) {
 	Convey("Delete domain", t, func() {
 		setup(MockRoute{"DELETE", "/v2/private_domains/b2a35f0c-d5ad-4a59-bea7-461711d96b0d", "", "", 204, "", nil}, t)
@@ -171,6 +223,36 @@ func TestDeleteDomain(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		err = client.DeleteDomain("b2a35f0c-d5ad-4a59-bea7-461711d96b0d")
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestDeleteSharedDomain(t *testing.T) {
+	Convey("Delete shared domain synchronously", t, func() {
+		setup(MockRoute{"DELETE", "/v2/shared_domains/b2a35f0c-d5ad-4a59-bea7-461711d96b0d", "", "", 204, "async=false", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		err = client.DeleteSharedDomain("b2a35f0c-d5ad-4a59-bea7-461711d96b0d", false)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Delete shared domain synchronously", t, func() {
+		setup(MockRoute{"DELETE", "/v2/shared_domains/b2a35f0c-d5ad-4a59-bea7-461711d96b0d", "", "", 202, "async=true", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		err = client.DeleteSharedDomain("b2a35f0c-d5ad-4a59-bea7-461711d96b0d", true)
 		So(err, ShouldBeNil)
 	})
 }
