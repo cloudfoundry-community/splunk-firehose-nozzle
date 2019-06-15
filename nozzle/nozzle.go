@@ -92,7 +92,7 @@ func (f *Nozzle) handleError(err error) {
 	case websocket.ClosePolicyViolation:
 		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
 			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
-			"was some temperary network issue causing the heartbeat to get lost."
+			"was some temporary network issue causing the heartbeat to get lost."
 
 	default:
 		msg = "Encountered close error while reading from Firehose"

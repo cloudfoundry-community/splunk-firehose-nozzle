@@ -77,7 +77,6 @@ forms:
       - name: ValueMetric
         label: ValueMetric
       - name: CounterEvent
-
         label: CounterEvent
       - name: Error
         label: Error
@@ -142,7 +141,7 @@ forms:
   - name: org_space_cache_invalidate_ttl
     type: string
     label: Org Space Cache Invalidate TTL
-    default: 0s
+    default: 72h
     description: Time interval (in sec) between refreshing the org and space cache.
   - name: app_limits
     type: integer
@@ -154,6 +153,11 @@ forms:
     label: Nozzle Memory
     description: Nozzle memory in MB.
     default: 256M
+  - name: firehose_keep_alive
+    type: string
+    label: Firehose Keep Alive
+    description: Keep alive duration (in sec) for the firehose consumer.
+    default: 25s
   - name: add_app_info
     type: boolean
     default: false
