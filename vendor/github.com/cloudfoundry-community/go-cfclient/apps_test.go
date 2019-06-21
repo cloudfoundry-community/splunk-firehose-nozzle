@@ -1,6 +1,10 @@
 package cfclient
 
 import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -86,6 +90,54 @@ func assertAppList(apps []App, err error) {
 	So(apps[1].Name, ShouldEqual, "app-test2")
 }
 
+func TestGetAppByGuidNoInlineCall(t *testing.T) {
+	Convey("App By GUID", t, func() {
+		mocks := []MockRoute{
+			{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayload, "Test-golang", 200, "", nil},
+			{"GET", "/v2/spaces/a72fa1e8-c694-47b3-85f2-55f61fd00d73", spacePayload, "Test-golang", 200, "", nil},
+			{"GET", "/v2/organizations/da0dba14-6064-4f7a-b15a-ff9e677e49b2", orgPayload, "Test-golang", 200, "", nil},
+		}
+		setupMultiple(mocks, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+			UserAgent:  "Test-golang",
+		}
+
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		app, err := client.GetAppByGuidNoInlineCall("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+
+		So(app.Guid, ShouldEqual, "9902530c-c634-4864-a189-71d763cb12e2")
+		So(app.Name, ShouldEqual, "test-env")
+	})
+
+	Convey("App By GUID with environment variables with different types", t, func() {
+		mocks := []MockRoute{
+			{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayloadWithEnvironment, "Test-golang", 200, "", nil},
+			{"GET", "/v2/spaces/a72fa1e8-c694-47b3-85f2-55f61fd00d73", spacePayload, "Test-golang", 200, "", nil},
+			{"GET", "/v2/organizations/da0dba14-6064-4f7a-b15a-ff9e677e49b2", orgPayload, "Test-golang", 200, "", nil},
+		}
+		setupMultiple(mocks, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+			UserAgent:  "Test-golang",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		app, err := client.GetAppByGuidNoInlineCall("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+		So(app.Environment["string"], ShouldEqual, "string")
+		So(app.Environment["int"], ShouldEqual, 1)
+	})
+}
+
 func TestAppByGuid(t *testing.T) {
 	Convey("App By GUID", t, func() {
 		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayload, "", 200, "inline-relations-depth=2", nil}, t)
@@ -105,7 +157,7 @@ func TestAppByGuid(t *testing.T) {
 	})
 
 	Convey("App By GUID with environment variables with different types", t, func() {
-		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayloadWithEnvironment_json, "", 200, "inline-relations-depth=2", nil}, t)
+		setup(MockRoute{"GET", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2", appPayloadWithEnvironment, "", 200, "inline-relations-depth=2", nil}, t)
 		defer teardown()
 		c := &Config{
 			ApiAddress: server.URL,
@@ -254,6 +306,70 @@ func TestGetAppRoutes(t *testing.T) {
 	})
 }
 
+func TestUploadAppBits(t *testing.T) {
+	Convey("Upload app bits", t, func() {
+		expectedPayload := "this should really be zipped binary data"
+		mr := MockRoute{
+			Method:   "PUT-FILE",
+			Endpoint: "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/bits",
+			Status:   201,
+			PostForm: &expectedPayload,
+		}
+		setup(mr, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		bits := bytes.NewBufferString(expectedPayload)
+		err = client.UploadAppBits(bits, "9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestGetAppBits(t *testing.T) {
+	Convey("Get app bits", t, func() {
+
+		next := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Content-Type", "application/gzip")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("apptarbinarydata"))
+		})
+		s := httptest.NewServer(next)
+		defer s.Close()
+
+		mr := MockRouteWithRedirect{
+			MockRoute: MockRoute{
+				Method:   "GET",
+				Endpoint: "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/download",
+				Status:   302,
+			},
+			RedirectLocation: s.URL,
+		}
+		setupWithRedirect(mr, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		bits, err := client.GetAppBits("9902530c-c634-4864-a189-71d763cb12e2")
+		So(err, ShouldBeNil)
+		So(bits, ShouldNotBeNil)
+
+		var download string
+		if b, err := ioutil.ReadAll(bits); err == nil {
+			download = string(b)
+		}
+		So(download, ShouldEqual, "apptarbinarydata")
+	})
+}
+
 func TestKillAppInstance(t *testing.T) {
 	Convey("Kills an app instance", t, func() {
 		setup(MockRoute{"DELETE", "/v2/apps/9902530c-c634-4864-a189-71d763cb12e2/instances/0", "", "", 204, "", nil}, t)
@@ -290,6 +406,51 @@ func TestAppEnv(t *testing.T) {
 	})
 }
 
+func TestAppSummary(t *testing.T) {
+	Convey("Get app summary", t, func() {
+		setup(MockRoute{"GET", "/v2/apps/b5f0d1bd-a3a9-40a4-af1a-312ad26e5379/summary", appSummaryPayload, "", 200, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		app := &App{
+			Guid: "b5f0d1bd-a3a9-40a4-af1a-312ad26e5379",
+			c:    client,
+		}
+
+		summary, err := app.Summary()
+		So(err, ShouldBeNil)
+
+		So(summary.Guid, ShouldEqual, "b5f0d1bd-a3a9-40a4-af1a-312ad26e5379")
+		So(summary.Name, ShouldEqual, "test-app")
+		So(summary.ServiceCount, ShouldEqual, 1)
+		So(summary.RunningInstances, ShouldEqual, 1)
+		So(summary.SpaceGuid, ShouldEqual, "494d8b64-8181-4183-a6d3-6279db8fec6e")
+		So(summary.StackGuid, ShouldEqual, "67e019a3-322a-407a-96e0-178e95bd0e55")
+		So(summary.Buildpack, ShouldEqual, "ruby_buildpack")
+		So(summary.DetectedBuildpack, ShouldEqual, "")
+		So(summary.Memory, ShouldEqual, 256)
+		So(summary.Instances, ShouldEqual, 1)
+		So(summary.DiskQuota, ShouldEqual, 512)
+		So(summary.State, ShouldEqual, "STARTED")
+		So(summary.Command, ShouldEqual, "")
+		So(summary.PackageState, ShouldEqual, "STAGED")
+		So(summary.HealthCheckType, ShouldEqual, "port")
+		So(summary.HealthCheckTimeout, ShouldEqual, 0)
+		So(summary.StagingFailedReason, ShouldEqual, "")
+		So(summary.StagingFailedDescription, ShouldEqual, "")
+		So(summary.Diego, ShouldEqual, true)
+		So(summary.DockerImage, ShouldEqual, "")
+		So(summary.DetectedStartCommand, ShouldEqual, "rackup -p $PORT")
+		So(summary.EnableSSH, ShouldEqual, true)
+		So(summary.DockerCredentials["redacted_message"], ShouldEqual, "[PRIVATE DATA HIDDEN]")
+	})
+}
+
 func TestAppSpace(t *testing.T) {
 	Convey("Find app space", t, func() {
 		setup(MockRoute{"GET", "/v2/spaces/foobar", spacePayload, "", 200, "", nil}, t)
@@ -312,5 +473,76 @@ func TestAppSpace(t *testing.T) {
 
 		So(space.Name, ShouldEqual, "test-space")
 		So(space.Guid, ShouldEqual, "a72fa1e8-c694-47b3-85f2-55f61fd00d73")
+	})
+}
+
+func TestDeleteApps(t *testing.T) {
+	Convey("Delete app", t, func() {
+		setup(MockRoute{"DELETE", "/v2/apps/a537761f-9d93-4b30-af17-3d73dbca181b", "", "", 204, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		err = client.DeleteApp("a537761f-9d93-4b30-af17-3d73dbca181b")
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestCreateApp(t *testing.T) {
+	Convey("Delete app", t, func() {
+		setup(MockRoute{"POST", "/v2/apps", appPayload, "", 201, "", nil}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		req := AppCreateRequest{
+			Name:      "test-env",
+			SpaceGuid: "a72fa1e8-c694-47b3-85f2-55f61fd00d73",
+		}
+		app, err := client.CreateApp(req)
+		So(err, ShouldBeNil)
+		So(app.Guid, ShouldEqual, "9902530c-c634-4864-a189-71d763cb12e2")
+		So(app.Name, ShouldEqual, "test-env")
+		So(app.SpaceGuid, ShouldEqual, "a72fa1e8-c694-47b3-85f2-55f61fd00d73")
+	})
+}
+
+func TestStartApp(t *testing.T) {
+	Convey("Start app", t, func() {
+		expectedBody := `{ "state": "STARTED" }`
+		setup(MockRoute{"PUT", "/v2/apps/a537761f-9d93-4b30-af17-3d73dbca181b", appPayload, "", http.StatusCreated, "", &expectedBody}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		So(client.StartApp("a537761f-9d93-4b30-af17-3d73dbca181b"), ShouldBeNil)
+	})
+}
+
+func TestStopApp(t *testing.T) {
+	Convey("Stop app", t, func() {
+		expectedBody := `{ "state": "STOPPED" }`
+		setup(MockRoute{"PUT", "/v2/apps/a537761f-9d93-4b30-af17-3d73dbca181b", appPayload, "", http.StatusCreated, "", &expectedBody}, t)
+		defer teardown()
+		c := &Config{
+			ApiAddress: server.URL,
+			Token:      "foobar",
+		}
+		client, err := NewClient(c)
+		So(err, ShouldBeNil)
+
+		So(client.StopApp("a537761f-9d93-4b30-af17-3d73dbca181b"), ShouldBeNil)
 	})
 }
