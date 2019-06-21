@@ -443,5 +443,6 @@ $ ./tools/nozzle.sh
 
 # Maintenance And Support
 
-Splunk Firehose Nozzle project is supported through Splunk Support assuming the customer has a current Splunk support entitlement.  For customers that do not have a current Splunk support entitlement, please file an issue at [create a new issue](https://github.com/cloud-foundry/splunk-firehose-nozzle/issues/new)
+Splunk Firehose Nozzle project is supported through Splunk Support assuming the customer has a current Splunk support entitlement.  For customers that do not have a current Splunk support entitlement, please file an issue at [create a new issue](https://github.com/cloudfoundry-community/splunk-firehose-nozzle/issues/new/choose)
+
 
