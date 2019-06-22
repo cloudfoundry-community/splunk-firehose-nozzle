@@ -2,16 +2,18 @@ package consumer_test
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"time"
 
-	"github.com/cloudfoundry/loggregatorlib/loggertesthelper"
-	"github.com/cloudfoundry/loggregatorlib/server/handlers"
 	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/cloudfoundry/noaa/errors"
 	"github.com/cloudfoundry/noaa/test_helpers"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
+	"github.com/onsi/gomega/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,10 +26,13 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 		testServer           *httptest.Server
 		fakeHandler          *test_helpers.FakeHandler
 		tlsSettings          *tls.Config
+		maxRetryCount        int
 
 		appGuid        string
 		authToken      string
 		messagesToSend chan []byte
+
+		streamPathBuilder consumer.StreamPathBuilder
 	)
 
 	BeforeEach(func() {
@@ -35,14 +40,24 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 		testServer = nil
 		fakeHandler = nil
 		tlsSettings = nil
+		maxRetryCount = consumer.DefaultMaxRetryCount
 
 		appGuid = ""
 		authToken = ""
 		messagesToSend = make(chan []byte, 256)
+
+		streamPathBuilder = nil
 	})
 
 	JustBeforeEach(func() {
 		cnsmr = consumer.New(trafficControllerURL, tlsSettings, nil)
+		cnsmr.SetMinRetryDelay(100 * time.Millisecond)
+		cnsmr.SetMaxRetryDelay(500 * time.Millisecond)
+		cnsmr.SetMaxRetryCount(maxRetryCount)
+
+		if streamPathBuilder != nil {
+			cnsmr.SetStreamPathBuilder(streamPathBuilder)
+		}
 	})
 
 	AfterEach(func() {
@@ -54,7 +69,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 	Describe("SetOnConnectCallback", func() {
 		BeforeEach(func() {
-			testServer = httptest.NewServer(handlers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond, loggertesthelper.Logger()))
+			testServer = httptest.NewServer(NewWebsocketHandler(messagesToSend, 100*time.Millisecond))
 			trafficControllerURL = "ws://" + testServer.Listener.Addr().String()
 			close(messagesToSend)
 		})
@@ -102,9 +117,10 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				cb := func() { called = true }
 
 				cnsmr.SetOnConnectCallback(cb)
-				cnsmr.TailingLogsWithoutReconnect(appGuid, authToken)
+				_, errs := cnsmr.TailingLogsWithoutReconnect(appGuid, authToken)
 
 				Consistently(func() bool { return called }).Should(BeFalse())
+				Eventually(errs).Should(Receive(Not(BeRetryable())))
 			})
 
 		})
@@ -115,7 +131,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 		fakeHandler = &test_helpers.FakeHandler{
 			InputChan: make(chan []byte, 10),
 			GenerateHandler: func(input chan []byte) http.Handler {
-				return handlers.NewWebsocketHandler(input, 100*time.Millisecond, loggertesthelper.Logger())
+				return NewWebsocketHandler(input, 100*time.Millisecond)
 			},
 		}
 
@@ -221,6 +237,20 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 						Eventually(fakeHandler.GetLastURL).Should(ContainSubstring("/apps/the-app-guid/stream"))
 					})
+
+					Context("when a stream path builder is provided", func() {
+						BeforeEach(func() {
+							streamPathBuilder = func(appGuid string) string {
+								return fmt.Sprintf("/logs/%s/stream", appGuid)
+							}
+						})
+
+						It("uses the stream path from the builder", func() {
+							fakeHandler.Close()
+
+							Eventually(fakeHandler.GetLastURL).Should(ContainSubstring("/logs/the-app-guid/stream"))
+						})
+					})
 				})
 
 				Context("with an access token", func() {
@@ -241,6 +271,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 						var err error
 						Eventually(errors).Should(Receive(&err))
+						Expect(err).ToNot(BeRetryable())
 						Expect(err.Error()).To(ContainSubstring("websocket: close 1000"))
 
 						close(done)
@@ -267,12 +298,11 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 					trafficControllerURL = "!!!bad-url"
 				})
 
-				It("receives an error on errChan", func(done Done) {
+				It("receives an error on errChan", func() {
 					var err error
 					Eventually(errors).Should(Receive(&err))
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("Please ask your Cloud Foundry Operator"))
-
-					close(done)
 				})
 			})
 
@@ -288,6 +318,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				It("it returns a helpful error message", func() {
 					var err error
 					Eventually(errors).Should(Receive(&err))
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("You are not authorized. Helpful message"))
 				})
 			})
@@ -295,7 +326,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 		Context("when SSL settings are passed in", func() {
 			BeforeEach(func() {
-				testServer = httptest.NewTLSServer(handlers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond, loggertesthelper.Logger()))
+				testServer = httptest.NewTLSServer(NewWebsocketHandler(messagesToSend, 100*time.Millisecond))
 				trafficControllerURL = "wss://" + testServer.Listener.Addr().String()
 
 				tlsSettings = &tls.Config{InsecureSkipVerify: true}
@@ -346,16 +377,14 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			logMessages, errors = cnsmr.TailingLogs(appGuid, authToken)
 		})
 
-		It("resets the attempt counter after a successful connection", func(done Done) {
-			defer close(done)
-
+		It("resets the delay after a successful connection", func() {
 			fakeHandler.InputChan <- marshalMessage(createMessage("message 1", 0))
 			Eventually(logMessages).Should(Receive())
 
 			fakeHandler.Close()
 			expectedErrorCount := 4
 			for i := 0; i < expectedErrorCount; i++ {
-				Eventually(errors, time.Second).Should(Receive())
+				Eventually(errors, time.Second).Should(Receive(HaveOccurred()))
 			}
 			fakeHandler.Reset()
 
@@ -365,9 +394,35 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 			fakeHandler.Close()
 			for i := uint(0); i < retries; i++ {
-				Eventually(errors, time.Second).Should(Receive())
+				Eventually(errors).Should(Receive(BeRetryable()))
 			}
-		}, 20)
+		})
+
+		Context("when maxRetryCount is set", func() {
+			BeforeEach(func() {
+				maxRetryCount = 3
+			})
+
+			It("resets the count after a successful connection", func() {
+				fakeHandler.InputChan <- marshalMessage(createMessage("message 1", 0))
+				Eventually(logMessages).Should(Receive())
+
+				fakeHandler.Close()
+				for i := 0; i < maxRetryCount-1; i++ {
+					Eventually(errors, time.Second).Should(Receive(HaveOccurred()))
+				}
+				fakeHandler.Reset()
+
+				fakeHandler.InputChan <- marshalMessage(createMessage("message 2", 0))
+
+				Eventually(logMessages).Should(Receive())
+
+				fakeHandler.Close()
+				for i := 0; i < maxRetryCount-1; i++ {
+					Eventually(errors).Should(Receive(BeRetryable()))
+				}
+			})
+		})
 
 		Context("with multiple connections", func() {
 			var (
@@ -388,29 +443,104 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			})
 		})
 
+		Context("when the connection cannot be established", func() {
+			BeforeEach(func() {
+				trafficControllerURL = `https://invalid`
+			})
+
+			It("returns an error", func() {
+				var err error
+				Eventually(errors).Should(Receive(&err))
+				Expect(err).To(HaveOccurred())
+				Expect(err).ToNot(BeRetryable())
+				Expect(err.Error()).To(ContainSubstring("Please ask your Cloud Foundry Operator"))
+			})
+		})
+
 		Context("with a failing handler", func() {
 			BeforeEach(func() {
 				fakeHandler.Fail = true
 			})
 
-			It("attempts to connect five times", func() {
+			It("exponentially backs off", func() {
+				ts := make(chan time.Duration, 100)
+				done := make(chan struct{})
 
-				fakeHandler.Close()
+				var wg sync.WaitGroup
+				wg.Add(1)
+				defer wg.Wait()
+				defer close(done)
+				go func() {
+					defer GinkgoRecover()
+					defer wg.Done()
+					last := time.Now()
+					for {
+						select {
+						case err := <-errors:
+							Expect(err).To(BeRetryable())
+							ts <- time.Since(last)
+							last = time.Now()
+						case <-done:
+							return
+						}
+					}
+				}()
 
-				for i := uint(0); i < retries; i++ {
-					Eventually(errors).Should(Receive())
+				Eventually(ts).Should(Receive(BeNumerically("<", 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 100*time.Millisecond, 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 200*time.Millisecond, 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 400*time.Millisecond, 50*time.Millisecond)))
+			})
+
+			It("doesn't go beyond max sleep", func() {
+				ts := make(chan time.Duration, 100)
+				done := make(chan struct{})
+
+				var wg sync.WaitGroup
+				wg.Add(1)
+				defer wg.Wait()
+				defer close(done)
+				go func() {
+					defer GinkgoRecover()
+					defer wg.Done()
+					last := time.Now()
+					for {
+						select {
+						case err := <-errors:
+							Expect(err).To(BeRetryable())
+							ts <- time.Since(last)
+							last = time.Now()
+						case <-done:
+							return
+						}
+					}
+				}()
+
+				Eventually(ts).Should(Receive())
+				timeout := time.After(time.Second)
+				for {
+					select {
+					case delay := <-ts:
+						Expect(delay).To(BeNumerically("<", 550*time.Millisecond))
+					case <-timeout:
+						return
+					}
 				}
 			})
 
-			It("waits 500ms before reconnecting", func() {
-				fakeHandler.Close()
+			Context("when maxRetryCount is set", func() {
+				BeforeEach(func() {
+					maxRetryCount = 3
+				})
 
-				start := time.Now()
-				for i := uint(0); i < retries; i++ {
-					Eventually(errors).Should(Receive())
-				}
-				end := time.Now()
-				Expect(end).To(BeTemporally(">=", start.Add(4*500*time.Millisecond)))
+				It("doesn't go beyond maxRetryCount", func() {
+					for i := 0; i < maxRetryCount; i++ {
+						Eventually(errors).Should(Receive(BeRetryable()))
+					}
+					Eventually(errors).Should(Receive(Equal(consumer.ErrMaxRetriesReached)))
+					Eventually(logMessages).Should(BeClosed())
+					Eventually(errors).Should(BeClosed())
+				})
 			})
 
 			It("will not attempt reconnect if consumer is closed", func() {
@@ -494,14 +624,14 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 			Context("when the connection cannot be established", func() {
 				BeforeEach(func() {
-					trafficControllerURL = "!!!bad-url"
+					trafficControllerURL = `http://invalid`
 				})
 
 				It("returns an error", func(done Done) {
-
 					var err error
 					Eventually(errors).Should(Receive(&err))
 					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("Please ask your Cloud Foundry Operator"))
 
 					close(done)
@@ -518,10 +648,10 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				})
 
 				It("it returns a helpful error message", func() {
-
 					var err error
 					Eventually(errors).Should(Receive(&err))
 					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("You are not authorized. Helpful message"))
 				})
 			})
@@ -529,7 +659,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 		Context("when SSL settings are passed in", func() {
 			BeforeEach(func() {
-				testServer = httptest.NewTLSServer(handlers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond, loggertesthelper.Logger()))
+				testServer = httptest.NewTLSServer(NewWebsocketHandler(messagesToSend, 100*time.Millisecond))
 				trafficControllerURL = "wss://" + testServer.Listener.Addr().String()
 
 				tlsSettings = &tls.Config{InsecureSkipVerify: true}
@@ -558,52 +688,62 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			envelopes, errors = cnsmr.Stream(appGuid, authToken)
 		})
 
-		Context("connection errors", func() {
+		Context("when the connection fails", func() {
 			BeforeEach(func() {
 				fakeHandler.Fail = true
 			})
 
-			It("attempts to connect five times", func() {
-				fakeHandler.Close()
+			It("exponentially backs off", func() {
+				ts := make(chan time.Duration, 100)
+				done := make(chan struct{})
 
-				for i := 0; i < 5; i++ {
-					Eventually(errors).Should(Receive())
-				}
+				var wg sync.WaitGroup
+				wg.Add(1)
+				defer wg.Wait()
+				defer close(done)
+				go func() {
+					defer GinkgoRecover()
+					defer wg.Done()
+					last := time.Now()
+					for {
+						select {
+						case err := <-errors:
+							Expect(err).To(BeRetryable())
+							ts <- time.Since(last)
+							last = time.Now()
+						case <-done:
+							return
+						}
+					}
+				}()
+
+				Eventually(ts).Should(Receive(BeNumerically("<", 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 100*time.Millisecond, 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 200*time.Millisecond, 50*time.Millisecond)))
+				Eventually(ts).Should(Receive(BeNumerically("~", 400*time.Millisecond, 50*time.Millisecond)))
 			})
 		})
 
-		It("waits 500ms before reconnecting", func() {
-			fakeHandler.Close()
-			start := time.Now()
-			for i := 0; i < 5; i++ {
-				Eventually(errors).Should(Receive())
-			}
-			end := time.Now()
-			Expect(end).To(BeTemporally(">=", start.Add(4*500*time.Millisecond)))
-		})
-
-		It("resets the attempt counter after a successful connection", func(done Done) {
-			defer close(done)
-
+		It("resets the delay after a successful connection", func() {
 			fakeHandler.InputChan <- marshalMessage(createMessage("message 1", 0))
 			Eventually(envelopes).Should(Receive())
 
 			fakeHandler.Close()
-
 			expectedErrorCount := 4
 			for i := 0; i < expectedErrorCount; i++ {
-				Eventually(errors).Should(Receive())
+				Eventually(errors, time.Second).Should(Receive(BeRetryable()))
 			}
 			fakeHandler.Reset()
 
 			fakeHandler.InputChan <- marshalMessage(createMessage("message 2", 0))
 
 			Eventually(envelopes).Should(Receive())
+
 			fakeHandler.Close()
-			for i := 0; i < 5; i++ {
-				Eventually(errors).Should(Receive())
+			for i := uint(0); i < 3; i++ {
+				Eventually(errors).Should(Receive(BeRetryable()))
 			}
-		}, 10)
+		})
 	})
 
 	Describe("Close", func() {
@@ -641,11 +781,9 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			})
 
 			Context("and the server is closed", func() {
-				JustBeforeEach(func() {
-					fakeHandler.Close()
-				})
-
 				It("returns errors", func() {
+					fakeHandler.Close()
+
 					var err error
 					Eventually(streamErrors).Should(Receive(&err))
 					Expect(err.Error()).To(ContainSubstring("websocket: close 1000"))
@@ -653,6 +791,19 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 					connErr := cnsmr.Close()
 					Expect(connErr).To(HaveOccurred())
 					Expect(connErr.Error()).To(ContainSubstring("close sent"))
+				})
+
+				It("returns multiple errors when multiple connections fail to close", func() {
+					incomings, streamErrors = cnsmr.StreamWithoutReconnect(appGuid, authToken)
+					fakeHandler.Close()
+
+					var err error
+					Eventually(streamErrors).Should(Receive(&err))
+					Expect(err.Error()).To(ContainSubstring("websocket: close 1000"))
+
+					connErr := cnsmr.Close()
+					Expect(connErr).To(HaveOccurred())
+					Expect(connErr.Error()).To(ContainSubstring("close sent, websocket: close sent"))
 				})
 			})
 		})
@@ -664,38 +815,8 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			errors    <-chan error
 		)
 
-		JustBeforeEach(func() {
-			envelopes, errors = cnsmr.Firehose("subscription-id", authToken)
-		})
-
 		BeforeEach(func() {
 			startFakeTrafficController()
-		})
-
-		Context("when connection fails", func() {
-			BeforeEach(func() {
-				fakeHandler.Fail = true
-			})
-
-			It("attempts to connect five times", func() {
-				fakeHandler.Close()
-				for i := 0; i < 5; i++ {
-					Eventually(errors).Should(Receive())
-				}
-			})
-		})
-
-		It("waits 500ms before reconnecting", func() {
-
-			fakeHandler.Close()
-			start := time.Now()
-			for i := 0; i < 5; i++ {
-				Eventually(errors).Should(Receive())
-			}
-
-			end := time.Now()
-			Expect(end).To(BeTemporally(">=", start.Add(4*500*time.Millisecond)))
-			cnsmr.Close()
 		})
 
 		Context("with data in the server", func() {
@@ -703,7 +824,11 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				fakeHandler.InputChan <- marshalMessage(createMessage("message 1", 0))
 			})
 
-			It("resets the attempt counter after a successful connection", func(done Done) {
+			JustBeforeEach(func() {
+				envelopes, errors = cnsmr.Firehose("subscription-id", authToken)
+			})
+
+			It("resets the delay after a successful connection", func(done Done) {
 				defer close(done)
 				Eventually(envelopes).Should(Receive())
 
@@ -711,7 +836,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 				expectedErrorCount := 4
 				for i := 0; i < expectedErrorCount; i++ {
-					Eventually(errors).Should(Receive())
+					Eventually(errors).Should(Receive(BeRetryable()))
 				}
 				fakeHandler.Reset()
 
@@ -720,9 +845,35 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				Eventually(envelopes).Should(Receive())
 				fakeHandler.Close()
 				for i := 0; i < 5; i++ {
-					Eventually(errors).Should(Receive())
+					Eventually(errors).Should(Receive(BeRetryable()))
 				}
 			}, 10)
+		})
+
+		Context("when the connection read takes too long", func() {
+			var (
+				idleTimeout time.Duration
+			)
+
+			JustBeforeEach(func() {
+				idleTimeout = 500 * time.Millisecond
+				cnsmr.SetIdleTimeout(idleTimeout)
+				envelopes, errors = cnsmr.Firehose("subscription-id", authToken)
+			})
+
+			It("returns an error when the idle timeout expires", func() {
+				var err error
+				Eventually(errors).Should(Receive(&err))
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeRetryable())
+				Expect(err.Error()).To(ContainSubstring("i/o timeout"))
+			})
+
+			It("reestablishes the connection", func() {
+				Eventually(fakeHandler.WasCalled).Should(BeTrue())
+				fakeHandler.Reset()
+				Eventually(fakeHandler.WasCalled).Should(BeTrue())
+			})
 		})
 	})
 
@@ -795,7 +946,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 
 			Context("when the connection cannot be established", func() {
 				BeforeEach(func() {
-					trafficControllerURL = "!!!bad-url"
+					trafficControllerURL = "https://invalid"
 				})
 
 				It("returns an error", func(done Done) {
@@ -804,6 +955,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 					var err error
 					Eventually(streamErrors).Should(Receive(&err))
 					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("Please ask your Cloud Foundry Operator"))
 				})
 			})
@@ -821,6 +973,7 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 					var err error
 					Eventually(streamErrors).Should(Receive(&err))
 					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(BeRetryable())
 					Expect(err.Error()).To(ContainSubstring("You are not authorized. Helpful message"))
 				})
 			})
@@ -835,13 +988,14 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 				var err error
 				Eventually(streamErrors).Should(Receive(&err))
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeRetryable())
 				Expect(err.Error()).To(ContainSubstring("i/o timeout"))
 			})
 		})
 
 		Context("when SSL settings are passed in", func() {
 			BeforeEach(func() {
-				testServer = httptest.NewTLSServer(handlers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond, loggertesthelper.Logger()))
+				testServer = httptest.NewTLSServer(NewWebsocketHandler(messagesToSend, 100*time.Millisecond))
 				trafficControllerURL = "wss://" + testServer.Listener.Addr().String()
 
 				tlsSettings = &tls.Config{InsecureSkipVerify: true}
@@ -855,7 +1009,29 @@ var _ = Describe("Consumer (Asynchronous)", func() {
 			})
 		})
 	})
+
+	Describe("FilteredFirehose", func() {
+		BeforeEach(func() {
+			startFakeTrafficController()
+		})
+
+		It("appends the correct query string for filtering log messages", func() {
+			cnsmr.FilteredFirehose("subscription-id", authToken, consumer.LogMessages)
+			fakeHandler.Close()
+			Eventually(fakeHandler.GetLastURL).Should(ContainSubstring("/firehose/subscription-id?filter-type=logs"))
+		})
+
+		It("appends the correct query string for filtering metrics", func() {
+			cnsmr.FilteredFirehose("subscription-id", authToken, consumer.Metrics)
+			fakeHandler.Close()
+			Eventually(fakeHandler.GetLastURL).Should(ContainSubstring("/firehose/subscription-id?filter-type=metrics"))
+		})
+	})
 })
+
+func BeRetryable() types.GomegaMatcher {
+	return BeAssignableToTypeOf(errors.NewRetryError(fmt.Errorf("some-error")))
+}
 
 func createError(message string) *events.Envelope {
 	timestamp := time.Now().UnixNano()
