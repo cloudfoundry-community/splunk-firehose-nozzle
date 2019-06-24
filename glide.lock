@@ -64,7 +64,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: golang.org/x/net
-  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
+  version: 3b0461eec859c4b73bb64fdc8285971fd33e3938
   subpackages:
   - context
 - name: golang.org/x/oauth2
@@ -73,7 +73,7 @@ imports:
   - clientcredentials
   - internal
 - name: golang.org/x/sys
-  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
+  version: c5567b49c5d04a5f83870795b8c0e2df43a8ce32
   subpackages:
   - unix
 - name: google.golang.org/appengine

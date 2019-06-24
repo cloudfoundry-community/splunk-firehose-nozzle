@@ -1,4 +1,4 @@
-// Copyright 2013 The Go Authors.  All rights reserved.
+// Copyright 2013 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,16 +10,16 @@ import (
 	"testing"
 
 	"golang.org/x/net/internal/iana"
-	"golang.org/x/net/internal/nettest"
 	"golang.org/x/net/ipv6"
+	"golang.org/x/net/nettest"
 )
 
 func TestConnUnicastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris", "windows":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	if !supportsIPv6 {
+	if !nettest.SupportsIPv6() {
 		t.Skip("ipv6 is not supported")
 	}
 
@@ -29,8 +29,15 @@ func TestConnUnicastSocketOptions(t *testing.T) {
 	}
 	defer ln.Close()
 
-	done := make(chan bool)
-	go acceptor(t, ln, done)
+	errc := make(chan error, 1)
+	go func() {
+		c, err := ln.Accept()
+		if err != nil {
+			errc <- err
+			return
+		}
+		errc <- c.Close()
+	}()
 
 	c, err := net.Dial("tcp6", ln.Addr().String())
 	if err != nil {
@@ -40,7 +47,9 @@ func TestConnUnicastSocketOptions(t *testing.T) {
 
 	testUnicastSocketOptions(t, ipv6.NewConn(c))
 
-	<-done
+	if err := <-errc; err != nil {
+		t.Errorf("server: %v", err)
+	}
 }
 
 var packetConnUnicastSocketOptionTests = []struct {
@@ -52,17 +61,17 @@ var packetConnUnicastSocketOptionTests = []struct {
 
 func TestPacketConnUnicastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris", "windows":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	if !supportsIPv6 {
+	if !nettest.SupportsIPv6() {
 		t.Skip("ipv6 is not supported")
 	}
 
-	m, ok := nettest.SupportsRawIPSocket()
+	ok := nettest.SupportsRawSocket()
 	for _, tt := range packetConnUnicastSocketOptionTests {
 		if tt.net == "ip6" && !ok {
-			t.Log(m)
+			t.Logf("not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 			continue
 		}
 		c, err := net.ListenPacket(tt.net+tt.proto, tt.addr)
@@ -83,6 +92,8 @@ type testIPv6UnicastConn interface {
 }
 
 func testUnicastSocketOptions(t *testing.T, c testIPv6UnicastConn) {
+	t.Helper()
+
 	tclass := iana.DiffServCS0 | iana.NotECNTransport
 	if err := c.SetTrafficClass(tclass); err != nil {
 		switch runtime.GOOS {
