@@ -359,6 +359,7 @@ func (c *Boltdb) fromPCFApp(app *cfclient.App) *App {
 		Guid:       app.Guid,
 		SpaceGuid:  app.SpaceGuid,
 		IgnoredApp: c.isOptOut(app.Environment),
+		CfAppEnv:   app.Environment,
 	}
 
 	c.fillOrgAndSpace(cachedApp)

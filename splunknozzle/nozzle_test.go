@@ -16,9 +16,11 @@ import (
 
 func newConfig() *Config {
 	return &Config{
-		ApiEndpoint: "http://localhost:9911",
-		User:        "admin",
-		Password:    "admin",
+		ApiEndpoint:  "http://localhost:9911",
+		User:         "admin",
+		Password:     "admin",
+		ClientID:     "admin",
+		ClientSecret: "admin",
 
 		SplunkToken: "token",
 		SplunkHost:  "localhost:8088",
