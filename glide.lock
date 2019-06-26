@@ -1,5 +1,5 @@
 hash: d7f08c29071249b8d7e8aefbf8edb471ad8dd236599c784787c35c06c9d55747
-updated: 2019-06-08T13:16:05.021795-07:00
+updated: 2019-06-24T13:35:17.515998-07:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -26,7 +26,7 @@ imports:
 - name: github.com/cloudfoundry-incubator/uaago
   version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
 - name: github.com/cloudfoundry/noaa
-  version: 0ca0d30d65c7422750132450593d402428dd2273
+  version: 5ce49363dfa666c00fc716cb5f8c2f99462b41ef
   subpackages:
   - consumer
   - consumer/internal
@@ -64,7 +64,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: golang.org/x/net
-  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
+  version: 3b0461eec859c4b73bb64fdc8285971fd33e3938
   subpackages:
   - context
 - name: golang.org/x/oauth2
@@ -73,7 +73,7 @@ imports:
   - clientcredentials
   - internal
 - name: golang.org/x/sys
-  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
+  version: c5567b49c5d04a5f83870795b8c0e2df43a8ce32
   subpackages:
   - unix
 - name: google.golang.org/appengine
@@ -89,18 +89,6 @@ imports:
 - name: gopkg.in/alecthomas/kingpin.v2
   version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 testImports:
-- name: github.com/codegangsta/inject
-  version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
-- name: github.com/go-martini/martini
-  version: 22fa46961aabd2665cf3f1343b146d20028f5071
-- name: github.com/gopherjs/gopherjs
-  version: 3e4dfb77656c424b6d1196a4d5fed0fcf63677cc
-  subpackages:
-  - js
-- name: github.com/jtolds/gls
-  version: b4936e06046bbecbb94cae9c18127ebe510a2cb9
-- name: github.com/martini-contrib/render
-  version: ec18f8345a1181146728238980606fb1d6f40e8c
 - name: github.com/onsi/ginkgo
   version: a8ccd817611666211fdf6e6a752174a0db8374a8
   subpackages:
@@ -133,17 +121,3 @@ testImports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/oxtoacart/bpool
-  version: 03653db5a59cd88b481403d312d7c324b56af377
-- name: github.com/smartystreets/assertions
-  version: d380eccd517d419eb73a0a90cc3ffc405f1e029e
-  subpackages:
-  - internal/go-diff/diffmatchpatch
-  - internal/go-render/render
-  - internal/oglematchers
-- name: github.com/smartystreets/goconvey
-  version: 68dc04aab96ae4326137d6b77330c224063a927e
-  subpackages:
-  - convey
-  - convey/gotest
-  - convey/reporting
