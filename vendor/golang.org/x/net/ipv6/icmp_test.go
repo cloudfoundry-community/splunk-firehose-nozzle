@@ -1,4 +1,4 @@
-// Copyright 2013 The Go Authors.  All rights reserved.
+// Copyright 2013 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"testing"
 
-	"golang.org/x/net/internal/nettest"
 	"golang.org/x/net/ipv6"
+	"golang.org/x/net/nettest"
 )
 
 var icmpStringTests = []struct {
@@ -34,7 +34,7 @@ func TestICMPString(t *testing.T) {
 
 func TestICMPFilter(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris", "windows":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
 
@@ -61,14 +61,14 @@ func TestICMPFilter(t *testing.T) {
 
 func TestSetICMPFilter(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris", "windows":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	if !supportsIPv6 {
+	if !nettest.SupportsIPv6() {
 		t.Skip("ipv6 is not supported")
 	}
-	if m, ok := nettest.SupportsRawIPSocket(); !ok {
-		t.Skip(m)
+	if !nettest.SupportsRawSocket() {
+		t.Skipf("not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
 	c, err := net.ListenPacket("ip6:ipv6-icmp", "::1")

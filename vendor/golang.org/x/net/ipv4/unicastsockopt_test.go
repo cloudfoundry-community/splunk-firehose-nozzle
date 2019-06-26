@@ -1,4 +1,4 @@
-// Copyright 2012 The Go Authors.  All rights reserved.
+// Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,17 +10,16 @@ import (
 	"testing"
 
 	"golang.org/x/net/internal/iana"
-	"golang.org/x/net/internal/nettest"
 	"golang.org/x/net/ipv4"
+	"golang.org/x/net/nettest"
 )
 
 func TestConnUnicastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	ifi := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback)
-	if ifi == nil {
+	if _, err := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback); err != nil {
 		t.Skipf("not available on %s", runtime.GOOS)
 	}
 
@@ -30,8 +29,15 @@ func TestConnUnicastSocketOptions(t *testing.T) {
 	}
 	defer ln.Close()
 
-	done := make(chan bool)
-	go acceptor(t, ln, done)
+	errc := make(chan error, 1)
+	go func() {
+		c, err := ln.Accept()
+		if err != nil {
+			errc <- err
+			return
+		}
+		errc <- c.Close()
+	}()
 
 	c, err := net.Dial("tcp4", ln.Addr().String())
 	if err != nil {
@@ -41,7 +47,9 @@ func TestConnUnicastSocketOptions(t *testing.T) {
 
 	testUnicastSocketOptions(t, ipv4.NewConn(c))
 
-	<-done
+	if err := <-errc; err != nil {
+		t.Errorf("server: %v", err)
+	}
 }
 
 var packetConnUnicastSocketOptionTests = []struct {
@@ -53,18 +61,17 @@ var packetConnUnicastSocketOptionTests = []struct {
 
 func TestPacketConnUnicastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	ifi := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback)
-	if ifi == nil {
+	if _, err := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback); err != nil {
 		t.Skipf("not available on %s", runtime.GOOS)
 	}
 
-	m, ok := nettest.SupportsRawIPSocket()
+	ok := nettest.SupportsRawSocket()
 	for _, tt := range packetConnUnicastSocketOptionTests {
 		if tt.net == "ip4" && !ok {
-			t.Log(m)
+			t.Logf("not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 			continue
 		}
 		c, err := net.ListenPacket(tt.net+tt.proto, tt.addr)
@@ -79,14 +86,13 @@ func TestPacketConnUnicastSocketOptions(t *testing.T) {
 
 func TestRawConnUnicastSocketOptions(t *testing.T) {
 	switch runtime.GOOS {
-	case "nacl", "plan9", "solaris":
+	case "fuchsia", "hurd", "js", "nacl", "plan9", "windows":
 		t.Skipf("not supported on %s", runtime.GOOS)
 	}
-	if m, ok := nettest.SupportsRawIPSocket(); !ok {
-		t.Skip(m)
+	if !nettest.SupportsRawSocket() {
+		t.Skipf("not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
-	ifi := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback)
-	if ifi == nil {
+	if _, err := nettest.RoutedInterface("ip4", net.FlagUp|net.FlagLoopback); err != nil {
 		t.Skipf("not available on %s", runtime.GOOS)
 	}
 
@@ -112,6 +118,8 @@ type testIPv4UnicastConn interface {
 }
 
 func testUnicastSocketOptions(t *testing.T, c testIPv4UnicastConn) {
+	t.Helper()
+
 	tos := iana.DiffServCS0 | iana.NotECNTransport
 	switch runtime.GOOS {
 	case "windows":
