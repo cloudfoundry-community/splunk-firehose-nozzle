@@ -24,7 +24,7 @@ imports:
 - name: github.com/cloudfoundry-community/go-cfclient
   version: f136f9222381e2fea5099f62e4b751dcb660ff82
 - name: github.com/cloudfoundry-incubator/uaago
-  version: 1db9cfd27865007e07ffd5914c0fdf5fb7fc09ba
+  version: 8136b7bbe76e26394600a790a95c15eac955f4fc
 - name: github.com/cloudfoundry/noaa
   version: 5ce49363dfa666c00fc716cb5f8c2f99462b41ef
   subpackages:
