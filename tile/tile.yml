@@ -60,16 +60,6 @@ forms:
     type: secret
     label: Client Secret
     description: CF UAA client secret
-  - name: api_user
-    type: string
-    label: API User
-    description: API username
-    optional: true
-  - name: api_password
-    type: secret
-    label: API Password
-    description: Password for API user
-    optional: true
   - name: skip_ssl_validation_cf
     type: boolean
     label: Skip SSL Validation
