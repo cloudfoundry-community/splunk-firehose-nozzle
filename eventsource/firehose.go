@@ -30,8 +30,8 @@ type Firehose struct {
 	tokenClient   doer
 	eventConsumer *consumer.Consumer
 	a             V2Adapter
-	stopReading   chan struct{}
-	stopRouting   chan struct{}
+	//stopReading   chan struct{}
+	//stopRouting   chan struct{}
 }
 
 func NewFirehose(tokenClient doer, config *FirehoseConfig) *Firehose {
@@ -45,8 +45,6 @@ func NewFirehose(tokenClient doer, config *FirehoseConfig) *Firehose {
 		config:      config,
 		tokenClient: tokenClient,
 		a:           NewV2Adapter(c),
-		stopReading: make(chan struct{}),
-		stopRouting: make(chan struct{}),
 	}
 	//c.RefreshTokenFrom(f)
 
@@ -72,8 +70,8 @@ func (f *Firehose) Open() error {
 }
 
 func (f *Firehose) Close() error {
-	//return f.eventConsumer.Close()
 	return nil
+
 }
 
 func (f *Firehose) Read() <-chan *events.Envelope {
