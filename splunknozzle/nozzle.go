@@ -13,8 +13,12 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 
+	"errors"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/authclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/cloudfoundry-incubator/uaago"
 	"github.com/google/uuid"
+	"strings"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -36,9 +40,9 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 	return eventrouter.New(cache, eventSink, config)
 }
 
-// PCFClient creates a client object which can talk to PCF
+//PCFClient creates a client object which can talk to PCF
 func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
-	cfConfig := &cfclient.Config{
+	c := &cfclient.Config{
 		ApiAddress:        s.config.ApiEndpoint,
 		Username:          s.config.User,
 		Password:          s.config.Password,
@@ -46,8 +50,13 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 		ClientID:          s.config.ClientID,
 		ClientSecret:      s.config.ClientSecret,
 	}
+	cfClient, err := cfclient.NewClient(c)
+	if err != nil {
+		errors.New("CLient failed")
+	}
 
-	return cfclient.NewClient(cfConfig)
+	//return ac, err
+	return cfClient, err
 }
 
 // AppCache creates in-memory cache or boltDB cache
@@ -121,13 +130,18 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 // EventSource creates eventsource.Source object which can read events from
 func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
 	config := &eventsource.FirehoseConfig{
-		KeepAlive:      s.config.KeepAlive,
-		SkipSSL:        s.config.SkipSSLCF,
-		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+		KeepAlive: s.config.KeepAlive,
+		SkipSSL:   s.config.SkipSSLCF,
+		//Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+		Endpoint:       strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
 		SubscriptionID: s.config.SubscriptionID,
 	}
-
-	return eventsource.NewFirehose(pcfClient, config)
+	uaa, err := uaago.NewClient(pcfClient.Endpoint.AuthEndpoint)
+	if err != nil {
+		errors.New("Unable to connect to get token from UAA")
+	}
+	ac := authclient.NewHttp(uaa, pcfClient.Config.ClientID, pcfClient.Config.ClientSecret, pcfClient.Config.SkipSslValidation)
+	return eventsource.NewFirehose(ac, config)
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router

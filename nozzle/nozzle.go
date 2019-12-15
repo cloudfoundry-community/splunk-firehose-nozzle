@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
-	"github.com/gorilla/websocket"
+	//"github.com/gorilla/websocket"
 )
 
 type Config struct {
@@ -42,7 +42,7 @@ func (f *Nozzle) Start() error {
 	defer close(f.closed)
 
 	var lastErr error
-	events, errs := f.eventSource.Read()
+	events := f.eventSource.Read()
 	for {
 		select {
 		case event, ok := <-events:
@@ -55,8 +55,8 @@ func (f *Nozzle) Start() error {
 				f.config.Logger.Error("Failed to route event", err)
 			}
 
-		case lastErr = <-errs:
-			f.handleError(lastErr)
+		//case lastErr = <-errs:
+		//	f.handleError(lastErr)
 
 		case <-f.closing:
 			return lastErr
@@ -75,28 +75,28 @@ func (f *Nozzle) Close() error {
 	return nil
 }
 
-func (f *Nozzle) handleError(err error) {
-	closeErr, ok := err.(*websocket.CloseError)
-	if !ok {
-		f.config.Logger.Error("Error while reading from the firehose", err)
-		return
-	}
-
-	msg := ""
-	switch closeErr.Code {
-	case websocket.CloseNormalClosure:
-		msg = "Connection was disconnected by Firehose server. This usually means Nozzle can't keep up " +
-			"with server. Please try to scaling out Nozzzle with mulitple instances by using the " +
-			"same subscription ID."
-
-	case websocket.ClosePolicyViolation:
-		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
-			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
-			"was some temporary network issue causing the heartbeat to get lost."
-
-	default:
-		msg = "Encountered close error while reading from Firehose"
-	}
-
-	f.config.Logger.Error(msg, err)
-}
+//func (f *Nozzle) handleError(err error) {
+//	closeErr, ok := err.(*websocket.CloseError)
+//	if !ok {
+//		f.config.Logger.Error("Error while reading from the firehose", err)
+//		return
+//	}
+//
+//	msg := ""
+//	switch closeErr.Code {
+//	case websocket.CloseNormalClosure:
+//		msg = "Connection was disconnected by Firehose server. This usually means Nozzle can't keep up " +
+//			"with server. Please try to scaling out Nozzzle with mulitple instances by using the " +
+//			"same subscription ID."
+//
+//	case websocket.ClosePolicyViolation:
+//		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
+//			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
+//			"was some temporary network issue causing the heartbeat to get lost."
+//
+//	default:
+//		msg = "Encountered close error while reading from Firehose"
+//	}
+//
+//	f.config.Logger.Error(msg, err)
+//}

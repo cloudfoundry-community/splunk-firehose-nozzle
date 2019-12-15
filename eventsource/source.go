@@ -9,5 +9,5 @@ import (
 type Source interface {
 	Open() error
 	Close() error
-	Read() (<-chan *events.Envelope, <-chan error)
+	Read() <-chan *events.Envelope
 }
