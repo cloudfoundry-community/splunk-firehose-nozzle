@@ -6,56 +6,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/sirupsen/logrus"
 )
 
 type Event struct {
 	Fields map[string]interface{}
 	Msg    string
 	Type   string
-}
-
-func HttpStart(msg *events.Envelope) *Event {
-	httpStart := msg.GetHttpStart()
-	fields := logrus.Fields{
-		"timestamp":         httpStart.GetTimestamp(),
-		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
-		"method":            httpStart.GetMethod().String(),
-		"uri":               httpStart.GetUri(),
-		"remote_addr":       httpStart.GetRemoteAddress(),
-		"user_agent":        httpStart.GetUserAgent(),
-		"parent_request_id": utils.FormatUUID(httpStart.GetParentRequestId()),
-		"cf_app_id":         utils.FormatUUID(httpStart.GetApplicationId()),
-		"instance_index":    httpStart.GetInstanceIndex(),
-		"instance_id":       httpStart.GetInstanceId(),
-	}
-
-	return &Event{
-		Fields: fields,
-		Msg:    "",
-	}
-}
-
-func HttpStop(msg *events.Envelope) *Event {
-	httpStop := msg.GetHttpStop()
-
-	fields := logrus.Fields{
-		"timestamp":      httpStop.GetTimestamp(),
-		"uri":            httpStop.GetUri(),
-		"request_id":     utils.FormatUUID(httpStop.GetRequestId()),
-		"peer_type":      httpStop.GetPeerType().String(),
-		"status_code":    httpStop.GetStatusCode(),
-		"content_length": httpStop.GetContentLength(),
-		"cf_app_id":      utils.FormatUUID(httpStop.GetApplicationId()),
-	}
-
-	return &Event{
-		Fields: fields,
-		Msg:    "",
-	}
 }
 
 func HttpStartStop(msg *events.Envelope) *Event {
@@ -148,7 +108,6 @@ func ErrorEvent(msg *events.Envelope) *Event {
 
 func ContainerMetric(msg *events.Envelope) *Event {
 	containerMetric := msg.GetContainerMetric()
-
 
 	fields := logrus.Fields{
 		"cf_app_id":          containerMetric.GetApplicationId(),

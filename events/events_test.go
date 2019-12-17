@@ -22,39 +22,6 @@ var _ = Describe("Events", func() {
 		event.AnnotateWithEnvelopeData(msg)
 	})
 
-	It("HttpStart", func() {
-		msg = NewHttpStart()
-		evt := fevents.HttpStart(msg)
-		Expect(evt).ToNot(BeNil())
-		Expect(evt.Fields).ToNot(BeNil())
-		Expect(evt.Msg).To(Equal(""))
-		Expect(evt.Fields["timestamp"]).To(Equal(timestamp))
-		Expect(evt.Fields["request_id"]).To(Equal(uuidStr))
-		Expect(evt.Fields["method"]).To(Equal(methodStr))
-		Expect(evt.Fields["uri"]).To(Equal(uri))
-		Expect(evt.Fields["remote_addr"]).To(Equal(remoteAddr))
-		Expect(evt.Fields["user_agent"]).To(Equal(userAgent))
-		Expect(evt.Fields["parent_request_id"]).To(Equal(uuidStr))
-		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
-		Expect(evt.Fields["instance_index"]).To(Equal(instanceIdx))
-		Expect(evt.Fields["instance_id"]).To(Equal(instanceId))
-	})
-
-	It("HttpStop", func() {
-		msg = NewHttpStop()
-		evt := fevents.HttpStop(msg)
-		Expect(evt).ToNot(BeNil())
-		Expect(evt.Fields).ToNot(BeNil())
-		Expect(evt.Msg).To(Equal(""))
-		Expect(evt.Fields["timestamp"]).To(Equal(timestamp))
-		Expect(evt.Fields["uri"]).To(Equal(uri))
-		Expect(evt.Fields["request_id"]).To(Equal(uuidStr))
-		Expect(evt.Fields["peer_type"]).To(Equal(peerTypeStr))
-		Expect(evt.Fields["status_code"]).To(Equal(statusCode))
-		Expect(evt.Fields["content_length"]).To(Equal(contentLength))
-		Expect(evt.Fields["cf_app_id"]).To(Equal(uuidStr))
-	})
-
 	It("HttpStartStop", func() {
 		msg = NewHttpStartStop()
 		evt := fevents.HttpStartStop(msg)
@@ -159,7 +126,7 @@ var _ = Describe("Events", func() {
 		})
 	})
 
-	It("HttpStart", func() {
+	It("HttpStartStop", func() {
 		event.AnnotateWithAppData(fcache)
 		Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
 		Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
@@ -199,7 +166,7 @@ var _ = Describe("Events", func() {
 
 	Context("AuthorizedEvents", func() {
 		It("should return right list of authorized events", func() {
-			Expect(fevents.AuthorizedEvents()).To(Equal("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric"))
+			Expect(fevents.AuthorizedEvents()).To(Equal("ContainerMetric, CounterEvent, Error, HttpStartStop, LogMessage, ValueMetric"))
 		})
 	})
 

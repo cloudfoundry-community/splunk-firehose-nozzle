@@ -5,15 +5,14 @@ import (
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
-	"github.com/gorilla/websocket"
 )
 
+// Config struct with field type Logger
 type Config struct {
 	Logger lager.Logger
 }
 
-// Nozzle reads events from eventsource.Source and routes events
-// to targets by using eventrouter.Router
+// Nozzle struct with fields to read and route data.
 type Nozzle struct {
 	eventSource eventsource.Source
 	eventRouter eventrouter.Router
@@ -23,6 +22,8 @@ type Nozzle struct {
 	closed  chan struct{}
 }
 
+// New returns Nozzle which reads events from eventsource.Source and routes events
+// to targets by using eventrouter.Router
 func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config *Config) *Nozzle {
 	return &Nozzle{
 		eventRouter: eventRouter,
@@ -33,6 +34,7 @@ func New(eventSource eventsource.Source, eventRouter eventrouter.Router, config 
 	}
 }
 
+// Start initiates the nozzle and start reading events
 func (f *Nozzle) Start() error {
 	err := f.eventSource.Open()
 	if err != nil {
@@ -42,7 +44,7 @@ func (f *Nozzle) Start() error {
 	defer close(f.closed)
 
 	var lastErr error
-	events, errs := f.eventSource.Read()
+	events := f.eventSource.Read()
 	for {
 		select {
 		case event, ok := <-events:
@@ -55,15 +57,13 @@ func (f *Nozzle) Start() error {
 				f.config.Logger.Error("Failed to route event", err)
 			}
 
-		case lastErr = <-errs:
-			f.handleError(lastErr)
-
 		case <-f.closing:
 			return lastErr
 		}
 	}
 }
 
+// Close closes the eventSource connection and stops reading events
 func (f *Nozzle) Close() error {
 	err := f.eventSource.Close()
 	if err != nil {
@@ -73,30 +73,4 @@ func (f *Nozzle) Close() error {
 	close(f.closing)
 	<-f.closed
 	return nil
-}
-
-func (f *Nozzle) handleError(err error) {
-	closeErr, ok := err.(*websocket.CloseError)
-	if !ok {
-		f.config.Logger.Error("Error while reading from the firehose", err)
-		return
-	}
-
-	msg := ""
-	switch closeErr.Code {
-	case websocket.CloseNormalClosure:
-		msg = "Connection was disconnected by Firehose server. This usually means Nozzle can't keep up " +
-			"with server. Please try to scaling out Nozzzle with mulitple instances by using the " +
-			"same subscription ID."
-
-	case websocket.ClosePolicyViolation:
-		msg = "Nozzle lost the keep-alive heartbeat with Firehose server. Connection was disconnected " +
-			"by Firehose server. This usually means either Nozzle was busy with processing events or there " +
-			"was some temporary network issue causing the heartbeat to get lost."
-
-	default:
-		msg = "Encountered close error while reading from Firehose"
-	}
-
-	f.config.Logger.Error(msg, err)
 }

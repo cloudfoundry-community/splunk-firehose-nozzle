@@ -7,14 +7,14 @@ import (
 )
 
 type App struct {
-	Name        string
-	Guid        string
-	SpaceName   string
-	SpaceGuid   string
-	OrgName     string
-	OrgGuid     string
-	CfAppEnv	map[string]interface{}
-	IgnoredApp  bool
+	Name       string
+	Guid       string
+	SpaceName  string
+	SpaceGuid  string
+	OrgName    string
+	OrgGuid    string
+	CfAppEnv   map[string]interface{}
+	IgnoredApp bool
 }
 
 type Cache interface {
