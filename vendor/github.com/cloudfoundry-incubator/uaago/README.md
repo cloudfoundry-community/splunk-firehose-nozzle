@@ -1,6 +1,6 @@
 # uaago
 
-Golang client for UAA.
+UAA client for golang.
 
 ## Usage
 
