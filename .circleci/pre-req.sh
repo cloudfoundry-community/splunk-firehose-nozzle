@@ -13,9 +13,10 @@ sudo apt-get install cf-cli
 cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD -o system -s system
 #Create splunk-ci org and space
 if [  "`cf o | grep "splunk-ci"`" == "splunk-ci" ]; then
-   echo "Its here"
+   echo "splunk-ci org already exists"
    cf target -o "splunk-ci" -s "splunk-ci"
 else
+   echo "creating splunk-ci org and space"
    cf create-org splunk-ci
    cf target -o splunk-ci
    cf create-space splunk-ci
