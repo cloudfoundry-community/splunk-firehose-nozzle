@@ -82,6 +82,7 @@ workflows:
           filters:
             branches:
               only:
+                - INGEST-15507-nozzle-v2-update
                 - develop
                 - master
       - tile-builder:

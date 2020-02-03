@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
+
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
@@ -12,16 +13,18 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
-
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
+	"github.com/cloudfoundry-incubator/uaago"
 	"github.com/google/uuid"
+	"strings"
 )
 
+// SplunkFirehoseNozzle struct type with config fields.
 type SplunkFirehoseNozzle struct {
 	config *Config
 }
 
-//create new function of type *SplunkFirehoseNozzle
+// NewSplunkFirehoseNozzle create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
@@ -123,11 +126,18 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsou
 	config := &eventsource.FirehoseConfig{
 		KeepAlive:      s.config.KeepAlive,
 		SkipSSL:        s.config.SkipSSLCF,
-		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+		Endpoint:       strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
 		SubscriptionID: s.config.SubscriptionID,
 	}
 
-	return eventsource.NewFirehose(pcfClient, config)
+	uaa, err := uaago.NewClient(pcfClient.Endpoint.AuthEndpoint)
+	if err != nil {
+		fmt.Println("unable to connect to get token from uaa", err)
+
+	}
+
+	ac := eventsource.NewHttp(uaa, pcfClient.Config.ClientID, pcfClient.Config.ClientSecret, pcfClient.Config.SkipSslValidation)
+	return eventsource.NewFirehose(ac, config)
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router

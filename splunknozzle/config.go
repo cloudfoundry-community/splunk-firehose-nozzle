@@ -10,6 +10,7 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
+// Config struct type with fields for configuration params.
 type Config struct {
 	ApiEndpoint  string `json:"api-endpoint"`
 	User         string `json:"-"`
@@ -57,6 +58,7 @@ type Config struct {
 	Debug        bool `json:"debug"`
 }
 
+// NewConfigFromCmdFlags provides Splunk Nozzle config params.
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	c := &Config{}
 
@@ -142,6 +144,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	return c
 }
 
+// ToMap returns configuration in json structure
 func (c *Config) ToMap() map[string]interface{} {
 	data, _ := json.Marshal(c)
 	var r map[string]interface{}
