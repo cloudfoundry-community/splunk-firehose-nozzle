@@ -15,3 +15,6 @@ data_gen
 
 manifest*.yml
 splunk-firehose-nozzle.iml
+/vendor/github.com/cloudfoundry/sonde-go/definitions/
+/vendor/golang.org/
+.circleci/ci_nozzle_manifest.yml
