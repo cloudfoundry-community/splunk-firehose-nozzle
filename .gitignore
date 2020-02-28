@@ -14,3 +14,4 @@ data_gen
 manifest*.yml
 splunk-firehose-nozzle.iml
 vendor/github.com/cloudfoundry/sonde-go/definitions/
+/testing/integration/venv/
