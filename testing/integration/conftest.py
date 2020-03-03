@@ -1,12 +1,15 @@
 import logging
 import logging.config
 import os
+import sys
 import pytest
 import configparser
 from os.path import join
-from .lib.helper import get_config_folder
+
+from lib.helper import get_config_folder, get_project_folder
 
 _current_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, get_project_folder())
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -49,21 +52,20 @@ def test_env():
 
         environment = os.environ[test_env_var]
 
-        if environment == "integration":
+        if environment == "default":
+
+            parser.read([join(config_folder, 'default.ini')])
+
+        elif environment == "negative_test":
 
             parser.read([join(config_folder, 'default.ini'),
-                         join(config_folder, 'integration.ini')])
-
-        elif environment == "local":
-
-            parser.read([join(config_folder, 'default.ini'),
-                         join(config_folder, 'local.ini')])
+                         join(config_folder, 'negative_test.ini')])
         else:
 
             raise ValueError("unknown environment for environment variable "
                              "PCF_TEST: {}".format(environment))
     else:
-
+        environment = 'local'
         parser.read([join(config_folder, 'default.ini'), join(config_folder, 'local.ini')])
-    conf = parser._sections
+    conf = dict(parser.items(environment))
     return conf
