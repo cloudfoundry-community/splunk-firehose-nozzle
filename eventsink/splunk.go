@@ -125,7 +125,7 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 		if err == nil {
 			return nil
 		}
-		s.config.Logger.Error("Unable to talk to Splunk", err)
+		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
 		time.Sleep(getRetryInterval(i))
 	}
 	s.config.Logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
