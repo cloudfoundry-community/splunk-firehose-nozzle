@@ -48,24 +48,10 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "index={} cf_app_name=data_gen",  # when add_app_info is true, cf_app_name is searchable
-        "index={} cf_org_name=splunk-ci-org",  # when add_app_info is true, cf_org_name is searchable
-        "index={} cf_space_name=splunk-ci-space"  # when add_app_info is true, cf_space_name is searchable
-    ])
-    def test_add_app_info_is_true(self, test_env, splunk_logger, query_input):
-        self.splunk_api = SplunkApi(test_env, splunk_logger)
-
-        search_results = self.splunk_api.check_events_from_splunk(
-            query=query_input.format(test_env['splunk_index']),
-            start_time="-15m@m")
-        assert len(search_results) > 0, \
-            '\nNumber of events from Splunk should not be {}, however the result is {}'.format(0, len(search_results))
-
-    @pytest.mark.Critical
-    @pytest.mark.parametrize("query_input", [
-        "index={} cf_app_name=data_gen",  # when add_app_info is true, cf_app_name is searchable
-        "index={} cf_org_name=splunk-ci-org",  # when add_app_info is true, cf_org_name is searchable
-        "index={} cf_space_name=splunk-ci-space"  # when add_app_info is true, cf_space_name is searchable
+        "index={0} cf_space_id=*",  # when cf_space_id is true, cf_org_name is searchable
+        "index={0} cf_org_id=*",  # cf_org_id add_app_info is true, cf_org_name is searchable
+        "index={0} cf_org_name=*",  # when add_app_info is true, cf_org_name is searchable
+        "index={0} cf_space_name=*"  # when add_app_info is true, cf_space_name is searchable
     ])
     def test_add_app_info_is_true(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
