@@ -66,10 +66,15 @@ def test_env(request):
     cfg = parser.items('DEFAULT')
     conf = dict(cfg)
 
-    conf["splunk_url"] = request.config.getoption("--splunk-url")
-    conf["splunk_user"] = request.config.getoption("--splunk-user")
-    conf["splunk_password"] = request.config.getoption("--splunk-password")
-    conf["api_endpoint"] = request.config.getoption("--api-endpoint")
-    conf["splunk_index"] = request.config.getoption("--splunk-index")
+    if request.config.getoption("--splunk-url"):
+        conf["splunk_url"] = request.config.getoption("--splunk-url")
+    if request.config.getoption("--splunk-user"):
+        conf["splunk_user"] = request.config.getoption("--splunk-user")
+    if request.config.getoption("--splunk-password"):
+        conf["splunk_password"] = request.config.getoption("--splunk-password")
+    if request.config.getoption("--api-endpoint"):
+        conf["api_endpoint"] = request.config.getoption("--api-endpoint")
+    if request.config.getoption("--splunk-index"):
+        conf["splunk_index"] = request.config.getoption("--splunk-index")
 
     return conf

@@ -42,7 +42,7 @@ class SplunkApi():
 
         search_url = '{0}/services/search/jobs?output_mode=json'.format(self.env["splunk_url"])
 
-        self.logger.info('requesting: %s', search_url)
+        # self.logger.info('requesting: %s', search_url)
         data = {
             'search': query,
             'earliest_time': start_time,
@@ -70,7 +70,7 @@ class SplunkApi():
         events = []
         job_url = '{0}/services/search/jobs/{1}?output_mode=json'.format(
             self.env["splunk_url"], str(job_id))
-        self.logger.info('requesting: %s', job_url)
+        # self.logger.info('requesting: %s', job_url)
 
         for _ in range(TIMEROUT):
             res = self.requests_retry_session().get(
