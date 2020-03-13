@@ -92,22 +92,6 @@ jobs:
           name: Executing tests
           command: |
             .circleci/functional-test.sh
-
-  teardown:
-    docker:
-      - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
-    steps:
-      - attach_workspace:
-          at: /tmp
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            curl https://glide.sh/get | sh
-            go get -t ./...
-            cp -R /tmp/splunk-firehose-nozzle .
-            .circleci/pre-req.sh
       - run:
           name: Teardown
           command: |
@@ -141,16 +125,6 @@ workflows:
           requires:
             - build
             - deploy-nozzle
-          filters:
-            branches:
-              only:
-                - develop
-                - master
-      - teardown:
-          requires:
-            - build
-            - deploy-nozzle
-            - execute_tests
           filters:
             branches:
               only:
