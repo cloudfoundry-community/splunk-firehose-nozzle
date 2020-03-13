@@ -115,6 +115,7 @@ workflows:
               only:
                 - develop
                 - master
+                - dev/fix-missing-subprocess-issue
       - tile-builder:
           requires:
             - deploy-nozzle
@@ -130,3 +131,4 @@ workflows:
               only:
                 - develop
                 - master
+                - dev/fix-missing-subprocess-issue
