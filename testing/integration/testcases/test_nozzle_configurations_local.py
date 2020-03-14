@@ -32,7 +32,7 @@ class TestSplunkNozzleLocal():
         ("index={0} test_tag::{1} event_type=HttpStartStop", True),
         ("index={0} test_tag::{1} event_type=ContainerMetric", True)
     ])
-    def test_search_event_on_splunk_is_not_empty(self, query_input, is_result_empty, test_env, splunk_logger, nozzle_logger):
+    def test_search_event_by_event_type(self, query_input, is_result_empty, test_env, splunk_logger, nozzle_logger):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
         search_results = self.splunk_api.check_events_from_splunk(
             query=query_input.format(test_env['splunk_index'], _tag),
