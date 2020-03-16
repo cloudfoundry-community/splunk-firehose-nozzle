@@ -1,6 +1,6 @@
 ---
 name: splunk-nozzle
-label: Splunk Firehose Nozzle for PCF
+label: Splunk Firehose Nozzle for VMware Tanzu
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
@@ -10,7 +10,7 @@ allow_paid_service_plans: true        # Allow paid service plans, default: false
 stemcell_criteria:
   os: ubuntu-xenial
   requires_cpi: false
-  version: '97'
+  version: '621'
 
 properties:
 - name: author
@@ -127,12 +127,12 @@ forms:
     type: string
     label: Flush Interval
     default: 5s
-    description: Time interval (in sec) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+    description: Time interval (in sec, min or hour) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
   - name: missing_app_cache_invalidate_ttl
     type: string
     label: Missing App Cache Invalidate TTL
     default: 0s
-    description: Time interval (in sec) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
+    description: Time interval (in sec, min or hour) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
   - name: app_cache_invalidate_ttl
     type: string
     label: App Cache Invalidate TTL
@@ -142,7 +142,7 @@ forms:
     type: string
     label: Org Space Cache Invalidate TTL
     default: 72h
-    description: Time interval (in sec) between refreshing the org and space cache.
+    description: Time interval (in sec, min or hour) between refreshing the org and space cache.
   - name: app_limits
     type: integer
     label: App Limits
@@ -156,7 +156,7 @@ forms:
   - name: firehose_keep_alive
     type: string
     label: Firehose Keep Alive
-    description: Keep alive duration (in sec) for the firehose consumer.
+    description: Keep alive duration (in sec, min or hour) for the firehose consumer.
     default: 25s
   - name: add_app_info
     type: boolean
@@ -172,7 +172,7 @@ forms:
     type: boolean
     label: Ignore Missing App
     default: true
-    description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
+    description: If the application is missing, then stop repeatedly querying application info from Cloud Foundry.
 
 packages:
 - name: splunk_firehose_nozzle
