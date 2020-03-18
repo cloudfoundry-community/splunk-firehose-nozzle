@@ -17,3 +17,4 @@ vendor/github.com/cloudfoundry/sonde-go/definitions/
 testing/integration/venv/
 testing/integration/config/local.ini
 *.pyc
+testing/integration/config/env.json
