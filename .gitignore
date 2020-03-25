@@ -3,8 +3,6 @@
 tools/dump_app_info/dump_app_info
 tools/data_gen/data_gen
 
-
-
 cache.db
 *.out
 
@@ -15,3 +13,7 @@ data_gen
 
 manifest*.yml
 splunk-firehose-nozzle.iml
+vendor/github.com/cloudfoundry/sonde-go/definitions/
+testing/integration/venv/
+testing/integration/config/local.ini
+*.pyc

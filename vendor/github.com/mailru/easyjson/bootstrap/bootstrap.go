@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 )
 
 const genPackage = "github.com/mailru/easyjson/gen"
@@ -21,9 +22,11 @@ type Generator struct {
 	PkgPath, PkgName string
 	Types            []string
 
-	NoStdMarshalers bool
-	SnakeCase       bool
-	OmitEmpty       bool
+	NoStdMarshalers       bool
+	SnakeCase             bool
+	LowerCamelCase        bool
+	OmitEmpty             bool
+	DisallowUnknownFields bool
 
 	OutName   string
 	BuildTags string
@@ -59,6 +62,7 @@ func (g *Generator) writeStub() error {
 		fmt.Fprintln(f, ")")
 	}
 
+	sort.Strings(g.Types)
 	for _, t := range g.Types {
 		fmt.Fprintln(f)
 		if !g.NoStdMarshalers {
@@ -108,12 +112,20 @@ func (g *Generator) writeMain() (path string, err error) {
 	if g.SnakeCase {
 		fmt.Fprintln(f, "  g.UseSnakeCase()")
 	}
+	if g.LowerCamelCase {
+		fmt.Fprintln(f, "  g.UseLowerCamelCase()")
+	}
 	if g.OmitEmpty {
 		fmt.Fprintln(f, "  g.OmitEmpty()")
 	}
 	if g.NoStdMarshalers {
 		fmt.Fprintln(f, "  g.NoStdMarshalers()")
 	}
+	if g.DisallowUnknownFields {
+		fmt.Fprintln(f, "  g.DisallowUnknownFields()")
+	}
+
+	sort.Strings(g.Types)
 	for _, v := range g.Types {
 		fmt.Fprintln(f, "  g.Add(pkg.EasyJSON_exporter_"+v+"(nil))")
 	}

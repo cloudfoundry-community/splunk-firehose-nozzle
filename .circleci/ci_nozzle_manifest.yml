@@ -8,8 +8,6 @@ applications:
     env:
       GOPACKAGENAME: main
       API_ENDPOINT:
-      API_USER:
-      API_PASSWORD:
       CLIENT_ID:
       CLIENT_SECRET:
       SPLUNK_HOST:

@@ -15,7 +15,7 @@ jobs:
           name: Builder
           command: make build
       - run:
-          name: Run tests
+          name: Run unit tests
           command: |
             make testall
             cp splunk-firehose-nozzle /tmp
@@ -44,13 +44,6 @@ jobs:
             .circleci/update_manifest.sh
             .circleci/pre-req.sh
             cf push -f .circleci/ci_nozzle_manifest.yml -u process --random-route
-      - run:
-          name: Teardown deployment env
-          command: |
-            sleep 10
-            echo "Teardown deployment env"
-            cf delete splunk-firehose-nozzle -f
-            cf delete-org splunk-ci -f
 
   tile-builder:
     docker:
@@ -71,6 +64,44 @@ jobs:
             cp -R /tmp/splunk-firehose-nozzle .
             .circleci/push_tile.sh
 
+  execute_tests:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            curl https://glide.sh/get | sh
+            go get -t ./...
+            cp -R /tmp/splunk-firehose-nozzle .
+      - run:
+          name: Deploy data-gen
+          command: |
+            .circleci/pre-req.sh
+            cf push -f .circleci/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+            sleep 10
+      - run:
+          name: Prepare test environment
+          command: |
+            .circleci/pre-functional-test.sh
+      - run:
+          name: Executing tests
+          command: |
+            .circleci/functional-test.sh
+      - run:
+          name: Teardown
+          command: |
+            echo "Teardown deployment env"
+            cf delete splunk-firehose-nozzle -f
+            cf delete data_gen -f
+            cf delete-org splunk-ci-org -f
+          when:
+            always
+
 workflows:
   version: 2
   build-and-deploy-nozzle:
@@ -90,3 +121,12 @@ workflows:
           filters:
             branches:
               only: master
+      - execute_tests:
+          requires:
+            - build
+            - deploy-nozzle
+          filters:
+            branches:
+              only:
+                - develop
+                - master
