@@ -1,4 +1,4 @@
-version: 2 # use CircleCI 2.0
+version: 2.1 # use CircleCI 2.1
 jobs:
   build:
     docker:
@@ -63,10 +63,12 @@ jobs:
           command: |
             cp -R /tmp/splunk-firehose-nozzle .
             .circleci/push_tile.sh
+      - teardown
 
   execute_tests:
     docker:
       - image: circleci/golang:1.12
+      - image: circleci/python:3.7
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps:
       - attach_workspace:
@@ -92,10 +94,18 @@ jobs:
           name: Executing tests
           command: |
             .circleci/functional-test.sh
+      - when:
+          condition: ${CIRCLE_BRANCH} != dev/fix-master-ci-failure
+          steps:
+            - teardown
+
+commands:
+  teardown:
+    description: Teardown deployment env
+    steps:
       - run:
           name: Teardown
           command: |
-            echo "Teardown deployment env"
             cf delete splunk-firehose-nozzle -f
             cf delete data_gen -f
             cf delete-org splunk-ci-org -f
@@ -103,7 +113,7 @@ jobs:
             always
 
 workflows:
-  version: 2
+  version: 2.1
   build-and-deploy-nozzle:
     jobs:
       - build
@@ -115,18 +125,21 @@ workflows:
               only:
                 - develop
                 - master
+                - dev/fix-master-ci-failure
       - tile-builder:
           requires:
-            - deploy-nozzle
+            - execute_tests
           filters:
             branches:
-              only: master
+              only:
+                - master
+                - dev/fix-master-ci-failure
       - execute_tests:
           requires:
-            - build
             - deploy-nozzle
           filters:
             branches:
               only:
                 - develop
                 - master
+                - dev/fix-master-ci-failure
