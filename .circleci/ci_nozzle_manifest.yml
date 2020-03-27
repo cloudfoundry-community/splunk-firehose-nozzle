@@ -1,8 +1,8 @@
 ---
 applications:
   - name: splunk-firehose-nozzle
-    memory: 512M
-    instances: 2
+    memory: 256M
+    instances: 1
     buildpack: go_buildpack
     cmd: splunk-firehose-nozzle
     env:
@@ -26,10 +26,10 @@ applications:
       BOLTDB_PATH: cache.db
       EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
       EXTRA_FIELDS: name:update-ci-test
-      FIREHOSE_SUBSCRIPTION_ID: splunk-ci
+      FIREHOSE_SUBSCRIPTION_ID: splunk-pcf-ci
       FLUSH_INTERVAL: 5s
       CONSUMER_QUEUE_SIZE: 10000
-      HEC_BATCH_SIZE: 1000
+      HEC_BATCH_SIZE: 100
       HEC_RETRIES: 5
       HEC_WORKERS: 8
       DEBUG: false
