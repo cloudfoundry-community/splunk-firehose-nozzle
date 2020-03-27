@@ -81,7 +81,7 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "index={} name::update-ci-test"
+        "index={} name::splunk-pcf-ci"
     ])
     def test_search_by_extra_fields(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
