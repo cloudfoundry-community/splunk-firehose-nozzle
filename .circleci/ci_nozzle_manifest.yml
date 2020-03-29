@@ -25,8 +25,8 @@ applications:
       APP_LIMITS: 1000
       BOLTDB_PATH: cache.db
       EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
-      EXTRA_FIELDS: name:update-ci-test
-      FIREHOSE_SUBSCRIPTION_ID: splunk-pcf-ci
+      EXTRA_FIELDS: name:splunk-pcf-ci
+      FIREHOSE_SUBSCRIPTION_ID: splunk-ci
       FLUSH_INTERVAL: 5s
       CONSUMER_QUEUE_SIZE: 10000
       HEC_BATCH_SIZE: 100
