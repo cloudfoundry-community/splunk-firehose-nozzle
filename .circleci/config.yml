@@ -146,12 +146,12 @@ workflows:
               only:
                 - develop
                 - master
-      - tile-builder:
-          requires:
-            - deploy-nozzle
-          filters:
-            branches:
-              only: master
+#      - tile-builder:
+#          requires:
+#            - deploy-nozzle
+#          filters:
+#            branches:
+#              only: master
       - execute_tests:
           requires:
             - deploy-nozzle
