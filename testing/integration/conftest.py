@@ -90,7 +90,6 @@ def test_env(request):
 
     if os.path.exists(join(config_folder, 'local.ini')):
         parser.read(join(config_folder, 'local.ini'))
-
-    conf.update(parser.items('LOCAL'))
+        conf.update(parser.items('LOCAL'))
 
     return conf
