@@ -1,7 +1,7 @@
 package eventsource
 
 import (
-	"code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/v8"
 	"github.com/cloudfoundry/sonde-go/events"
 	"net/http"
 	"time"
