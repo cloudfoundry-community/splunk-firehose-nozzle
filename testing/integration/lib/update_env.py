@@ -31,8 +31,8 @@ def get_default_env():
     if os.path.exists(join(config_folder, 'env.json')):
         with open(join(config_folder, 'env.json')) as json_file:
             local_env = json.load(json_file)
+        default_dict.update(local_env)
 
-    default_dict.update(local_env)
     return default_dict
 
 
