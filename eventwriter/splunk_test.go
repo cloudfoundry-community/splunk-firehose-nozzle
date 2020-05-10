@@ -28,11 +28,12 @@ var _ = Describe("Splunk", func() {
 	BeforeEach(func() {
 		logger = lager.NewLogger("test")
 		config = &SplunkConfig{
-			Token:   "token",
-			Index:   "",
-			Fields:  nil,
-			SkipSSL: true,
-			Logger:  logger,
+			Token:    "token",
+			Index:    "",
+			Fields:   nil,
+			SkipSSL:  true,
+			Endpoint: "/services/collector",
+			Logger:   logger,
 		}
 	})
 
@@ -177,6 +178,17 @@ var _ = Describe("Splunk", func() {
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
+		})
+
+		It("Writes to custom endpoint", func() {
+			custom_hec_endpoint := "/my/custom/endpoint"
+			config.Endpoint = custom_hec_endpoint
+			client := NewSplunk(config)
+			events := []map[string]interface{}{}
+			err := client.Write(events)
+
+			Expect(err).To(BeNil())
+			Expect(capturedRequest.URL.Path).To(Equal(custom_hec_endpoint))
 		})
 	})
 
