@@ -16,7 +16,6 @@ type Event struct {
 	Fields map[string]interface{}
 	Msg    string
 	Type   string
-
 }
 
 func HttpStartStop(msg *events.Envelope) *Event {
