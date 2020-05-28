@@ -146,6 +146,7 @@ workflows:
               only:
                 - develop
                 - master
+                - dev/fix-circleci-failure
 #      - tile-builder:
 #          requires:
 #            - deploy-nozzle
@@ -160,6 +161,7 @@ workflows:
               only:
                 - develop
                 - master
+                - dev/fix-circleci-failure
 
 #      - execute_perf_tests:
 #          requires:
