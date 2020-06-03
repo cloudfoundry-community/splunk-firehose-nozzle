@@ -1,18 +1,24 @@
 package eventsource
 
 import (
-	"code.cloudfoundry.org/go-loggregator"
+	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
+	"log"
 	"net/http"
 	"time"
 )
 
 // FirehoseConfig struct with 4 fields of different types.
 type FirehoseConfig struct {
-	KeepAlive      time.Duration
-	SkipSSL        bool
-	Endpoint       string
-	SubscriptionID string
+	KeepAlive          time.Duration
+	SkipSSL            bool
+	Endpoint           string
+	SubscriptionID     string
+	GatewayErrChanAddr *chan error
+	GatewayLoggerAddr  *log.Logger
+	GatewayMaxRetries  int
+	Logger             lager.Logger
 }
 
 // Doer is used to make HTTP requests to the RLP Gateway.
@@ -32,6 +38,9 @@ func NewFirehose(tokenClient doer, config *FirehoseConfig) *Firehose {
 	c := loggregator.NewRLPGatewayClient(
 		config.Endpoint,
 		loggregator.WithRLPGatewayHTTPClient(tokenClient),
+		loggregator.WithRLPGatewayClientLogger(config.GatewayLoggerAddr),
+		loggregator.WithRLPGatewayErrChan(*config.GatewayErrChanAddr),
+		loggregator.WithRLPGatewayMaxRetries(config.GatewayMaxRetries),
 	)
 
 	f := &Firehose{
@@ -55,5 +64,5 @@ func (f *Firehose) Close() error {
 
 // Read reads envelope stream
 func (f *Firehose) Read() <-chan *events.Envelope {
-	return f.v2.Firehose(f.config.SubscriptionID)
+	return f.v2.Firehose(f.config)
 }

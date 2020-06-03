@@ -2,6 +2,7 @@ package splunknozzle
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"code.cloudfoundry.org/lager"
@@ -19,15 +20,20 @@ import (
 	"strings"
 )
 
+var gatewayLoggerAddr = log.New(os.Stderr, "RLP_Gateway Error - ", 3)
+var gatewayErrChan = make(chan error, 1)
+
 // SplunkFirehoseNozzle struct type with config fields.
 type SplunkFirehoseNozzle struct {
 	config *Config
+	logger lager.Logger
 }
 
 // NewSplunkFirehoseNozzle create new function of type *SplunkFirehoseNozzle
-func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
+func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
+		logger: logger,
 	}
 }
 
@@ -54,7 +60,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 }
 
 // AppCache creates in-memory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
+func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, error) {
 	if s.config.AddAppInfo {
 		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
@@ -62,7 +68,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
 			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
-			Logger:             logger,
+			Logger:             s.logger,
 		}
 		return cache.NewBoltdb(client, &c)
 	}
@@ -71,18 +77,17 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 }
 
 // EventSink creates std sink or Splunk sink
-func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, error) {
+func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 	if s.config.Debug {
 		return &eventsink.Std{}, nil
 	}
-
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
 		SkipSSL: s.config.SkipSSLSplunk,
-		Logger:  logger,
+		Logger:  s.logger,
 	}
 
 	var writers []eventwriter.Writer
@@ -93,6 +98,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 
 	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
 	if err != nil {
+		s.logger.Error("Error at parsing extra fields", nil)
 		return nil, err
 	}
 
@@ -109,41 +115,41 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		TraceLogging:   s.config.TraceLogging,
 		ExtraFields:    parsedExtraFields,
 		UUID:           nozzleUUID,
-		Logger:         logger,
+		Logger:         s.logger,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
-	if err := splunkSink.Open(); err != nil {
-		return nil, fmt.Errorf("failed to connect splunk")
-	}
-
-	logger.RegisterSink(splunkSink)
+	splunkSink.Open()
+	s.logger.RegisterSink(splunkSink)
 	return splunkSink, nil
 }
 
 // EventSource creates eventsource.Source object which can read events from
-func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
+func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) (*eventsource.Firehose, error) {
 	config := &eventsource.FirehoseConfig{
-		KeepAlive:      s.config.KeepAlive,
-		SkipSSL:        s.config.SkipSSLCF,
-		Endpoint:       strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
-		SubscriptionID: s.config.SubscriptionID,
+		KeepAlive:          s.config.KeepAlive,
+		SkipSSL:            s.config.SkipSSLCF,
+		Endpoint:           strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
+		SubscriptionID:     s.config.SubscriptionID,
+		GatewayLoggerAddr:  gatewayLoggerAddr,
+		GatewayErrChanAddr: &gatewayErrChan,
+		GatewayMaxRetries:  s.config.RLPGatewayRetries,
+		Logger:             s.logger,
 	}
-
 	uaa, err := uaago.NewClient(pcfClient.Endpoint.AuthEndpoint)
 	if err != nil {
 		fmt.Println("unable to connect to get token from uaa", err)
-
+		return nil, err
 	}
 
 	ac := eventsource.NewHttp(uaa, pcfClient.Config.ClientID, pcfClient.Config.ClientSecret, pcfClient.Config.SkipSslValidation)
-	return eventsource.NewFirehose(ac, config)
+	return eventsource.NewFirehose(ac, config), nil
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router
-func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRouter eventrouter.Router, logger lager.Logger) *nozzle.Nozzle {
+func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRouter eventrouter.Router) *nozzle.Nozzle {
 	firehoseConfig := &nozzle.Config{
-		Logger: logger,
+		Logger: s.logger,
 	}
 
 	return nozzle.New(eventSource, eventRouter, firehoseConfig)
@@ -151,50 +157,65 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
-func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
-	eventSink, err := s.EventSink(logger)
+func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
+	eventSink, err := s.EventSink()
 	if err != nil {
+		s.logger.Error("Failed to create event sink", nil)
 		return err
 	}
 
-	logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
+	s.logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
+		s.logger.Error("Failed to get info from PCF Server", nil)
 		return err
 	}
 
-	appCache, err := s.AppCache(pcfClient, logger)
+	appCache, err := s.AppCache(pcfClient)
 	if err != nil {
+		s.logger.Error("Failed to start App Cache", nil)
 		return err
 	}
 
 	err = appCache.Open()
 	if err != nil {
+		s.logger.Error("Failed to open App Cache", nil)
 		return err
 	}
 	defer appCache.Close()
 
 	eventRouter, err := s.EventRouter(appCache, eventSink)
 	if err != nil {
+		s.logger.Error("Failed to create event router", nil)
 		return err
 	}
 
-	eventSource := s.EventSource(pcfClient)
-	noz := s.Nozzle(eventSource, eventRouter, logger)
+	eventSource, err := s.EventSource(pcfClient)
+	if err != nil {
+		return err
+	}
+
+	noz := s.Nozzle(eventSource, eventRouter)
 
 	// Continuous Loop will run forever
 	go func() {
 		err := noz.Start()
 		if err != nil {
-			logger.Error("Firehose consumer exits with error", err)
+			s.logger.Error("Firehose consumer exits with error", err)
 		}
 		shutdownChan <- os.Interrupt
 	}()
+	select {
+	case <-shutdownChan:
+		s.logger.Info("Splunk Nozzle is going to exit gracefully")
+		noz.Close()
+		return eventSink.Close()
+	case gatewayError := <-gatewayErrChan:
+		s.logger.Error("Error from reverse log proxy gateway", gatewayError)
+		noz.Close()
+		eventSink.Close()
+		return gatewayError
+	}
 
-	<-shutdownChan
-
-	logger.Info("Splunk Nozzle is going to exit gracefully")
-	noz.Close()
-	return eventSink.Close()
 }

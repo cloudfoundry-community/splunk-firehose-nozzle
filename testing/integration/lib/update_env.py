@@ -15,6 +15,8 @@ def get_default_env():
         {
             'ADD_APP_INFO': True,
             'API_ENDPOINT': _env_var.get('API_ENDPOINT'),
+            'API_USER': _env_var.get('API_USER'),
+            'API_PASSWORD': _env_var.get('API_PASSWORD'),
             'EVENTS': 'ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric',
             'SPLUNK_TOKEN': _env_var.get('SPLUNK_TOKEN'),
             'SPLUNK_HOST': _env_var.get('SPLUNK_HOST'),

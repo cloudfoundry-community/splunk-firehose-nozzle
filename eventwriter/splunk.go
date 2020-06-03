@@ -2,15 +2,14 @@ package eventwriter
 
 import (
 	"bytes"
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/lager"
 )
 
 type SplunkConfig struct {

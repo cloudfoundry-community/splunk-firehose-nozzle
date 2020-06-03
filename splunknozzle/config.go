@@ -42,12 +42,13 @@ type Config struct {
 	WantedEvents string `json:"wanted-events"`
 	ExtraFields  string `json:"extra-fields"`
 
-	FlushInterval time.Duration `json:"flush-interval"`
-	QueueSize     int           `json:"queue-size"`
-	BatchSize     int           `json:"batch-size"`
-	Retries       int           `json:"retries"`
-	HecWorkers    int           `json:"hec-workers"`
-	SplunkVersion string        `json:"splunk-version"`
+	FlushInterval     time.Duration `json:"flush-interval"`
+	QueueSize         int           `json:"queue-size"`
+	BatchSize         int           `json:"batch-size"`
+	RLPGatewayRetries int           `json:"rlp-gateway-retries"`
+	Retries           int           `json:"retries"`
+	HecWorkers        int           `json:"hec-workers"`
+	SplunkVersion     string        `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
@@ -128,6 +129,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
+	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to reverse log proxy gateway").
+		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("10").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
@@ -139,7 +142,6 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
-
 	kingpin.Parse()
 	return c
 }
