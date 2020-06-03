@@ -1,9 +1,9 @@
 package eventsource_test
 
 import (
-	"code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/conversion"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/conversion"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"context"
 
 	. "github.com/onsi/ginkgo"
@@ -29,9 +29,11 @@ var _ = Describe("V2adapter", func() {
 
 		stubStreamer := newStubStreamer()
 		stubStreamer.envs = []*loggregator_v2.Envelope{v2Env}
-
+		config := &eventsource.FirehoseConfig{
+			SubscriptionID: "test-subscription",
+		}
 		firehoseAdapter := eventsource.NewV2Adapter(stubStreamer)
-		messages := firehoseAdapter.Firehose("test-subscription")
+		messages := firehoseAdapter.Firehose(config)
 
 		expected := conversion.ToV1(v2Env)
 		Eventually(messages).Should(Receive(Equal(expected[0])))

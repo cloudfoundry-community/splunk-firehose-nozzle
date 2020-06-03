@@ -7,12 +7,12 @@ applications:
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT:
-      CLIENT_ID:
-      CLIENT_SECRET:
-      SPLUNK_HOST:
-      SPLUNK_TOKEN:
-      SPLUNK_INDEX:
+      API_ENDPOINT: 
+      CLIENT_ID: 
+      CLIENT_SECRET: 
+      SPLUNK_HOST: 
+      SPLUNK_TOKEN: 
+      SPLUNK_INDEX: main
       SKIP_SSL_VALIDATION_CF: true
       SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle

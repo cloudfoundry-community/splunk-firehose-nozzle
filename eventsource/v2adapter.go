@@ -1,9 +1,9 @@
 package eventsource
 
 import (
-	"code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/conversion"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/conversion"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"context"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -27,11 +27,12 @@ func NewV2Adapter(s Streamer) V2Adapter {
 }
 
 // Firehose returns only selected event stream
-func (a V2Adapter) Firehose(subscriptionID string) chan *events.Envelope {
+func (a V2Adapter) Firehose(config *FirehoseConfig) chan *events.Envelope {
 	ctx := context.Background()
-
+	var v1msgs = make(chan *events.Envelope, 10000)
+	var v2msgs = make(chan *loggregator_v2.Envelope, 10000)
 	es := a.streamer.Stream(ctx, &loggregator_v2.EgressBatchRequest{
-		ShardId: subscriptionID,
+		ShardId: config.SubscriptionID,
 		Selectors: []*loggregator_v2.Selector{
 			{
 				Message: &loggregator_v2.Selector_Log{
@@ -61,17 +62,23 @@ func (a V2Adapter) Firehose(subscriptionID string) chan *events.Envelope {
 		},
 	})
 
-	var msgs = make(chan *events.Envelope, 100)
 	go func() {
 		for ctx.Err() == nil {
 			for _, e := range es() {
-				// ToV1 converts v2 envelopes down to v1 envelopes.
-				for _, v1e := range conversion.ToV1(e) {
-					msgs <- v1e
-				}
+				v2msgs <- e
 			}
 		}
 	}()
 
-	return msgs
+	go func() {
+		for ctx.Err() == nil {
+			e := <-v2msgs
+			//// ToV1 converts v2 envelopes down to v1 envelopes.
+			for _, v1e := range conversion.ToV1(e) {
+				v1msgs <- v1e
+			}
+		}
+	}()
+
+	return v1msgs
 }

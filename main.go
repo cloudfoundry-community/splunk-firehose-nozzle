@@ -31,8 +31,8 @@ func main() {
 		logger.Info("Apps are not being cached. When apps are not cached, the org and space caching TTL is ineffective")
 	}
 
-	splunkNozzle := splunknozzle.NewSplunkFirehoseNozzle(config)
-	err := splunkNozzle.Run(shutdownChan, logger)
+	splunkNozzle := splunknozzle.NewSplunkFirehoseNozzle(config, logger)
+	err := splunkNozzle.Run(shutdownChan)
 	if err != nil {
 		logger.Error("Failed to run splunk-firehose-nozzle", err)
 	}

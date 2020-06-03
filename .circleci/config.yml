@@ -141,11 +141,6 @@ workflows:
       - deploy-nozzle:
           requires:
             - build
-          filters:
-            branches:
-              only:
-                - develop
-                - master
 #      - tile-builder:
 #          requires:
 #            - deploy-nozzle
@@ -155,11 +150,7 @@ workflows:
       - execute_tests:
           requires:
             - deploy-nozzle
-          filters:
-            branches:
-              only:
-                - develop
-                - master
+
 
 #      - execute_perf_tests:
 #          requires:

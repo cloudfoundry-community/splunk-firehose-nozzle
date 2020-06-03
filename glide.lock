@@ -9,8 +9,8 @@ imports:
   version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
 - name: code.cloudfoundry.org/go-diodes
   version: f77fb823c7ee0156ed4cdadaf4f79ac3fd84613f
-- name: code.cloudfoundry.org/go-loggregator
-  version: b8d176783c8a6280a34f0e19e0e8f57d722773a1
+- name: code.cloudfoundry.org/go-loggregator/v8
+  version: 4ef0726afcab7137cbe6cb9e1bc0b649ff13b910
   subpackages:
   - conversion
   - rpc/loggregator_v2
@@ -182,3 +182,6 @@ testImports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
+- name: code.cloudfoundry.org/tlsconfig
+  version: bbe0f8da39b3c59d42217afcc79019c754dabdfb
+
