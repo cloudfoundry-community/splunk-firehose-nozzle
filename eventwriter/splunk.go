@@ -2,14 +2,16 @@ package eventwriter
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/lager"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync/atomic"
+
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 )
 
 type SplunkConfig struct {
@@ -40,10 +42,10 @@ func NewSplunk(config *SplunkConfig) Writer {
 	}
 }
 
-func (s *splunkClient) Write(events []map[string]interface{}) error {
+func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
+	var count uint64 = 0
 	for i, event := range events {
-
 		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
 			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
 		} else if s.config.Index != "" {
@@ -57,6 +59,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
+			atomic.AddUint64(&count, 1)
 			if i < len(events)-1 {
 				bodyBuffer.Write([]byte("\n\n"))
 			}
@@ -70,7 +73,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 	}
 	bodyBytes := bodyBuffer.Bytes()
 
-	return s.send(&bodyBytes)
+	return s.send(&bodyBytes), count
 }
 
 func (s *splunkClient) send(postBody *[]byte) error {
@@ -93,6 +96,5 @@ func (s *splunkClient) send(postBody *[]byte) error {
 		responseBody, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	}
-
 	return nil
 }

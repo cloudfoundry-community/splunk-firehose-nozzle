@@ -1,11 +1,11 @@
 package splunknozzle
 
 import (
+	"code.cloudfoundry.org/lager"
 	"fmt"
 	"log"
 	"os"
-
-	"code.cloudfoundry.org/lager"
+	"time"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
@@ -105,36 +105,42 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 	nozzleUUID := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
-		FlushInterval:  s.config.FlushInterval,
-		QueueSize:      s.config.QueueSize,
-		BatchSize:      s.config.BatchSize,
-		Retries:        s.config.Retries,
-		Hostname:       s.config.JobHost,
-		Version:        s.config.SplunkVersion,
-		SubscriptionID: s.config.SubscriptionID,
-		TraceLogging:   s.config.TraceLogging,
-		ExtraFields:    parsedExtraFields,
-		UUID:           nozzleUUID,
-		Logger:         s.logger,
+		FlushInterval:         s.config.FlushInterval,
+		QueueSize:             s.config.QueueSize,
+		BatchSize:             s.config.BatchSize,
+		Retries:               s.config.Retries,
+		Hostname:              s.config.JobHost,
+		Version:               s.config.SplunkVersion,
+		SubscriptionID:        s.config.SubscriptionID,
+		TraceLogging:          s.config.TraceLogging,
+		ExtraFields:           parsedExtraFields,
+		UUID:                  nozzleUUID,
+		Logger:                s.logger,
+		StatusMonitorInterval: s.config.StatusMonitorInterval,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
 	splunkSink.Open()
+
 	s.logger.RegisterSink(splunkSink)
+	if s.config.StatusMonitorInterval > time.Second*0 {
+		go splunkSink.LogStatus()
+	}
 	return splunkSink, nil
 }
 
 // EventSource creates eventsource.Source object which can read events from
 func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) (*eventsource.Firehose, error) {
 	config := &eventsource.FirehoseConfig{
-		KeepAlive:          s.config.KeepAlive,
-		SkipSSL:            s.config.SkipSSLCF,
-		Endpoint:           strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
-		SubscriptionID:     s.config.SubscriptionID,
-		GatewayLoggerAddr:  gatewayLoggerAddr,
-		GatewayErrChanAddr: &gatewayErrChan,
-		GatewayMaxRetries:  s.config.RLPGatewayRetries,
-		Logger:             s.logger,
+		KeepAlive:             s.config.KeepAlive,
+		SkipSSL:               s.config.SkipSSLCF,
+		Endpoint:              strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
+		SubscriptionID:        s.config.SubscriptionID,
+		GatewayLoggerAddr:     gatewayLoggerAddr,
+		GatewayErrChanAddr:    &gatewayErrChan,
+		GatewayMaxRetries:     s.config.RLPGatewayRetries,
+		StatusMonitorInterval: s.config.StatusMonitorInterval,
+		Logger:                s.logger,
 	}
 	uaa, err := uaago.NewClient(pcfClient.Endpoint.AuthEndpoint)
 	if err != nil {
@@ -192,11 +198,16 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 	}
 
 	eventSource, err := s.EventSource(pcfClient)
+
 	if err != nil {
 		return err
 	}
 
 	noz := s.Nozzle(eventSource, eventRouter)
+
+	go func() {
+
+	}()
 
 	// Continuous Loop will run forever
 	go func() {
@@ -212,7 +223,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		noz.Close()
 		return eventSink.Close()
 	case gatewayError := <-gatewayErrChan:
-		s.logger.Error("Error from reverse log proxy gateway", gatewayError)
+		s.logger.Error("Error from PCF RLP gateway", gatewayError)
 		noz.Close()
 		eventSink.Close()
 		return gatewayError

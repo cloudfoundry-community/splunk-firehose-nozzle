@@ -55,8 +55,9 @@ type Config struct {
 	Commit  string `json:"commit"`
 	BuildOS string `json:"buildos"`
 
-	TraceLogging bool `json:"trace-logging"`
-	Debug        bool `json:"debug"`
+	TraceLogging          bool          `json:"trace-logging"`
+	Debug                 bool          `json:"debug"`
+	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 }
 
 // NewConfigFromCmdFlags provides Splunk Nozzle config params.
@@ -129,7 +130,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
-	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to reverse log proxy gateway").
+	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to PCF RLP gateway").
 		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("10").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
@@ -142,6 +143,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
+	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
+		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 	kingpin.Parse()
 	return c
 }

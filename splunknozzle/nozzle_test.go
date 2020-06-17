@@ -58,7 +58,9 @@ func newConfig() *Config {
 		Commit:  "f1c3178f4df3e51e7f08abf046ac899bca49e93b",
 		BuildOS: "MacOS",
 
-		Debug: false,
+		TraceLogging:          false,
+		Debug:                 false,
+		StatusMonitorInterval: time.Second * 5,
 	}
 }
 

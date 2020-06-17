@@ -4,6 +4,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager"
 	"context"
 
 	. "github.com/onsi/ginkgo"
@@ -30,7 +31,9 @@ var _ = Describe("V2adapter", func() {
 		stubStreamer := newStubStreamer()
 		stubStreamer.envs = []*loggregator_v2.Envelope{v2Env}
 		config := &eventsource.FirehoseConfig{
-			SubscriptionID: "test-subscription",
+			SubscriptionID:        "test-subscription",
+			StatusMonitorInterval: time.Second * 10,
+			Logger:                lager.NewLogger("test"),
 		}
 		firehoseAdapter := eventsource.NewV2Adapter(stubStreamer)
 		messages := firehoseAdapter.Firehose(config)
