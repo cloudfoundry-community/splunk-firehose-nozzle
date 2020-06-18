@@ -10,7 +10,7 @@ imports:
 - name: code.cloudfoundry.org/go-diodes
   version: f77fb823c7ee0156ed4cdadaf4f79ac3fd84613f
 - name: code.cloudfoundry.org/go-loggregator/v8
-  version: 4ef0726afcab7137cbe6cb9e1bc0b649ff13b910
+  version: beb75025a60d7edecb3af56b1631ac37f6255e98
   subpackages:
   - conversion
   - rpc/loggregator_v2

@@ -268,43 +268,6 @@ var _ = Describe("RlpGatewayClient", func() {
 		}).Should(BeNumerically("==", 2))
 	})
 
-	It("batches envelopes", func() {
-		ch := make(chan []byte, 100)
-		spyDoer.resps = append(spyDoer.resps, &http.Response{
-			StatusCode: 200,
-			Body:       ioutil.NopCloser(channelReader(ch)),
-		})
-		spyDoer.errs = []error{nil}
-
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			m := jsonpb.Marshaler{}
-			for i := 0; i < 10; i++ {
-				s, err := m.MarshalToString(&loggregator_v2.EnvelopeBatch{
-					Batch: []*loggregator_v2.Envelope{
-						{Timestamp: int64(i)},
-					},
-				})
-				if err != nil {
-					panic(err)
-				}
-				ch <- []byte(fmt.Sprintf("data: %s\n\n", s))
-			}
-		}()
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		es := c.Stream(ctx, &loggregator_v2.EgressBatchRequest{})
-
-		wg.Wait()
-		// Let the everything settle
-		time.Sleep(250 * time.Millisecond)
-
-		Expect(es()).ToNot(HaveLen(1))
-	})
-
 	It("reconnects for non-200 requests", func() {
 		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 500})
 		spyDoer.resps = append(spyDoer.resps, &http.Response{StatusCode: 500})
