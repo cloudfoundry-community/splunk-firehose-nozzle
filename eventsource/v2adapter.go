@@ -4,8 +4,11 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/conversion"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager"
 	"context"
 	"github.com/cloudfoundry/sonde-go/events"
+	"sync/atomic"
+	"time"
 )
 
 // Streamer implements Stream which returns a new EnvelopeStream for the given context and request.
@@ -71,11 +74,35 @@ func (a V2Adapter) Firehose(config *FirehoseConfig) chan *events.Envelope {
 	}()
 
 	go func() {
-		for ctx.Err() == nil {
-			e := <-v2msgs
-			//// ToV1 converts v2 envelopes down to v1 envelopes.
-			for _, v1e := range conversion.ToV1(e) {
-				v1msgs <- v1e
+		var receivedCount uint64 = 0
+
+		if config.StatusMonitorInterval > time.Second*0 {
+			timer := time.NewTimer(config.StatusMonitorInterval)
+			for ctx.Err() == nil {
+				select {
+				case <-timer.C:
+					config.Logger.Info("Data_Flow_Monitoring", lager.Data{"events_pre_processing": len(v2msgs), "events_in_process": len(v1msgs)})
+					config.Logger.Info("Event_Count", lager.Data{"event_count_received": receivedCount})
+					timer.Reset(config.StatusMonitorInterval)
+					receivedCount = 0
+				default:
+				}
+				select {
+				case e := <-v2msgs:
+					atomic.AddUint64(&receivedCount, 1)
+					//// ToV1 converts v2 envelopes down to v1 envelopes.
+					for _, v1e := range conversion.ToV1(e) {
+						v1msgs <- v1e
+					}
+				default:
+				}
+			}
+		} else {
+			for ctx.Err() == nil {
+				e := <-v2msgs
+				for _, v1e := range conversion.ToV1(e) {
+					v1msgs <- v1e
+				}
 			}
 		}
 	}()

@@ -11,14 +11,15 @@ import (
 
 // FirehoseConfig struct with 4 fields of different types.
 type FirehoseConfig struct {
-	KeepAlive          time.Duration
-	SkipSSL            bool
-	Endpoint           string
-	SubscriptionID     string
-	GatewayErrChanAddr *chan error
-	GatewayLoggerAddr  *log.Logger
-	GatewayMaxRetries  int
-	Logger             lager.Logger
+	KeepAlive             time.Duration
+	SkipSSL               bool
+	Endpoint              string
+	SubscriptionID        string
+	GatewayErrChanAddr    *chan error
+	GatewayLoggerAddr     *log.Logger
+	GatewayMaxRetries     int
+	StatusMonitorInterval time.Duration
+	Logger                lager.Logger
 }
 
 // Doer is used to make HTTP requests to the RLP Gateway.

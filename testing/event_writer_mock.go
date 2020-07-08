@@ -12,19 +12,19 @@ type EventWriterMock struct {
 	ReturnErr      bool
 }
 
-func (m *EventWriterMock) Write(events []map[string]interface{}) error {
+func (m *EventWriterMock) Write(events []map[string]interface{}) (error, uint64) {
 	if m.ReturnErr {
-		return errors.New("mockup error")
+		return errors.New("mockup error"), 0
 	}
 
 	if m.PostBatchFn != nil {
-		return m.PostBatchFn(events)
+		return m.PostBatchFn(events), 0
 	} else {
 		m.lock.Lock()
 		m.capturedEvents = append(m.capturedEvents, events...)
 		m.lock.Unlock()
 	}
-	return nil
+	return nil, uint64(len(m.capturedEvents))
 }
 
 func (m *EventWriterMock) CapturedEvents() []map[string]interface{} {

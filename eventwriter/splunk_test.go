@@ -65,7 +65,7 @@ var _ = Describe("Splunk", func() {
 
 			client := NewSplunk(config)
 			events := []map[string]interface{}{}
-			err := client.Write(events)
+			err, _ := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -79,7 +79,7 @@ var _ = Describe("Splunk", func() {
 		It("sets content type to json", func() {
 			client := NewSplunk(config)
 			events := []map[string]interface{}{}
-			err := client.Write(events)
+			err, _ := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -101,10 +101,11 @@ var _ = Describe("Splunk", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2, event3}
-			err := client.Write(events)
+			err, sentCount := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
+			Expect(sentCount).To(Equal(uint64(3)))
 
 			expectedPayload := strings.TrimSpace(`
 {"event":{"greeting":"hello world"}}
@@ -127,7 +128,7 @@ var _ = Describe("Splunk", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2}
-			err := client.Write(events)
+			err, _ := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -156,7 +157,7 @@ var _ = Describe("Splunk", func() {
 			}}
 
 			events := []map[string]interface{}{event1, event2}
-			err := client.Write(events)
+			err, _ := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest).NotTo(BeNil())
@@ -173,7 +174,7 @@ var _ = Describe("Splunk", func() {
 		It("Writes to correct endpoint", func() {
 			client := NewSplunk(config)
 			events := []map[string]interface{}{}
-			err := client.Write(events)
+			err, _ := client.Write(events)
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
@@ -184,7 +185,7 @@ var _ = Describe("Splunk", func() {
 		config.Host = ":"
 		client := NewSplunk(config)
 		events := []map[string]interface{}{}
-		err := client.Write(events)
+		err, _ := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("protocol"))
@@ -199,7 +200,7 @@ var _ = Describe("Splunk", func() {
 		config.Host = testServer.URL
 		client := NewSplunk(config)
 		events := []map[string]interface{}{}
-		err := client.Write(events)
+		err, _ := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("500"))
@@ -209,7 +210,7 @@ var _ = Describe("Splunk", func() {
 		config.Host = "foo://example.com"
 		client := NewSplunk(config)
 		events := []map[string]interface{}{}
-		err := client.Write(events)
+		err, _ := client.Write(events)
 
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(ContainSubstring("foo"))
