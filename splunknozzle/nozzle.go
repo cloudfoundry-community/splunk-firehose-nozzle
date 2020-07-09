@@ -223,7 +223,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		noz.Close()
 		return eventSink.Close()
 	case gatewayError := <-gatewayErrChan:
-		s.logger.Error("Error from PCF RLP gateway", gatewayError)
+		s.logger.Error("Error from RLP gateway", gatewayError)
 		noz.Close()
 		eventSink.Close()
 		return gatewayError

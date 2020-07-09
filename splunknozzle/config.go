@@ -130,7 +130,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
-	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to PCF RLP gateway").
+	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to RLP gateway").
 		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("10").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)

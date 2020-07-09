@@ -184,8 +184,6 @@ func (e *Event) AnnotateWithEnvelopeData(msg *events.Envelope) {
 	e.Fields["ip"] = msg.GetIp()
 	e.Fields["job"] = msg.GetJob()
 	e.Fields["job_index"] = msg.GetIndex()
-	// Adding tags
-	e.Fields["tags"] = msg.GetTags()
 	e.Type = msg.GetEventType().String()
 }
 
