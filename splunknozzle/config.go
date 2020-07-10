@@ -39,11 +39,10 @@ type Config struct {
 	AppLimits          int           `json:"app-limits"`
 
 	// Add configuration option to filter/ choose from AppInfo
-	AddOrgName         	bool          `json:"add-org-name"`
-	AddOrgGuid         	bool          `json:"add-org-guid"`
-	AddSpaceName        bool          `json:"add-space-name"`
-	AddSpaceGuid        bool          `json:"add-space-guid"`
-
+	AddOrgName   bool `json:"add-org-name"`
+	AddOrgGuid   bool `json:"add-org-guid"`
+	AddSpaceName bool `json:"add-space-name"`
+	AddSpaceGuid bool `json:"add-space-guid"`
 
 	BoltDBPath   string `json:"boltdb-path"`
 	WantedEvents string `json:"wanted-events"`
