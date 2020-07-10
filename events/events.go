@@ -18,6 +18,14 @@ type Event struct {
 	Type   string
 }
 
+type Config struct {
+	SelectedEvents string
+	AddOrgName     bool
+	AddOrgGuid     bool
+	AddSpaceName   bool
+	AddSpaceGuid   bool
+}
+
 func HttpStartStop(msg *events.Envelope) *Event {
 	httpStartStop := msg.GetHttpStartStop()
 
@@ -125,7 +133,7 @@ func ContainerMetric(msg *events.Envelope) *Event {
 	}
 }
 
-func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
+func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	cf_app_id := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cf_app_id)
 
@@ -149,19 +157,19 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 			e.Fields["cf_app_name"] = cf_app_name
 		}
 
-		if cf_space_id != "" {
+		if cf_space_id != "" && config.AddSpaceGuid {
 			e.Fields["cf_space_id"] = cf_space_id
 		}
 
-		if cf_space_name != "" {
+		if cf_space_name != "" && config.AddSpaceName {
 			e.Fields["cf_space_name"] = cf_space_name
 		}
 
-		if cf_org_id != "" {
+		if cf_org_id != "" && config.AddOrgGuid {
 			e.Fields["cf_org_id"] = cf_org_id
 		}
 
-		if cf_org_name != "" {
+		if cf_org_name != "" && config.AddOrgName {
 			e.Fields["cf_org_name"] = cf_org_name
 		}
 
