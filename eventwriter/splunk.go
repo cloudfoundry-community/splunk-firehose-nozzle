@@ -85,13 +85,16 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.config.Token))
+	//Add app headers for HEC telemetry
+	//Todo: update static values with appName and appVersion variables
+	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
+	req.Header.Set("__splunk_app_version", "2.0.0")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode > 299 {
 		responseBody, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
