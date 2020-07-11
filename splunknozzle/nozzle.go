@@ -41,7 +41,7 @@ func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehos
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
 	config := &eventrouter.Config{
 		SelectedEvents: s.config.WantedEvents,
-		AddAppName:		s.config.AddAppName,
+		AddAppName:     s.config.AddAppName,
 		AddOrgName:     s.config.AddOrgName,
 		AddOrgGuid:     s.config.AddOrgGuid,
 		AddSpaceName:   s.config.AddSpaceName,

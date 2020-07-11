@@ -114,7 +114,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("add-app-info", "Query API to fetch app details").
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
 	kingpin.Flag("add-app-name", "Add app name from app cache").
-		OverrideDefaultFromEnvar("ADD_APP_NAME").Default("false").BoolVar(&c.AddAppName)
+		OverrideDefaultFromEnvar("ADD_APP_NAME").Default("true").BoolVar(&c.AddAppName)
 	kingpin.Flag("add-org-name", "Add org name from app cache").
 		OverrideDefaultFromEnvar("ADD_ORG_NAME").Default("true").BoolVar(&c.AddOrgName)
 	kingpin.Flag("add-org-guid", "Add org guid from app cache").
