@@ -177,13 +177,14 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
-
-		e.Fields["cf_ignored_app"] = cf_ignored_app
+		//removing cf_ignored_app as per INGEST-17639
+		//e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
 
 func (e *Event) AnnotateWithCFMetaData() {
-	e.Fields["cf_origin"] = "firehose"
+	//removing cf_origin as per INGEST-17639
+	//e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
 }
 
