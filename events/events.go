@@ -20,7 +20,7 @@ type Event struct {
 
 type Config struct {
 	SelectedEvents string
-	AddAppName	   bool
+	AddAppName   bool
 	AddOrgName     bool
 	AddOrgGuid     bool
 	AddSpaceName   bool
@@ -151,7 +151,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
-		cf_ignored_app := appInfo.IgnoredApp
+		//cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
 		if cf_app_name != "" && config.AddAppName {
