@@ -117,6 +117,7 @@ var _ = Describe("Events", func() {
 		It("Should give us the right Application metadata", func() {
 			fcache.SetIgnoreApp(true)
 			var config = &fevents.Config {
+				AddAppName: true,
 				AddOrgName: true,
 				AddOrgGuid: true,
 				AddSpaceName:  true,
@@ -134,6 +135,7 @@ var _ = Describe("Events", func() {
 
 	It("HttpStartStop", func() {
 		var config = &fevents.Config {
+			AddAppName: true,
 			AddOrgName: true,
 			AddOrgGuid: true,
 			AddSpaceName:  true,
