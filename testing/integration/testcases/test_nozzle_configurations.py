@@ -133,7 +133,6 @@ class TestSplunkNozzle():
         expect_raw_data = {
             "cf_app_name": "data_gen",
             "cf_org_name": "splunk-ci-org",
-            "cf_origin": "firehose",
             "cf_space_name": "splunk-ci-space",
             "event_type": "LogMessage"
         }

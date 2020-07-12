@@ -20,6 +20,7 @@ type Event struct {
 
 type Config struct {
 	SelectedEvents string
+	AddAppName   bool
 	AddOrgName     bool
 	AddOrgGuid     bool
 	AddSpaceName   bool
@@ -150,10 +151,10 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
-		cf_ignored_app := appInfo.IgnoredApp
+		//cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
-		if cf_app_name != "" {
+		if cf_app_name != "" && config.AddAppName {
 			e.Fields["cf_app_name"] = cf_app_name
 		}
 
@@ -176,13 +177,14 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
-
-		e.Fields["cf_ignored_app"] = cf_ignored_app
+		//removing cf_ignored_app as per INGEST-17639
+		//e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
 
 func (e *Event) AnnotateWithCFMetaData() {
-	e.Fields["cf_origin"] = "firehose"
+	//removing cf_origin as per INGEST-17639
+	//e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
 }
 
