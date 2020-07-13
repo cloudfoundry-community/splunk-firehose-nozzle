@@ -167,7 +167,7 @@ forms:
     type: integer
     label: RLP Gateway Retries
     default: 5
-    description: Time interval for monitoring consumer-queue-size status to help with back-pressure insights.
+    description: Number of retries to connect to RLP gateway
   - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing
