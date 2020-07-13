@@ -106,7 +106,7 @@ forms:
   - name: hec_retries
     type: integer
     label: HEC Retries
-    default: 5
+    default: 3
     description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
   - name: hec_batch_size
     type: integer
@@ -158,16 +158,51 @@ forms:
     label: Firehose Keep Alive
     description: Keep alive duration (in sec, min or hour) for the firehose consumer.
     default: 25s
-  - name: add_app_info
-    type: boolean
-    default: false
-    label: Add App Information
-    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
+  - name: status_monitor_interval
+    type: string
+    label: Monitor Queue Size
+    default: 0s
+    description: Time interval for monitoring consumer-queue-size status to help with back-pressure insights.
+  - name: rlp_gateway_retries
+    type: integer
+    label: RLP Gateway Retries
+    default: 5
+    description: Time interval for monitoring consumer-queue-size status to help with back-pressure insights.
   - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing
     default: false
     description: Enables data loss tracing.
+  - name: add_app_info
+    type: boolean
+    default: false
+    label: Add App Information
+    description: Enriches event data with application metadata, such as application name, space name/ id, org name/id.
+  - name: add_app_name
+    type: boolean
+    default: true
+    label: Add App Name
+    description: Enriches event raw data with application name. (Requires Add App Info feature enabled)
+  - name: add_org_name
+    type: boolean
+    default: true
+    label: Add Org Name
+    description: Enriches event raw data with cf-org name. (Requires Add App Info feature enabled)
+  - name: add_org_guid
+    type: boolean
+    default: true
+    label: Add Org ID
+    description: Enriches event raw data with cf-org id. (Requires Add App Info feature enabled)
+  - name: add_space_name
+    type: boolean
+    default: true
+    label: Add Space Name
+    description: Enriches event raw data with cf-space name. (Requires Add App Info feature enabled)
+  - name: add_space_guid
+    type: boolean
+    default: true
+    label: Add Space ID
+    description: Enriches event raw data with cf-space id. (Requires Add App Info feature enabled)
   - name: ignore_missing_app
     type: boolean
     label: Ignore Missing App

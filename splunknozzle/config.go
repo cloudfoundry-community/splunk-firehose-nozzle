@@ -149,7 +149,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
 	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to RLP gateway").
-		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("10").IntVar(&c.RLPGatewayRetries)
+		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("5").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
@@ -161,7 +161,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
-	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
+	kingpin.Flag("status-monitor-interval", "Time interval for monitoring consumer-queue-size status to help with back-pressure insights").
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 
 	kingpin.Parse()
