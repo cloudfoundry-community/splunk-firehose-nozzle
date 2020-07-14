@@ -20,11 +20,19 @@ type Event struct {
 
 type Config struct {
 	SelectedEvents string
-	AddAppName   bool
+	AddAppName     bool
 	AddOrgName     bool
 	AddOrgGuid     bool
 	AddSpaceName   bool
 	AddSpaceGuid   bool
+}
+
+var AppMetadata = []string{
+	"AppName",
+	"OrgName",
+	"OrgGuid",
+	"SpaceName",
+	"SpaceGuid",
 }
 
 func HttpStartStop(msg *events.Envelope) *Event {
@@ -257,4 +265,8 @@ func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 		}
 	}
 	return extraEvents, nil
+}
+
+func AuthorizedMetadata() string {
+	return strings.Join(AppMetadata, ", ")
 }

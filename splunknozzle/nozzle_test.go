@@ -34,7 +34,7 @@ func newConfig() *Config {
 		SubscriptionID: "splunk-sub",
 		KeepAlive:      time.Second * 25,
 
-		AddAppInfo:         true,
+		AddAppInfo:         "AppName,OrgName,OrgGuid,SpaceName,SpaceGuid",
 		IgnoreMissingApps:  true,
 		MissingAppCacheTTL: time.Second * 30,
 		AppCacheTTL:        time.Second * 30,
@@ -106,7 +106,7 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 		_, err := noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		config.AddAppInfo = false
+		config.AddAppInfo = ""
 		_, err = noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
@@ -146,7 +146,7 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("Run with cloudcontroller", func() {
-		config.AddAppInfo = false
+		config.AddAppInfo = ""
 		port := 9911
 		cc := testing.NewCloudControllerMock(port)
 		started := make(chan struct{})
