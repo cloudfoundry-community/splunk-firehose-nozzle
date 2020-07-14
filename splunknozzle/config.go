@@ -31,19 +31,12 @@ type Config struct {
 	SubscriptionID string        `json:"subscription-id"`
 	KeepAlive      time.Duration `json:"keep-alive"`
 
-	AddAppInfo         bool          `json:"add-app-info"`
+	AddAppInfo         string        `json:"add-app-info"`
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
 	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
 	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
-
-	// Add configuration to select interested fields from app info.
-	AddAppName   bool `json:"add-app-name"`
-	AddOrgName   bool `json:"add-org-name"`
-	AddOrgGuid   bool `json:"add-org-guid"`
-	AddSpaceName bool `json:"add-space-name"`
-	AddSpaceGuid bool `json:"add-space-guid"`
 
 	BoltDBPath   string `json:"boltdb-path"`
 	WantedEvents string `json:"wanted-events"`
@@ -111,18 +104,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 		OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").DurationVar(&c.KeepAlive)
 
-	kingpin.Flag("add-app-info", "Query API to fetch app details").
-		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
-	kingpin.Flag("add-app-name", "Add app name from app cache").
-		OverrideDefaultFromEnvar("ADD_APP_NAME").Default("true").BoolVar(&c.AddAppName)
-	kingpin.Flag("add-org-name", "Add org name from app cache").
-		OverrideDefaultFromEnvar("ADD_ORG_NAME").Default("true").BoolVar(&c.AddOrgName)
-	kingpin.Flag("add-org-guid", "Add org guid from app cache").
-		OverrideDefaultFromEnvar("ADD_ORG_GUID").Default("true").BoolVar(&c.AddOrgGuid)
-	kingpin.Flag("add-space-name", "Add space name from app cache").
-		OverrideDefaultFromEnvar("ADD_SPACE_NAME").Default("true").BoolVar(&c.AddSpaceName)
-	kingpin.Flag("add-space-guid", "Add space guid from app cache").
-		OverrideDefaultFromEnvar("ADD_SPACE_GUID").Default("true").BoolVar(&c.AddSpaceGuid)
+	kingpin.Flag("add-app-info", fmt.Sprintf("Comma separated list of app metadata to enrich event. Valid options are %s", events.AuthorizedMetadata())).
+		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("").StringVar(&c.AddAppInfo)
 
 	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from PCF").
 		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)

@@ -39,13 +39,14 @@ func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehos
 
 // EventRouter creates EventRouter object and setup routes for interested events
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
+	LowerAddAppInfo := strings.ToLower(s.config.AddAppInfo)
 	config := &eventrouter.Config{
 		SelectedEvents: s.config.WantedEvents,
-		AddAppName:     s.config.AddAppName,
-		AddOrgName:     s.config.AddOrgName,
-		AddOrgGuid:     s.config.AddOrgGuid,
-		AddSpaceName:   s.config.AddSpaceName,
-		AddSpaceGuid:   s.config.AddSpaceGuid,
+		AddAppName:     strings.Contains(LowerAddAppInfo, "appname"),
+		AddOrgName:     strings.Contains(LowerAddAppInfo, "orgname"),
+		AddOrgGuid:     strings.Contains(LowerAddAppInfo, "orgguid"),
+		AddSpaceName:   strings.Contains(LowerAddAppInfo, "spacename"),
+		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
 	}
 	return eventrouter.New(cache, eventSink, config)
 }
@@ -66,7 +67,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 
 // AppCache creates in-memory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, error) {
-	if s.config.AddAppInfo {
+	if s.config.AddAppInfo != "" {
 		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,
