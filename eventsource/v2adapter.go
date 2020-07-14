@@ -33,7 +33,7 @@ func NewV2Adapter(s Streamer) V2Adapter {
 func (a V2Adapter) Firehose(config *FirehoseConfig) chan *events.Envelope {
 	ctx := context.Background()
 	var v1msgs = make(chan *events.Envelope, 10000)
-	var v2msgs = make(chan *loggregator_v2.Envelope, 10000)
+	var v2msgs = make(chan []*loggregator_v2.Envelope, 10000)
 	es := a.streamer.Stream(ctx, &loggregator_v2.EgressBatchRequest{
 		ShardId: config.SubscriptionID,
 		Selectors: []*loggregator_v2.Selector{
@@ -67,9 +67,8 @@ func (a V2Adapter) Firehose(config *FirehoseConfig) chan *events.Envelope {
 
 	go func() {
 		for ctx.Err() == nil {
-			for _, e := range es() {
-				v2msgs <- e
-			}
+			e := es()
+			v2msgs <- e
 		}
 	}()
 
@@ -81,27 +80,30 @@ func (a V2Adapter) Firehose(config *FirehoseConfig) chan *events.Envelope {
 			for ctx.Err() == nil {
 				select {
 				case <-timer.C:
-					config.Logger.Info("Data_Flow_Monitoring", lager.Data{"events_pre_processing": len(v2msgs), "events_in_process": len(v1msgs)})
 					config.Logger.Info("Event_Count", lager.Data{"event_count_received": receivedCount})
 					timer.Reset(config.StatusMonitorInterval)
 					receivedCount = 0
 				default:
 				}
 				select {
-				case e := <-v2msgs:
-					atomic.AddUint64(&receivedCount, 1)
-					//// ToV1 converts v2 envelopes down to v1 envelopes.
-					for _, v1e := range conversion.ToV1(e) {
-						v1msgs <- v1e
+				case eArray := <-v2msgs:
+					atomic.AddUint64(&receivedCount, uint64(len(eArray)))
+					for _, e := range eArray {
+						//// ToV1 converts v2 envelopes down to v1 envelopes.
+						for _, v1e := range conversion.ToV1(e) {
+							v1msgs <- v1e
+						}
 					}
 				default:
 				}
 			}
 		} else {
 			for ctx.Err() == nil {
-				e := <-v2msgs
-				for _, v1e := range conversion.ToV1(e) {
-					v1msgs <- v1e
+				eArray := <-v2msgs
+				for _, e := range eArray {
+					for _, v1e := range conversion.ToV1(e) {
+						v1msgs <- v1e
+					}
 				}
 			}
 		}
