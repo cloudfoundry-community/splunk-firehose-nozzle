@@ -34,3 +34,5 @@ applications:
       HEC_WORKERS: 8
       DEBUG: false
       ENABLE_EVENT_TRACING: true
+      RLP_GATEWAY_RETRIES: 5
+      STATUS_MONITOR_INTERVAL: 0s
