@@ -338,7 +338,6 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      splunk-version: 6.6
      subscription-id: splunk-firehose
      trace-logging: true
-     version:
      rlp-gateway-retries: 5
      status-monitor-interval: 0s
      wanted-events: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
@@ -397,7 +396,7 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.8.x
+| go | go1.12.x
 | glide | 0.12.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
@@ -420,7 +419,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.1
+$ make VERSION=2.0.0
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
