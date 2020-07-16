@@ -30,7 +30,7 @@ applications:
       FLUSH_INTERVAL: 5s
       CONSUMER_QUEUE_SIZE: 10000
       HEC_BATCH_SIZE: 100
-      HEC_RETRIES: 5
+      HEC_RETRIES: 3
       HEC_WORKERS: 8
       DEBUG: false
       ENABLE_EVENT_TRACING: true
