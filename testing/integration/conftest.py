@@ -72,12 +72,7 @@ def test_env(request):
     """
     config_folder = get_config_folder()
     parser = configparser.ConfigParser()
-
-    if os.path.exists(join(config_folder, 'local.ini')):
-        parser.read([join(config_folder, 'config.ini'),
-                     join(config_folder, 'local.ini')])
-    else:
-        parser.read(join(config_folder, 'config.ini'))
+    parser.read(join(config_folder, 'config.ini'))
 
     cfg = parser.items('DEFAULT')
     conf = dict(cfg)
@@ -92,5 +87,9 @@ def test_env(request):
         conf["api_endpoint"] = request.config.getoption("--api-endpoint")
     if request.config.getoption("--splunk-index"):
         conf["splunk_index"] = request.config.getoption("--splunk-index")
+
+    if os.path.exists(join(config_folder, 'local.ini')):
+        parser.read(join(config_folder, 'local.ini'))
+        conf.update(parser.items('LOCAL'))
 
     return conf

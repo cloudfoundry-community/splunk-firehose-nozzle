@@ -6,7 +6,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
@@ -35,29 +34,33 @@ func newConfig() *Config {
 		SubscriptionID: "splunk-sub",
 		KeepAlive:      time.Second * 25,
 
-		AddAppInfo:         true,
+		AddAppInfo:         "AppName,OrgName,OrgGuid,SpaceName,SpaceGuid",
 		IgnoreMissingApps:  true,
 		MissingAppCacheTTL: time.Second * 30,
 		AppCacheTTL:        time.Second * 30,
+		OrgSpaceCacheTTL:   time.Second * 30,
 		AppLimits:          0,
 
 		BoltDBPath:   "/tmp/boltdb.db",
 		WantedEvents: "LogMessage",
 		ExtraFields:  "tag:value",
 
-		FlushInterval: time.Second * 5,
-		QueueSize:     1000,
-		BatchSize:     100,
-		Retries:       1,
-		HecWorkers:    8,
-		SplunkVersion: "6.4",
+		FlushInterval:     time.Second * 5,
+		QueueSize:         1000,
+		BatchSize:         100,
+		RLPGatewayRetries: 10,
+		Retries:           1,
+		HecWorkers:        8,
+		SplunkVersion:     "6.4",
 
 		Version: "1.0",
 		Branch:  "develop",
 		Commit:  "f1c3178f4df3e51e7f08abf046ac899bca49e93b",
 		BuildOS: "MacOS",
 
-		Debug: false,
+		TraceLogging:          false,
+		Debug:                 false,
+		StatusMonitorInterval: time.Second * 5,
 	}
 }
 
@@ -70,16 +73,16 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 	BeforeEach(func() {
 		config = newConfig()
-		noz = NewSplunkFirehoseNozzle(config)
 		logger = lager.NewLogger("test")
+		noz = NewSplunkFirehoseNozzle(config, logger)
 	})
 
 	It("EventSink", func() {
-		_, err := noz.EventSink(logger)
+		_, err := noz.EventSink()
 		Ω(err).ShouldNot(HaveOccurred())
 
 		config.Debug = true
-		_, err = noz.EventSink(logger)
+		_, err = noz.EventSink()
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -100,11 +103,11 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 	It("AppCache", func() {
 		client := testing.NewAppClientMock(1)
-		_, err := noz.AppCache(client, logger)
+		_, err := noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		config.AddAppInfo = false
-		_, err = noz.AppCache(client, logger)
+		config.AddAppInfo = ""
+		_, err = noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -116,31 +119,34 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("EventSource", func() {
-		client := &cfclient.Client{
-			Endpoint: cfclient.Endpoint{
-				DopplerEndpoint: "ws://localhost:9911",
-			},
-		}
-
-		f := noz.EventSource(client)
+		port := 9911
+		cc := testing.NewCloudControllerMock(port)
+		started := make(chan struct{})
+		go func() {
+			started <- struct{}{}
+			cc.Start()
+		}()
+		<-started
+		pcfClient, _ := noz.PCFClient()
+		f, _ := noz.EventSource(pcfClient)
 		Expect(f).ToNot(BeNil())
 	})
 
 	It("Nozzle", func() {
 		src := testing.NewMemoryEventSourceMock(1, 10, -1)
 		router := testing.NewEventRouterMock()
-		n := noz.Nozzle(src, router, logger)
+		n := noz.Nozzle(src, router)
 		Expect(n).ToNot(BeNil())
 	})
 
 	It("Run without cloudcontroller, error out", func() {
 		shutdownChan := make(chan os.Signal, 2)
-		err := noz.Run(shutdownChan, logger)
+		err := noz.Run(shutdownChan)
 		Ω(err).Should(HaveOccurred())
 	})
 
 	It("Run with cloudcontroller", func() {
-		config.AddAppInfo = false
+		config.AddAppInfo = ""
 		port := 9911
 		cc := testing.NewCloudControllerMock(port)
 		started := make(chan struct{})
@@ -155,7 +161,7 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 			time.Sleep(time.Second)
 			shutdownChan <- os.Interrupt
 		}()
-		err := noz.Run(shutdownChan, logger)
+		err := noz.Run(shutdownChan)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 })

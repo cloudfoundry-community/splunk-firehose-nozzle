@@ -3,9 +3,9 @@ package testing
 import (
 	"errors"
 	"fmt"
+	"github.com/cloudfoundry/sonde-go/events"
 	"sync"
 	"time"
-	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type MemoryEventSourceMock struct {

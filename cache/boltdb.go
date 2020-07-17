@@ -78,13 +78,13 @@ func (c *Boltdb) Open() error {
 	// Open bolt db
 	db, err := bolt.Open(c.config.Path, 0600, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
-		c.config.Logger.Error("Fail to open boltdb: ", err)
+		c.config.Logger.Error("Failed to open boltdb: ", err)
 		return err
 	}
 	c.appdb = db
 
 	if err := c.createBucket(); err != nil {
-		c.config.Logger.Error("Fail to create bucket: ", err)
+		c.config.Logger.Error("Failed to create bucket: ", err)
 		return err
 	}
 

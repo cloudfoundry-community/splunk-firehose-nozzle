@@ -102,6 +102,37 @@ jobs:
           when:
             always
 
+  execute_perf_tests:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            curl https://glide.sh/get | sh
+            go get -t ./...
+            cp -R /tmp/splunk-firehose-nozzle .
+      - run:
+          name: Prepare test environment
+          command: |
+            .circleci/pre-req.sh
+            .circleci/pre-functional-test.sh
+      - run:
+          name: Executing perf tests
+          command: |
+            .circleci/performance-test.sh
+      - run:
+          name: Teardown
+          command: |
+            echo "Teardown deployment env"
+            cf delete-org splunk-ci-org -f
+          when:
+            always
+
 workflows:
   version: 2
   build-and-deploy-nozzle:
@@ -110,11 +141,6 @@ workflows:
       - deploy-nozzle:
           requires:
             - build
-          filters:
-            branches:
-              only:
-                - develop
-                - master
 #      - tile-builder:
 #          requires:
 #            - deploy-nozzle
@@ -123,10 +149,26 @@ workflows:
 #              only: master
       - execute_tests:
           requires:
-            - build
             - deploy-nozzle
-          filters:
-            branches:
-              only:
-                - develop
-                - master
+
+
+#      - execute_perf_tests:
+#          requires:
+#            - build
+#          filters:
+#            branches:
+#              only:
+#                - dev/pcf-performance-testing
+#  nightly:
+#    triggers:
+#      - schedule:
+#          cron: "0 7 * * *"
+#          filters:
+#            branches:
+#              only:
+#                - dev/pcf-performance-testing
+#    jobs:
+#      - build
+#      - execute_perf_tests:
+#          requires:
+#            - build

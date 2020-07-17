@@ -7,18 +7,18 @@ applications:
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT:
-      CLIENT_ID:
-      CLIENT_SECRET:
-      SPLUNK_HOST:
-      SPLUNK_TOKEN:
-      SPLUNK_INDEX:
+      API_ENDPOINT: 
+      CLIENT_ID: 
+      CLIENT_SECRET: 
+      SPLUNK_HOST: 
+      SPLUNK_TOKEN: 
+      SPLUNK_INDEX: main
       SKIP_SSL_VALIDATION_CF: true
       SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle
       JOB_INDEX: -1
       JOB_HOST: localhost
-      ADD_APP_INFO: true
+      ADD_APP_INFO: AppName,OrgName,OrgGuid,SpaceName,SpaceGuid
       IGNORE_MISSING_APP: true
       MISSING_APP_CACHE_INVALIDATE_TTL: 3600s
       APP_CACHE_INVALIDATE_TTL: 86440s
@@ -34,3 +34,5 @@ applications:
       HEC_WORKERS: 8
       DEBUG: false
       ENABLE_EVENT_TRACING: true
+      RLP_GATEWAY_RETRIES: 5
+      STATUS_MONITOR_INTERVAL: 0s

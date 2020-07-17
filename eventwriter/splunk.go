@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync/atomic"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
@@ -41,10 +42,10 @@ func NewSplunk(config *SplunkConfig) Writer {
 	}
 }
 
-func (s *splunkClient) Write(events []map[string]interface{}) error {
+func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
+	var count uint64 = 0
 	for i, event := range events {
-
 		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
 			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
 		} else if s.config.Index != "" {
@@ -58,6 +59,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
+			atomic.AddUint64(&count, 1)
 			if i < len(events)-1 {
 				bodyBuffer.Write([]byte("\n\n"))
 			}
@@ -71,7 +73,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 	}
 	bodyBytes := bodyBuffer.Bytes()
 
-	return s.send(&bodyBytes)
+	return s.send(&bodyBytes), count
 }
 
 func (s *splunkClient) send(postBody *[]byte) error {
@@ -83,17 +85,19 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.config.Token))
+	//Add app headers for HEC telemetry
+	//Todo: update static values with appName and appVersion variables
+	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
+	req.Header.Set("__splunk_app_version", "2.0.0")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode > 299 {
 		responseBody, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	}
-
 	return nil
 }

@@ -97,6 +97,21 @@ forms:
     type: string
     label: Firehose Subscription ID
     description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
+  - name: add_app_info
+    type: multi_select_options
+    label: Add App Information
+    options:
+      - name: AppName
+        label: AppName
+      - name: OrgName
+        label: OrgName
+      - name: OrgGuid
+        label: OrgGuid
+      - name: SpaceName
+        label: SpaceName
+      - name: SpaceGuid
+        label: SpaceGuid
+    description: Enriches event raw data with application metadata
     optional: true
   - name: extra_fields
     type: string
@@ -106,7 +121,7 @@ forms:
   - name: hec_retries
     type: integer
     label: HEC Retries
-    default: 5
+    default: 3
     description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
   - name: hec_batch_size
     type: integer
@@ -158,11 +173,16 @@ forms:
     label: Firehose Keep Alive
     description: Keep alive duration (in sec, min or hour) for the firehose consumer.
     default: 25s
-  - name: add_app_info
-    type: boolean
-    default: false
-    label: Add App Information
-    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
+  - name: status_monitor_interval
+    type: string
+    label: Monitor Queue Pressure
+    default: 0s
+    description: Time interval for monitoring memory queue pressure to help with back-pressure insights.
+  - name: rlp_gateway_retries
+    type: integer
+    label: RLP Gateway Retries
+    default: 5
+    description: Number of retries to connect to RLP gateway
   - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing

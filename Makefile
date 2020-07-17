@@ -65,6 +65,8 @@ testall: test vet race cov
 test:
 	@go test ${PKGS}
 
+testv:
+	@go test -v ${PKGS}
 # Run "short" unit tests
 test-short:
 	@go test -short ${PKGS}

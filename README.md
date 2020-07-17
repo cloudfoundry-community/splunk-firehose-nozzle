@@ -79,7 +79,7 @@ This is recommended for dev environments only.
 This is recommended for dev environments only.
 * `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html.
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer.
-* `ADD_APP_INFO`: Enriches raw data with app details.
+* `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid).
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry.
 * `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates.
 * `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates.
@@ -95,6 +95,9 @@ This is recommended for dev environments only.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
 * `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. Only required for Splunk version 6.3 or below.
+* `RLP_GATEWAY_RETRIES`: Number of retries to connect to RLP gateway.
+* `STATUS_MONITOR_INTERVAL`: Time interval for monitoring memory queue pressure to help with back-pressure insights.
+
     ###  Please note 
     > SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
     For Splunk version 6.3 or below, please deploy nozzle via CLI. Update nozzle_manifest.yml with splunk_version (eg:- SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
@@ -134,11 +137,11 @@ on user authentication.
     ```
 
 #### Dump application info to boltdb ####
-If in production there are lots of PCF applications(say tens of thousands) and if the user would like to enrich
-application logs by including application meta data,querying all application metadata information from PCF may take some time.
+If in production there are lots of Cloud Foundry applications(say tens of thousands) and if the user would like to enrich
+application logs by including application meta data,querying all application metadata information from Cloud Foundry may take some time.
 For example if we include, add app name, space ID, space name, org ID and org name to the events.
 If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
-cache the meta data information to the local boltdb file. These queries will introduce load to the PCF system and could potentially take a long time to finish.
+cache the meta data information to the local boltdb file. These queries will introduce load to the Cloud Foundry system and could potentially take a long time to finish.
 Users can run this tool to generate a copy of all application meta data and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
 Example of how to run the dump application info tool:
@@ -167,8 +170,6 @@ applications:
   timeout: 180
   buildpack: https://github.com/SUSE/stratos-buildpack
   health-check-type: port
-  services:
-  - splunk-index
   env:
     SPLUNK_INDEX: testing_index
 ```
@@ -238,7 +239,7 @@ This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundr
 
   Are you searching for events and not finding them or looking at a dashboard and seeing "No result found"? Check Splunk Nozzle app logs.
 
-  To view the nozzle's logs running on PCF do the following:
+  To view the nozzle's logs running on Cloud Foundry do the following:
 
 <ol>
   <li>Log in as an admin via the CLI.</li>
@@ -310,7 +311,7 @@ A correct setup logs a start message with configuration parameters of the Nozzle
 
 <pre class="terminal">
   data:	{
-     add-app-info: true
+     add-app-info: AppName,OrgName,OrgGuid,SpaceName,SpaceGuid
      api-endpoint: https://api.endpoint.com
      app-cache-ttl: 0
      app-limits: 0
@@ -337,7 +338,8 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      splunk-version: 6.6
      subscription-id: splunk-firehose
      trace-logging: true
-     version:
+     rlp-gateway-retries: 5
+     status-monitor-interval: 0s
      wanted-events: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
   }
   ip: 10.0.0.0
@@ -394,7 +396,7 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.8.x
+| go | go1.12.x
 | glide | 0.12.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
@@ -417,7 +419,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.1
+$ make VERSION=2.0.0
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)

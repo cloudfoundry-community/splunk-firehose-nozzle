@@ -2,4 +2,4 @@
 
 cd testing/integration
 . venv/bin/activate
-pytest
+pytest -v -m Critical

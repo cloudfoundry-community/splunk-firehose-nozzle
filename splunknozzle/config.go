@@ -31,7 +31,7 @@ type Config struct {
 	SubscriptionID string        `json:"subscription-id"`
 	KeepAlive      time.Duration `json:"keep-alive"`
 
-	AddAppInfo         bool          `json:"add-app-info"`
+	AddAppInfo         string        `json:"add-app-info"`
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
 	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
@@ -42,20 +42,22 @@ type Config struct {
 	WantedEvents string `json:"wanted-events"`
 	ExtraFields  string `json:"extra-fields"`
 
-	FlushInterval time.Duration `json:"flush-interval"`
-	QueueSize     int           `json:"queue-size"`
-	BatchSize     int           `json:"batch-size"`
-	Retries       int           `json:"retries"`
-	HecWorkers    int           `json:"hec-workers"`
-	SplunkVersion string        `json:"splunk-version"`
+	FlushInterval     time.Duration `json:"flush-interval"`
+	QueueSize         int           `json:"queue-size"`
+	BatchSize         int           `json:"batch-size"`
+	RLPGatewayRetries int           `json:"rlp-gateway-retries"`
+	Retries           int           `json:"retries"`
+	HecWorkers        int           `json:"hec-workers"`
+	SplunkVersion     string        `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
 	Commit  string `json:"commit"`
 	BuildOS string `json:"buildos"`
 
-	TraceLogging bool `json:"trace-logging"`
-	Debug        bool `json:"debug"`
+	TraceLogging          bool          `json:"trace-logging"`
+	Debug                 bool          `json:"debug"`
+	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 }
 
 // NewConfigFromCmdFlags provides Splunk Nozzle config params.
@@ -102,8 +104,9 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 		OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").DurationVar(&c.KeepAlive)
 
-	kingpin.Flag("add-app-info", "Query API to fetch app details").
-		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
+	kingpin.Flag("add-app-info", fmt.Sprintf("Comma separated list of app metadata to enrich event. Valid options are %s", events.AuthorizedMetadata())).
+		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("").StringVar(&c.AddAppInfo)
+
 	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from PCF").
 		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
@@ -128,6 +131,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
+	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to RLP gateway").
+		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("5").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
@@ -139,6 +144,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
+	kingpin.Flag("status-monitor-interval", "Time interval for monitoring consumer-queue-size status to help with back-pressure insights").
+		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 
 	kingpin.Parse()
 	return c

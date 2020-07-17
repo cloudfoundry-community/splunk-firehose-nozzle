@@ -9,14 +9,13 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-type Config struct {
-	SelectedEvents string
-}
+type Config = fevents.Config
 
 type router struct {
 	appCache       cache.Cache
 	sink           eventsink.Sink
 	selectedEvents map[string]bool
+	config         *Config
 }
 
 func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, error) {
@@ -30,6 +29,7 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 		appCache:       appCache,
 		sink:           sink,
 		selectedEvents: selectedEvents,
+		config:         config,
 	}, nil
 }
 
@@ -64,7 +64,7 @@ func (r *router) Route(msg *events.Envelope) error {
 	event.AnnotateWithCFMetaData()
 
 	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
-		event.AnnotateWithAppData(r.appCache)
+		event.AnnotateWithAppData(r.appCache, r.config)
 	}
 
 	if ignored, ok := event.Fields["cf_ignored_app"]; ok {
