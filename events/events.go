@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/sirupsen/logrus"
 )
 
 type Event struct {
@@ -149,7 +149,6 @@ func ErrorEvent(msg *events.Envelope) *Event {
 func ContainerMetric(msg *events.Envelope) *Event {
 	containerMetric := msg.GetContainerMetric()
 
-
 	fields := logrus.Fields{
 		"cf_app_id":          containerMetric.GetApplicationId(),
 		"cpu_percentage":     containerMetric.GetCpuPercentage(),
@@ -206,7 +205,9 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 			e.Fields["cf_org_name"] = cf_org_name
 		}
 
-		e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
+		if app_env["SPLUNK_INDEX"] != nil {
+			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
+		}
 		e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
