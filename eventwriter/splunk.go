@@ -45,7 +45,6 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 	bodyBuffer := new(bytes.Buffer)
 	for i, event := range events {
 
-
 		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
 			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
 		} else if s.config.Index != "" {
@@ -84,6 +83,10 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.config.Token))
+	//Add app headers for HEC telemetry
+	//Todo: update static values with appName and appVersion variables
+	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
+	req.Header.Set("__splunk_app_version", "1.1.3")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

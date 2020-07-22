@@ -88,6 +88,36 @@ var _ = Describe("Splunk", func() {
 			Expect(contentType).To(Equal("application/json"))
 		})
 
+		It("sets app name to appName", func() {
+			appName := "Splunk Firehose Nozzle"
+
+			client := NewSplunk(config)
+			events := []map[string]interface{}{}
+			err := client.Write(events)
+
+			Expect(err).To(BeNil())
+			Expect(capturedRequest).NotTo(BeNil())
+
+			applicationName := capturedRequest.Header.Get("__splunk_app_name")
+			Expect(applicationName).To(Equal(appName))
+
+		})
+
+		It("sets app appVersion", func() {
+			appVersion := "1.1.3"
+
+			client := NewSplunk(config)
+			events := []map[string]interface{}{}
+			err := client.Write(events)
+
+			Expect(err).To(BeNil())
+			Expect(capturedRequest).NotTo(BeNil())
+
+			applicationVersion := capturedRequest.Header.Get("__splunk_app_version")
+			Expect(applicationVersion).To(Equal(appVersion))
+
+		})
+
 		It("Writes batch event json", func() {
 			client := NewSplunk(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
