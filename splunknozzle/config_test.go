@@ -47,7 +47,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("FIREHOSE_SUBSCRIPTION_ID", "my-nozzle")
 			os.Setenv("FIREHOSE_KEEP_ALIVE", "42s")
 
-			os.Setenv("ADD_APP_INFO", "true")
+			os.Setenv("ADD_APP_INFO", "AppName")
 			os.Setenv("IGNORE_MISSING_APP", "true")
 			os.Setenv("MISSING_APP_CACHE_INVALIDATE_TTL", "100s")
 			os.Setenv("APP_CACHE_INVALIDATE_TTL", "100s")
@@ -88,7 +88,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SubscriptionID).To(Equal("my-nozzle"))
 			Expect(c.KeepAlive).To(Equal(42 * time.Second))
 
-			Expect(c.AddAppInfo).To(BeTrue())
+			Expect(c.AddAppInfo).To(Equal("AppName"))
 			Expect(c.IgnoreMissingApps).To(BeTrue())
 			Expect(c.MissingAppCacheTTL).To(Equal(100 * time.Second))
 			Expect(c.AppCacheTTL).To(Equal(100 * time.Second))
@@ -126,7 +126,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SubscriptionID).To(Equal("splunk-firehose"))
 			Expect(c.KeepAlive).To(Equal(25 * time.Second))
 
-			Expect(c.AddAppInfo).To(BeFalse())
+			Expect(c.AddAppInfo).To(Equal(""))
 			Expect(c.IgnoreMissingApps).To(BeTrue())
 			Expect(c.MissingAppCacheTTL).To(Equal(0 * time.Second))
 			Expect(c.AppCacheTTL).To(Equal(0 * time.Second))
@@ -176,7 +176,7 @@ var _ = Describe("Config", func() {
 				"--skip-ssl-validation-splunk",
 				"--subscription-id=my-nozzlec",
 				"--firehose-keep-alive=24s",
-				"--add-app-info",
+				"--add-app-info=OrgName",
 				"--ignore-missing-app",
 				"--missing-app-cache-invalidate-ttl=15s",
 				"--app-cache-invalidate-ttl=15s",
@@ -218,7 +218,7 @@ var _ = Describe("Config", func() {
 			Expect(c.SubscriptionID).To(Equal("my-nozzlec"))
 			Expect(c.KeepAlive).To(Equal(24 * time.Second))
 
-			Expect(c.AddAppInfo).To(BeTrue())
+			Expect(c.AddAppInfo).To(Equal("OrgName"))
 			Expect(c.IgnoreMissingApps).To(BeTrue())
 			Expect(c.MissingAppCacheTTL).To(Equal(15 * time.Second))
 			Expect(c.AppCacheTTL).To(Equal(15 * time.Second))

@@ -149,7 +149,14 @@ var _ = Describe("Events", func() {
 	Context("given Application Metadata", func() {
 		It("Should give us the right Application metadata", func() {
 			fcache.SetIgnoreApp(true)
-			event.AnnotateWithAppData(fcache)
+			var config = &fevents.Config{
+				AddAppName:   true,
+				AddOrgName:   true,
+				AddOrgGuid:   true,
+				AddSpaceName: true,
+				AddSpaceGuid: true,
+			}
+			event.AnnotateWithAppData(fcache, config)
 			Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
 			Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
 			Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
@@ -160,7 +167,14 @@ var _ = Describe("Events", func() {
 	})
 
 	It("HttpStart", func() {
-		event.AnnotateWithAppData(fcache)
+		var config = &fevents.Config{
+			AddAppName:   true,
+			AddOrgName:   true,
+			AddOrgGuid:   true,
+			AddSpaceName: true,
+			AddSpaceGuid: true,
+		}
+		event.AnnotateWithAppData(fcache, config)
 		Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
 		Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
 		Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
