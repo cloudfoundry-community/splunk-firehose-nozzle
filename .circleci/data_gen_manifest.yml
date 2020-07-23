@@ -1,0 +1,11 @@
+---
+applications:
+  - name: data_gen
+    memory: 128M
+    instances: 1
+    buildpack: go_buildpack
+    cmd: data_gen
+    env:
+      GOPACKAGENAME: main
+      EPS: 50
+      TOTAL_EVENTS: 0
