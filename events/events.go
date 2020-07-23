@@ -18,6 +18,23 @@ type Event struct {
 	Type   string
 }
 
+type Config struct {
+	SelectedEvents string
+	AddAppName     bool
+	AddOrgName     bool
+	AddOrgGuid     bool
+	AddSpaceName   bool
+	AddSpaceGuid   bool
+}
+
+var AppMetadata = []string{
+	"AppName",
+	"OrgName",
+	"OrgGuid",
+	"SpaceName",
+	"SpaceGuid",
+}
+
 func HttpStart(msg *events.Envelope) *Event {
 	httpStart := msg.GetHttpStart()
 	fields := logrus.Fields{
@@ -165,7 +182,7 @@ func ContainerMetric(msg *events.Envelope) *Event {
 	}
 }
 
-func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
+func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	cf_app_id := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cf_app_id)
 
@@ -182,38 +199,35 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
-		cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
-		if cf_app_name != "" {
+		if cf_app_name != "" && config.AddAppName {
 			e.Fields["cf_app_name"] = cf_app_name
 		}
 
-		if cf_space_id != "" {
+		if cf_space_id != "" && config.AddSpaceGuid {
 			e.Fields["cf_space_id"] = cf_space_id
 		}
 
-		if cf_space_name != "" {
+		if cf_space_name != "" && config.AddSpaceName {
 			e.Fields["cf_space_name"] = cf_space_name
 		}
 
-		if cf_org_id != "" {
+		if cf_org_id != "" && config.AddOrgGuid {
 			e.Fields["cf_org_id"] = cf_org_id
 		}
 
-		if cf_org_name != "" {
+		if cf_org_name != "" && config.AddOrgName {
 			e.Fields["cf_org_name"] = cf_org_name
 		}
 
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
-		e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
 
 func (e *Event) AnnotateWithCFMetaData() {
-	e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
 }
 
@@ -286,4 +300,8 @@ func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 		}
 	}
 	return extraEvents, nil
+}
+
+func AuthorizedMetadata() string {
+	return strings.Join(AppMetadata, ", ")
 }

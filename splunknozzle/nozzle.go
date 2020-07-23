@@ -3,6 +3,7 @@ package splunknozzle
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -30,8 +31,14 @@ func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
 
 // EventRouter creates EventRouter object and setup routes for interested events
 func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsink.Sink) (eventrouter.Router, error) {
+	LowerAddAppInfo := strings.ToLower(s.config.AddAppInfo)
 	config := &eventrouter.Config{
 		SelectedEvents: s.config.WantedEvents,
+		AddAppName:     strings.Contains(LowerAddAppInfo, "appname"),
+		AddOrgName:     strings.Contains(LowerAddAppInfo, "orgname"),
+		AddOrgGuid:     strings.Contains(LowerAddAppInfo, "orgguid"),
+		AddSpaceName:   strings.Contains(LowerAddAppInfo, "spacename"),
+		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
 	}
 	return eventrouter.New(cache, eventSink, config)
 }
@@ -52,7 +59,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 
 // AppCache creates in-memory cache or boltDB cache
 func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
-	if s.config.AddAppInfo {
+	if s.config.AddAppInfo != "" {
 		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
 			IgnoreMissingApps:  s.config.IgnoreMissingApps,

@@ -30,7 +30,7 @@ type Config struct {
 	SubscriptionID string        `json:"subscription-id"`
 	KeepAlive      time.Duration `json:"keep-alive"`
 
-	AddAppInfo         bool          `json:"add-app-info"`
+	AddAppInfo         string        `json:"add-app-info"`
 	IgnoreMissingApps  bool          `json:"ignore-missing-apps"`
 	MissingAppCacheTTL time.Duration `json:"missing-app-cache-ttl"`
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
@@ -100,8 +100,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 		OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").DurationVar(&c.KeepAlive)
 
-	kingpin.Flag("add-app-info", "Query API to fetch app details").
-		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("false").BoolVar(&c.AddAppInfo)
+	kingpin.Flag("add-app-info", fmt.Sprintf("Comma separated list of app metadata to enrich event. Valid options are %s", events.AuthorizedMetadata())).
+		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("").StringVar(&c.AddAppInfo)
 	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from PCF").
 		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").

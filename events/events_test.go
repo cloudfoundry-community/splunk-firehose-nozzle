@@ -139,7 +139,6 @@ var _ = Describe("Events", func() {
 	Context("given metadata", func() {
 		It("Should give us the right metadata", func() {
 			event.AnnotateWithCFMetaData()
-			Expect(event.Fields["cf_origin"]).To(Equal("firehose"))
 			Expect(event.Fields["event_type"]).To(Equal(event.Type))
 
 		})
@@ -149,24 +148,36 @@ var _ = Describe("Events", func() {
 	Context("given Application Metadata", func() {
 		It("Should give us the right Application metadata", func() {
 			fcache.SetIgnoreApp(true)
-			event.AnnotateWithAppData(fcache)
+			var config = &fevents.Config{
+				AddAppName:   true,
+				AddOrgName:   true,
+				AddOrgGuid:   true,
+				AddSpaceName: true,
+				AddSpaceGuid: true,
+			}
+			event.AnnotateWithAppData(fcache, config)
 			Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
 			Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
 			Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
 			Expect(event.Fields["cf_org_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d7"))
 			Expect(event.Fields["cf_org_name"]).To(Equal("testing-org"))
-			Expect(event.Fields["cf_ignored_app"]).To(Equal(true))
 		})
 	})
 
 	It("HttpStart", func() {
-		event.AnnotateWithAppData(fcache)
+		var config = &fevents.Config{
+			AddAppName:   true,
+			AddOrgName:   true,
+			AddOrgGuid:   true,
+			AddSpaceName: true,
+			AddSpaceGuid: true,
+		}
+		event.AnnotateWithAppData(fcache, config)
 		Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
 		Expect(event.Fields["cf_space_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d6"))
 		Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
 		Expect(event.Fields["cf_org_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d7"))
 		Expect(event.Fields["cf_org_name"]).To(Equal("testing-org"))
-		Expect(event.Fields["cf_ignored_app"]).To(Equal(false))
 	})
 
 	Context("ParseSelectedEvents, empty select events passed in", func() {
