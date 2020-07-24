@@ -1,9 +1,9 @@
 package splunknozzle
 
 import (
-	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
@@ -20,12 +20,14 @@ import (
 
 type SplunkFirehoseNozzle struct {
 	config *Config
+	logger lager.Logger
 }
 
 //create new function of type *SplunkFirehoseNozzle
-func NewSplunkFirehoseNozzle(config *Config) *SplunkFirehoseNozzle {
+func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
+		logger: logger,
 	}
 }
 
@@ -58,7 +60,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 }
 
 // AppCache creates in-memory cache or boltDB cache
-func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Logger) (cache.Cache, error) {
+func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, error) {
 	if s.config.AddAppInfo != "" {
 		c := cache.BoltdbConfig{
 			Path:               s.config.BoltDBPath,
@@ -66,7 +68,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
 			AppCacheTTL:        s.config.AppCacheTTL,
 			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
-			Logger:             logger,
+			Logger:             s.logger,
 		}
 		return cache.NewBoltdb(client, &c)
 	}
@@ -75,7 +77,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient, logger lager.Log
 }
 
 // EventSink creates std sink or Splunk sink
-func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, error) {
+func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 	if s.config.Debug {
 		return &eventsink.Std{}, nil
 	}
@@ -86,7 +88,7 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
 		SkipSSL: s.config.SkipSSLSplunk,
-		Logger:  logger,
+		Logger:  s.logger,
 	}
 
 	var writers []eventwriter.Writer
@@ -97,31 +99,34 @@ func (s *SplunkFirehoseNozzle) EventSink(logger lager.Logger) (eventsink.Sink, e
 
 	parsedExtraFields, err := events.ParseExtraFields(s.config.ExtraFields)
 	if err != nil {
+		s.logger.Error("Error at parsing extra fields", nil)
 		return nil, err
 	}
 
 	nozzleUUID := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
-		FlushInterval:  s.config.FlushInterval,
-		QueueSize:      s.config.QueueSize,
-		BatchSize:      s.config.BatchSize,
-		Retries:        s.config.Retries,
-		Hostname:       s.config.JobHost,
-		Version:        s.config.SplunkVersion,
-		SubscriptionID: s.config.SubscriptionID,
-		TraceLogging:   s.config.TraceLogging,
-		ExtraFields:    parsedExtraFields,
-		UUID:           nozzleUUID,
-		Logger:         logger,
+		FlushInterval:         s.config.FlushInterval,
+		QueueSize:             s.config.QueueSize,
+		BatchSize:             s.config.BatchSize,
+		Retries:               s.config.Retries,
+		Hostname:              s.config.JobHost,
+		Version:               s.config.SplunkVersion,
+		SubscriptionID:        s.config.SubscriptionID,
+		TraceLogging:          s.config.TraceLogging,
+		ExtraFields:           parsedExtraFields,
+		UUID:                  nozzleUUID,
+		Logger:                s.logger,
+		StatusMonitorInterval: s.config.StatusMonitorInterval,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
-	if err := splunkSink.Open(); err != nil {
-		return nil, fmt.Errorf("failed to connect splunk")
-	}
+	splunkSink.Open()
 
-	logger.RegisterSink(splunkSink)
+	s.logger.RegisterSink(splunkSink)
+	if s.config.StatusMonitorInterval > time.Second*0 {
+		go splunkSink.LogStatus()
+	}
 	return splunkSink, nil
 }
 
@@ -138,9 +143,10 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsou
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router
-func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRouter eventrouter.Router, logger lager.Logger) *nozzle.Nozzle {
+func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRouter eventrouter.Router) *nozzle.Nozzle {
 	firehoseConfig := &nozzle.Config{
-		Logger: logger,
+		Logger:                s.logger,
+		StatusMonitorInterval: s.config.StatusMonitorInterval,
 	}
 
 	return nozzle.New(eventSource, eventRouter, firehoseConfig)
@@ -148,50 +154,55 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 
 // Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
-func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal, logger lager.Logger) error {
-	eventSink, err := s.EventSink(logger)
+func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
+	eventSink, err := s.EventSink()
 	if err != nil {
+		s.logger.Error("Failed to create event sink", nil)
 		return err
 	}
 
-	logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
+	s.logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
+		s.logger.Error("Failed to get info from PCF Server", nil)
 		return err
 	}
 
-	appCache, err := s.AppCache(pcfClient, logger)
+	appCache, err := s.AppCache(pcfClient)
 	if err != nil {
+		s.logger.Error("Failed to start App Cache", nil)
 		return err
 	}
 
 	err = appCache.Open()
 	if err != nil {
+		s.logger.Error("Failed to open App Cache", nil)
 		return err
 	}
 	defer appCache.Close()
 
 	eventRouter, err := s.EventRouter(appCache, eventSink)
 	if err != nil {
+		s.logger.Error("Failed to create event router", nil)
 		return err
 	}
 
 	eventSource := s.EventSource(pcfClient)
-	noz := s.Nozzle(eventSource, eventRouter, logger)
+	noz := s.Nozzle(eventSource, eventRouter)
 
 	// Continuous Loop will run forever
 	go func() {
 		err := noz.Start()
 		if err != nil {
-			logger.Error("Firehose consumer exits with error", err)
+			s.logger.Error("Firehose consumer exits with error", err)
 		}
 		shutdownChan <- os.Interrupt
 	}()
 
 	<-shutdownChan
 
-	logger.Info("Splunk Nozzle is going to exit gracefully")
+	s.logger.Info("Splunk Nozzle is going to exit gracefully")
 	noz.Close()
 	return eventSink.Close()
 }

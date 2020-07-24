@@ -40,6 +40,7 @@ func newConfig() *Config {
 		MissingAppCacheTTL: time.Second * 30,
 		AppCacheTTL:        time.Second * 30,
 		AppLimits:          0,
+		OrgSpaceCacheTTL:   time.Second * 30,
 
 		BoltDBPath:   "/tmp/boltdb.db",
 		WantedEvents: "LogMessage",
@@ -57,7 +58,9 @@ func newConfig() *Config {
 		Commit:  "f1c3178f4df3e51e7f08abf046ac899bca49e93b",
 		BuildOS: "MacOS",
 
-		Debug: false,
+		TraceLogging:          false,
+		Debug:                 false,
+		StatusMonitorInterval: time.Second * 5,
 	}
 }
 
@@ -70,16 +73,16 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 	BeforeEach(func() {
 		config = newConfig()
-		noz = NewSplunkFirehoseNozzle(config)
 		logger = lager.NewLogger("test")
+		noz = NewSplunkFirehoseNozzle(config, logger)
 	})
 
 	It("EventSink", func() {
-		_, err := noz.EventSink(logger)
+		_, err := noz.EventSink()
 		Ω(err).ShouldNot(HaveOccurred())
 
 		config.Debug = true
-		_, err = noz.EventSink(logger)
+		_, err = noz.EventSink()
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -100,11 +103,11 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 	It("AppCache", func() {
 		client := testing.NewAppClientMock(1)
-		_, err := noz.AppCache(client, logger)
+		_, err := noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		config.AddAppInfo = ""
-		_, err = noz.AppCache(client, logger)
+		_, err = noz.AppCache(client)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -129,13 +132,13 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	It("Nozzle", func() {
 		src := testing.NewMemoryEventSourceMock(1, 10, -1)
 		router := testing.NewEventRouterMock()
-		n := noz.Nozzle(src, router, logger)
+		n := noz.Nozzle(src, router)
 		Expect(n).ToNot(BeNil())
 	})
 
 	It("Run without cloudcontroller, error out", func() {
 		shutdownChan := make(chan os.Signal, 2)
-		err := noz.Run(shutdownChan, logger)
+		err := noz.Run(shutdownChan)
 		Ω(err).Should(HaveOccurred())
 	})
 
@@ -155,7 +158,7 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 			time.Sleep(time.Second)
 			shutdownChan <- os.Interrupt
 		}()
-		err := noz.Run(shutdownChan, logger)
+		err := noz.Run(shutdownChan)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 })

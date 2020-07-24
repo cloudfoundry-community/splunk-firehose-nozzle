@@ -18,25 +18,27 @@ import (
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
 
 type SplunkConfig struct {
-	FlushInterval  time.Duration
-	QueueSize      int // consumer queue buffer size
-	BatchSize      int
-	Retries        int // No of retries to post events to HEC before dropping events
-	Hostname       string
-	Version        string
-	SubscriptionID string
-	ExtraFields    map[string]string
-	TraceLogging   bool
-	UUID           string
-	Logger         lager.Logger
+	FlushInterval         time.Duration
+	QueueSize             int // consumer queue buffer size
+	BatchSize             int
+	Retries               int // No of retries to post events to HEC before dropping events
+	Hostname              string
+	Version               string
+	SubscriptionID        string
+	ExtraFields           map[string]string
+	TraceLogging          bool
+	UUID                  string
+	Logger                lager.Logger
+	StatusMonitorInterval time.Duration
 }
 
 type Splunk struct {
-	writers    []eventwriter.Writer
-	config     *SplunkConfig
-	events     chan map[string]interface{}
-	wg         sync.WaitGroup
-	eventCount uint64
+	writers       []eventwriter.Writer
+	config        *SplunkConfig
+	events        chan map[string]interface{}
+	wg            sync.WaitGroup
+	eventCount    uint64
+	sentCountChan chan uint64
 
 	// cached IP
 	ip string
@@ -47,11 +49,12 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 	config.Hostname = hostname
 
 	return &Splunk{
-		writers:    writers,
-		config:     config,
-		events:     make(chan map[string]interface{}, config.QueueSize),
-		ip:         ip,
-		eventCount: 0,
+		writers:       writers,
+		config:        config,
+		events:        make(chan map[string]interface{}, config.QueueSize),
+		ip:            ip,
+		eventCount:    0,
+		sentCountChan: make(chan uint64, 100),
 	}
 }
 
@@ -121,8 +124,11 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 	}
 	var err error
 	for i := 0; i < s.config.Retries; i++ {
-		err = writer.Write(batch)
+		err, sentCount := writer.Write(batch)
 		if err == nil {
+			if s.config.StatusMonitorInterval > time.Second*0 {
+				s.sentCountChan <- sentCount
+			}
 			return nil
 		}
 		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
@@ -211,6 +217,36 @@ func (s *Splunk) Log(message lager.LogFormat) {
 
 	events := []map[string]interface{}{event}
 	s.writers[len(s.writers)-1].Write(events)
+}
+
+func (s *Splunk) LogStatus() {
+	timer := time.NewTimer(s.config.StatusMonitorInterval)
+	var sent uint64 = 0
+	for {
+		select {
+		case <-timer.C:
+			percent := float64(len(s.events)) / float64(s.config.QueueSize) * 100.0
+			status := "low"
+			switch {
+			case percent > 99.9:
+				status = "too high"
+			case percent > 90:
+				status = "high"
+			case percent > 50:
+				status = "medium"
+			}
+			s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
+			s.config.Logger.Info("Event_Count", lager.Data{"event_count_sent": sent})
+			sent = 0
+			timer.Reset(s.config.StatusMonitorInterval)
+		default:
+		}
+		select {
+		case sentCount := <-s.sentCountChan:
+			atomic.AddUint64(&sent, sentCount)
+		default:
+		}
+	}
 }
 
 func getRetryInterval(attempt int) time.Duration {

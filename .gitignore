@@ -15,3 +15,6 @@ data_gen
 
 manifest*.yml
 splunk-firehose-nozzle.iml
+*.pyc
+testing/integration/config/env.json
+testing/manual_perf/data_gen_manifest.yml

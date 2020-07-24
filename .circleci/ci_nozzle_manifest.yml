@@ -36,3 +36,4 @@ applications:
       HEC_WORKERS: 8
       DEBUG: false
       ENABLE_EVENT_TRACING: true
+      STATUS_MONITOR_INTERVAL: 0s
