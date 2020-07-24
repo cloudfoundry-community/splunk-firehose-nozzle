@@ -41,8 +41,9 @@ func NewSplunk(config *SplunkConfig) Writer {
 	}
 }
 
-func (s *splunkClient) Write(events []map[string]interface{}) error {
+func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
+	count := uint64(len(events))
 	for i, event := range events {
 
 		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
@@ -71,7 +72,7 @@ func (s *splunkClient) Write(events []map[string]interface{}) error {
 	}
 	bodyBytes := bodyBuffer.Bytes()
 
-	return s.send(&bodyBytes)
+	return s.send(&bodyBytes), count
 }
 
 func (s *splunkClient) send(postBody *[]byte) error {
@@ -86,7 +87,7 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	//Add app headers for HEC telemetry
 	//Todo: update static values with appName and appVersion variables
 	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
-	req.Header.Set("__splunk_app_version", "1.1.3")
+	req.Header.Set("__splunk_app_version", "1.2.0")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

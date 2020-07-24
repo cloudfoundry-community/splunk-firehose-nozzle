@@ -53,8 +53,9 @@ type Config struct {
 	Commit  string `json:"commit"`
 	BuildOS string `json:"buildos"`
 
-	TraceLogging bool `json:"trace-logging"`
-	Debug        bool `json:"debug"`
+	TraceLogging          bool          `json:"trace-logging"`
+	Debug                 bool          `json:"debug"`
+	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -137,6 +138,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
+	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
+		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 
 	kingpin.Parse()
 	return c

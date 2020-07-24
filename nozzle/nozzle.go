@@ -2,6 +2,8 @@ package nozzle
 
 import (
 	"code.cloudfoundry.org/lager"
+	"sync/atomic"
+	"time"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
@@ -9,7 +11,8 @@ import (
 )
 
 type Config struct {
-	Logger lager.Logger
+	Logger                lager.Logger
+	StatusMonitorInterval time.Duration
 }
 
 // Nozzle reads events from eventsource.Source and routes events
@@ -43,23 +46,56 @@ func (f *Nozzle) Start() error {
 
 	var lastErr error
 	events, errs := f.eventSource.Read()
-	for {
-		select {
-		case event, ok := <-events:
-			if !ok {
-				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
+	if f.config.StatusMonitorInterval > time.Second*0 {
+		var receivedCount uint64 = 0
+		timer := time.NewTimer(f.config.StatusMonitorInterval)
+
+		for {
+			select {
+			case <-timer.C:
+				f.config.Logger.Info("Event_Count", lager.Data{"event_count_received": receivedCount})
+				timer.Reset(f.config.StatusMonitorInterval)
+				receivedCount = 0
+			default:
+			}
+
+			select {
+			case event, ok := <-events:
+				if !ok {
+					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
+					return lastErr
+				}
+				atomic.AddUint64(&receivedCount, uint64(1))
+				if err := f.eventRouter.Route(event); err != nil {
+					f.config.Logger.Error("Failed to route event", err)
+				}
+
+			case lastErr = <-errs:
+				f.handleError(lastErr)
+
+			case <-f.closing:
 				return lastErr
 			}
+		}
+	} else {
+		for {
+			select {
+			case event, ok := <-events:
+				if !ok {
+					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
+					return lastErr
+				}
 
-			if err := f.eventRouter.Route(event); err != nil {
-				f.config.Logger.Error("Failed to route event", err)
+				if err := f.eventRouter.Route(event); err != nil {
+					f.config.Logger.Error("Failed to route event", err)
+				}
+
+			case lastErr = <-errs:
+				f.handleError(lastErr)
+
+			case <-f.closing:
+				return lastErr
 			}
-
-		case lastErr = <-errs:
-			f.handleError(lastErr)
-
-		case <-f.closing:
-			return lastErr
 		}
 	}
 }
