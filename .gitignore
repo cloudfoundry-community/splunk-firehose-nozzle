@@ -2,19 +2,17 @@
 
 tools/dump_app_info/dump_app_info
 tools/data_gen/data_gen
-
-
-
 cache.db
 *.out
-
 main
 splunk-firehose-nozzle
 env.sh
 data_gen
-
 manifest*.yml
 splunk-firehose-nozzle.iml
+
 *.pyc
-testing/integration/config/env.json
 testing/manual_perf/data_gen_manifest.yml
+testing/integration/config/env.json
+testing/integration/config/local.ini
+
