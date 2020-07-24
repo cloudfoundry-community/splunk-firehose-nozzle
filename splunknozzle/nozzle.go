@@ -45,7 +45,7 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 	return eventrouter.New(cache, eventSink, config)
 }
 
-// PCFClient creates a client object which can talk to PCF
+// CFClient creates a client object which can talk to Cloud Foundry
 func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 	cfConfig := &cfclient.Config{
 		ApiAddress:        s.config.ApiEndpoint,
@@ -152,7 +152,7 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 	return nozzle.New(eventSource, eventRouter, firehoseConfig)
 }
 
-// Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
+// Run creates all necessary objects, reading events from CF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 	eventSink, err := s.EventSink()
@@ -165,7 +165,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
-		s.logger.Error("Failed to get info from PCF Server", nil)
+		s.logger.Error("Failed to get info from CF Server", nil)
 		return err
 	}
 

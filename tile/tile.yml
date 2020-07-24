@@ -1,6 +1,6 @@
 ---
 name: splunk-nozzle
-label: Splunk Firehose Nozzle for PCF
+label: Splunk Firehose Nozzle for Vmware Tanzu
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
@@ -10,7 +10,7 @@ allow_paid_service_plans: true        # Allow paid service plans, default: false
 stemcell_criteria:
   os: ubuntu-xenial
   requires_cpi: false
-  version: '97'
+  version: '621'
 
 properties:
 - name: author
@@ -98,6 +98,21 @@ forms:
     label: Firehose Subscription ID
     description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
     optional: true
+  - name: add_app_info
+    type: multi_select_options
+    label: Add App Information
+    options:
+      - name: AppName
+        label: AppName
+      - name: OrgName
+        label: OrgName
+      - name: OrgGuid
+        label: OrgGuid
+      - name: SpaceName
+        label: SpaceName
+      - name: SpaceGuid
+        label: SpaceGuid
+    description: Enriches event raw data with application metadata
   - name: extra_fields
     type: string
     label: Additional Fields
@@ -106,7 +121,7 @@ forms:
   - name: hec_retries
     type: integer
     label: HEC Retries
-    default: 5
+    default: 3
     description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
   - name: hec_batch_size
     type: integer
@@ -123,26 +138,31 @@ forms:
     label: Consumer Queue Size
     default: 10000
     description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
+  - name: status_monitor_interval
+    type: string
+    label: Monitor Queue Pressure
+    default: 0s
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
   - name: flush_interval
     type: string
     label: Flush Interval
     default: 5s
-    description: Time interval (in sec) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
   - name: missing_app_cache_invalidate_ttl
     type: string
     label: Missing App Cache Invalidate TTL
     default: 0s
-    description: Time interval (in sec) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the missing app info cache. Set to 0s to maintain cache until nozzle restart.
   - name: app_cache_invalidate_ttl
     type: string
     label: App Cache Invalidate TTL
     default: 0s
-    description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the app info local cache. Set to 0s to only populate the cache during startup or restart of the nozzle.
   - name: org_space_cache_invalidate_ttl
     type: string
     label: Org Space Cache Invalidate TTL
     default: 72h
-    description: Time interval (in sec) between refreshing the org and space cache.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the org and space cache. Defaults to 72h.
   - name: app_limits
     type: integer
     label: App Limits
@@ -158,11 +178,6 @@ forms:
     label: Firehose Keep Alive
     description: Keep alive duration (in sec) for the firehose consumer.
     default: 25s
-  - name: add_app_info
-    type: boolean
-    default: false
-    label: Add App Information
-    description: Enriches raw data with application metadata, such as application name, space name, org name, etc.
   - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing

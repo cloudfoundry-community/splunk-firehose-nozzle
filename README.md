@@ -81,24 +81,24 @@ This is recommended for dev environments only.
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer.
 * `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid).
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry.
-* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates.
-* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates.
-* `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates.
+* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
+* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
+* `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
 * `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache.
 * `BOLTDB_PATH`: Bolt database path.
 * `EVENTS`: A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 * `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value).
-* `FLUSH_INTERVAL`: Time interval for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
+* `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
 * `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.
 * `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
 * `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
 * `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. Only required for Splunk version 6.3 or below.
-* `STATUS_MONITOR_INTERVAL`: Time interval for monitoring memory queue pressure to help with back-pressure insights.
+* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
     ###  Please note 
     > SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
-    For Splunk version 6.3 or below, please deploy nozzle via CLI. Update nozzle_manifest.yml with splunk_version (eg:- SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
+    For Splunk version 6.3 or below, please deploy nozzle via CLI. Update nozzle_manifest.yml with splunk_version (For example: SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
     
     **[Tile](https://network.pivotal.io/products/splunk-nozzle/)** only supports deployment for Splunk version 6.4 or above
     
@@ -135,11 +135,11 @@ on user authentication.
     ```
 
 #### Dump application info to boltdb ####
-If in production there are lots of PCF applications(say tens of thousands) and if the user would like to enrich
-application logs by including application meta data,querying all application metadata information from PCF may take some time.
+If in production there are lots of CF applications(say tens of thousands) and if the user would like to enrich
+application logs by including application meta data,querying all application metadata information from CF may take some time.
 For example if we include, add app name, space ID, space name, org ID and org name to the events.
 If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
-cache the meta data information to the local boltdb file. These queries will introduce load to the PCF system and could potentially take a long time to finish.
+cache the meta data information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
 Users can run this tool to generate a copy of all application meta data and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
 Example of how to run the dump application info tool:
@@ -168,8 +168,6 @@ applications:
   timeout: 180
   buildpack: https://github.com/SUSE/stratos-buildpack
   health-check-type: port
-  services:
-  - splunk-index
   env:
     SPLUNK_INDEX: testing_index
 ```
@@ -239,7 +237,7 @@ This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundr
 
   Are you searching for events and not finding them or looking at a dashboard and seeing "No result found"? Check Splunk Nozzle app logs.
 
-  To view the nozzle's logs running on PCF do the following:
+  To view the nozzle's logs running on CF do the following:
 
 <ol>
   <li>Log in as an admin via the CLI.</li>
