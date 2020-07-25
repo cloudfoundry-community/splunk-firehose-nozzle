@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
@@ -38,7 +39,6 @@ func newConfig() *Config {
 		IgnoreMissingApps:  true,
 		MissingAppCacheTTL: time.Second * 30,
 		AppCacheTTL:        time.Second * 30,
-		OrgSpaceCacheTTL:   time.Second * 30,
 		AppLimits:          0,
 		OrgSpaceCacheTTL:   time.Second * 30,
 
@@ -46,13 +46,12 @@ func newConfig() *Config {
 		WantedEvents: "LogMessage",
 		ExtraFields:  "tag:value",
 
-		FlushInterval:     time.Second * 5,
-		QueueSize:         1000,
-		BatchSize:         100,
-		RLPGatewayRetries: 10,
-		Retries:           1,
-		HecWorkers:        8,
-		SplunkVersion:     "6.4",
+		FlushInterval: time.Second * 5,
+		QueueSize:     1000,
+		BatchSize:     100,
+		Retries:       1,
+		HecWorkers:    8,
+		SplunkVersion: "6.4",
 
 		Version: "1.0",
 		Branch:  "develop",
@@ -120,16 +119,13 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("EventSource", func() {
-		port := 9911
-		cc := testing.NewCloudControllerMock(port)
-		started := make(chan struct{})
-		go func() {
-			started <- struct{}{}
-			cc.Start()
-		}()
-		<-started
-		pcfClient, _ := noz.PCFClient()
-		f, _ := noz.EventSource(pcfClient)
+		client := &cfclient.Client{
+			Endpoint: cfclient.Endpoint{
+				DopplerEndpoint: "ws://localhost:9911",
+			},
+		}
+
+		f := noz.EventSource(client)
 		Expect(f).ToNot(BeNil())
 	})
 

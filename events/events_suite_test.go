@@ -106,6 +106,40 @@ var (
 	}
 )
 
+func NewHttpStart() *Envelope {
+	httpStart := &HttpStart{
+		Timestamp:       &timestamp,
+		RequestId:       &requestId,
+		PeerType:        &peerType,
+		Method:          &method,
+		Uri:             &uri,
+		RemoteAddress:   &remoteAddr,
+		UserAgent:       &userAgent,
+		ParentRequestId: &parentRequestId,
+		ApplicationId:   &appId,
+		InstanceIndex:   &instanceIdx,
+		InstanceId:      &instanceId,
+	}
+	event.HttpStart = httpStart
+
+	return event
+}
+
+func NewHttpStop() *Envelope {
+	httpStop := &HttpStop{
+		Timestamp:     &timestamp,
+		Uri:           &uri,
+		RequestId:     &requestId,
+		PeerType:      &peerType,
+		StatusCode:    &statusCode,
+		ContentLength: &contentLength,
+		ApplicationId: &appId,
+	}
+	event.HttpStop = httpStop
+
+	return event
+}
+
 func NewHttpStartStop() *Envelope {
 	httpStartStop := &HttpStartStop{
 		StartTimestamp: &timestamp,

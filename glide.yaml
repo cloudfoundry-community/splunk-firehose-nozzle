@@ -13,5 +13,3 @@ import:
 - package: github.com/kelseyhightower/envconfig
 - package: github.com/pkg/errors
   version: ~0.8.0
-- package: code.cloudfoundry.org/go-diodes
-- package: code.cloudfoundry.org/go-loggregator

@@ -50,31 +50,8 @@ func (c *CloudControllerMock) Start() error {
 	// Access token endpoint
 	mux.HandleFunc("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
 		// Should return acccess token back to the user
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"access_token":"mocktoken","scope":"user","token_type":"bearer"}`))
-	})
-
-	mux.HandleFunc("/v2/read", func(w http.ResponseWriter, r *http.Request) {
-		flusher, ok := w.(http.Flusher)
-		if !ok {
-			http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/event-stream")
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Connection", "keep-alive")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		messageChan := make(chan []byte)
-		go serverSentEvents(messageChan)
-		for {
-			// Write to the ResponseWriter
-			// Server Sent Events compatible
-			w.Write([]byte(<-messageChan))
-
-			// Flush the data immediatly instead of buffering it for later.
-			flusher.Flush()
-		}
+		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+		w.Write([]byte("access_token=mocktoken&scope=user&token_type=bearer"))
 	})
 
 	c.server.Handler = mux
@@ -84,11 +61,4 @@ func (c *CloudControllerMock) Start() error {
 func (c *CloudControllerMock) Stop() error {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
 	return c.server.Shutdown(ctx)
-}
-
-func serverSentEvents(messageChan chan []byte) {
-	for {
-		<-time.After(100 * time.Millisecond)
-		messageChan <- []byte(`"data":"hello"`)
-	}
 }

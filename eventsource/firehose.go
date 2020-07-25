@@ -1,69 +1,66 @@
 package eventsource
 
 import (
-	"code.cloudfoundry.org/go-loggregator/v8"
-	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/sonde-go/events"
-	"log"
-	"net/http"
+	"crypto/tls"
+	"errors"
 	"time"
+
+	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/cloudfoundry/sonde-go/events"
 )
 
-// FirehoseConfig struct with 4 fields of different types.
 type FirehoseConfig struct {
-	KeepAlive             time.Duration
-	SkipSSL               bool
-	Endpoint              string
-	SubscriptionID        string
-	GatewayErrChanAddr    *chan error
-	GatewayLoggerAddr     *log.Logger
-	GatewayMaxRetries     int
-	StatusMonitorInterval time.Duration
-	Logger                lager.Logger
+	KeepAlive      time.Duration
+	SkipSSL        bool
+	Endpoint       string
+	SubscriptionID string
 }
 
-// Doer is used to make HTTP requests to the RLP Gateway.
-type doer interface {
-	Do(req *http.Request) (*http.Response, error)
+type TokenClient interface {
+	GetToken() (string, error)
 }
 
-// Firehose struct with fields of types FirehoseConfig, doer and V2adapter.
 type Firehose struct {
-	config      *FirehoseConfig
-	tokenClient doer
-	v2          V2Adapter
+	config        *FirehoseConfig
+	tokenClient   TokenClient
+	eventConsumer *consumer.Consumer
 }
 
-// NewFirehose the HTTP client.
-func NewFirehose(tokenClient doer, config *FirehoseConfig) *Firehose {
-	c := loggregator.NewRLPGatewayClient(
-		config.Endpoint,
-		loggregator.WithRLPGatewayHTTPClient(tokenClient),
-		loggregator.WithRLPGatewayClientLogger(config.GatewayLoggerAddr),
-		loggregator.WithRLPGatewayErrChan(*config.GatewayErrChanAddr),
-		loggregator.WithRLPGatewayMaxRetries(config.GatewayMaxRetries),
-	)
+func NewFirehose(tokenClient TokenClient, config *FirehoseConfig) *Firehose {
+	c := consumer.New(config.Endpoint, &tls.Config{InsecureSkipVerify: config.SkipSSL}, nil)
+	c.SetIdleTimeout(config.KeepAlive)
 
 	f := &Firehose{
-		config:      config,
-		tokenClient: tokenClient,
-		v2:          NewV2Adapter(c),
+		config:        config,
+		tokenClient:   tokenClient,
+		eventConsumer: c,
 	}
+	c.RefreshTokenFrom(f)
 
 	return f
 }
 
-// Open initiates Firehose
+func (f *Firehose) RefreshAuthToken() (string, error) {
+	token, err := f.tokenClient.GetToken()
+	if err != nil {
+		return "", err
+	}
+
+	if token == "" {
+		return "", errors.New("failed to refresh token")
+	}
+
+	return token, nil
+}
+
 func (f *Firehose) Open() error {
 	return nil
 }
 
-// Close closes Firehose
 func (f *Firehose) Close() error {
-	return nil
+	return f.eventConsumer.Close()
 }
 
-// Read reads envelope stream
-func (f *Firehose) Read() <-chan *events.Envelope {
-	return f.v2.Firehose(f.config)
+func (f *Firehose) Read() (<-chan *events.Envelope, <-chan error) {
+	return f.eventConsumer.Firehose(f.config.SubscriptionID, "")
 }

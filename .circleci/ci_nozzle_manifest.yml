@@ -1,18 +1,20 @@
 ---
 applications:
   - name: splunk-firehose-nozzle
-    memory: 256M
-    instances: 1
+    memory: 512M
+    instances: 2
     buildpack: go_buildpack
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT: 
-      CLIENT_ID: 
-      CLIENT_SECRET: 
-      SPLUNK_HOST: 
-      SPLUNK_TOKEN: 
-      SPLUNK_INDEX: main
+      API_ENDPOINT:
+      API_USER:
+      API_PASSWORD:
+      CLIENT_ID:
+      CLIENT_SECRET:
+      SPLUNK_HOST:
+      SPLUNK_TOKEN:
+      SPLUNK_INDEX:
       SKIP_SSL_VALIDATION_CF: true
       SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle
@@ -25,14 +27,13 @@ applications:
       APP_LIMITS: 1000
       BOLTDB_PATH: cache.db
       EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
-      EXTRA_FIELDS: name:splunk-pcf-ci
+      EXTRA_FIELDS: name:update-ci-test
       FIREHOSE_SUBSCRIPTION_ID: splunk-ci
       FLUSH_INTERVAL: 5s
       CONSUMER_QUEUE_SIZE: 10000
-      HEC_BATCH_SIZE: 100
+      HEC_BATCH_SIZE: 1000
       HEC_RETRIES: 5
       HEC_WORKERS: 8
       DEBUG: false
       ENABLE_EVENT_TRACING: true
       STATUS_MONITOR_INTERVAL: 0s
-

@@ -3,9 +3,11 @@ package testing
 import (
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/sonde-go/events"
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gorilla/websocket"
 )
 
 type MemoryEventSourceMock struct {
@@ -40,7 +42,9 @@ func NewMemoryEventSourceMock(eps int, totalEvents int64, errCode int) *MemoryEv
 
 	// If generates error
 	if errCode > 0 {
-		err := errors.New("error is different than the mockup error")
+		err := &websocket.CloseError{
+			Code: errCode,
+		}
 
 		e.errors <- err
 	}
@@ -58,8 +62,8 @@ func (e *MemoryEventSourceMock) Open() error {
 	return nil
 }
 
-func (e *MemoryEventSourceMock) Read() <-chan *events.Envelope {
-	return e.events
+func (e *MemoryEventSourceMock) Read() (<-chan *events.Envelope, <-chan error) {
+	return e.events, e.errors
 }
 
 func (e *MemoryEventSourceMock) Close() error {

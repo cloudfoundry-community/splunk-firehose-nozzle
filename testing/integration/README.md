@@ -1,4 +1,4 @@
-## Cloud Foundry Nozzle Integration Tests Environment Setup
+## PCF Nozzle Integration Tests Environment Setup
 
 #### Setup Cloud Foundry Nozzle
  - Using remote nozzle environment
