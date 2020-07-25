@@ -1,5 +1,5 @@
-hash: d7f08c29071249b8d7e8aefbf8edb471ad8dd236599c784787c35c06c9d55747
-updated: 2019-06-24T13:35:17.515998-07:00
+hash: 08f312f1d2cf50d891040671b630fb1ec8e69ab53d4065f620bc79029331a37b
+updated: 2019-12-23T21:00:06.845431-08:00
 imports:
 - name: code.cloudfoundry.org/cfhttp
   version: 1d363866d79a7203ee22ee605a9ac6081b56c9a0
@@ -7,12 +7,21 @@ imports:
   - unix_transport
 - name: code.cloudfoundry.org/cflager
   version: 3b0406dd8038bb31452dfaf171c4f0efa55393bf
+- name: code.cloudfoundry.org/go-diodes
+  version: f77fb823c7ee0156ed4cdadaf4f79ac3fd84613f
+- name: code.cloudfoundry.org/go-loggregator/v8
+  version: beb75025a60d7edecb3af56b1631ac37f6255e98
+  subpackages:
+  - conversion
+  - rpc/loggregator_v2
 - name: code.cloudfoundry.org/gofileutils
   version: 4d0c80011a0f37da1711c184028bc40137cd45af
   subpackages:
   - fileutils
 - name: code.cloudfoundry.org/lager
   version: b273f19621a28f627423f658e71e014f114dd53e
+- name: code.cloudfoundry.org/rfc5424
+  version: 236a6d29298aea12f69978f33393d12465abc429
 - name: github.com/alecthomas/template
   version: b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0
   subpackages:
@@ -24,15 +33,13 @@ imports:
 - name: github.com/cloudfoundry-community/go-cfclient
   version: f136f9222381e2fea5099f62e4b751dcb660ff82
 - name: github.com/cloudfoundry-incubator/uaago
-  version: 8136b7bbe76e26394600a790a95c15eac955f4fc
+  version: be6a0cef0130f933079e4c958abac60fadea0c85
 - name: github.com/cloudfoundry/noaa
   version: 5ce49363dfa666c00fc716cb5f8c2f99462b41ef
   subpackages:
   - consumer
-  - consumer/internal
-  - errors
 - name: github.com/cloudfoundry/sonde-go
-  version: 81c3f6be579cf4337477a8b0d03852d0760b5801
+  version: b33733203bb48d7c56de7cb639d77f78b0449d19
   subpackages:
   - events
 - name: github.com/gogo/protobuf
@@ -42,17 +49,21 @@ imports:
   - proto
   - protoc-gen-gogo/descriptor
 - name: github.com/golang/protobuf
-  version: 98fa357170587e470c5f27d3c3ea0947b71eb455
+  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
+  - jsonpb
   - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/struct
+  - ptypes/timestamp
 - name: github.com/google/uuid
   version: 281f560d28af7174109514e936f94c2ab2cb2823
-- name: github.com/gorilla/websocket
-  version: a69d25be2fe2923a97c2af6849b2f52426f68fc0
 - name: github.com/kelseyhightower/envconfig
   version: 9aca109c9aec4633fced9717c4a09ecab3d33111
 - name: github.com/mailru/easyjson
-  version: 3d7eb5818bd515e07588ded25d0d501516a0309d
+  version: 9825584555aa620c53c265d4a09ace0df1346fd9
   subpackages:
   - buffer
   - jlexer
@@ -67,6 +78,12 @@ imports:
   version: 3b0461eec859c4b73bb64fdc8285971fd33e3938
   subpackages:
   - context
+  - http/httpguts
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - trace
 - name: golang.org/x/oauth2
   version: 2baa8a1b9338cf13d9eeb27696d761155fa480be
   subpackages:
@@ -76,6 +93,13 @@ imports:
   version: c5567b49c5d04a5f83870795b8c0e2df43a8ce32
   subpackages:
   - unix
+- name: golang.org/x/text
+  version: cbf43d21aaebfdfeb81d91a5f444d13a3046e686
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
 - name: google.golang.org/appengine
   version: 46239ca616842c00f41b8cbc6bbf2bd6ffbfcdad
   subpackages:
@@ -86,6 +110,43 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
+- name: google.golang.org/genproto
+  version: fc2db5cae922db113989ef87b5b859cc8a179f59
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 2fdaae294f38ed9a121193c51ec99fecd3b13eb7
+  subpackages:
+  - balancer
+  - balancer/base
+  - balancer/roundrobin
+  - binarylog/grpc_binarylog_v1
+  - codes
+  - connectivity
+  - credentials
+  - credentials/internal
+  - encoding
+  - encoding/proto
+  - grpclog
+  - internal
+  - internal/backoff
+  - internal/binarylog
+  - internal/channelz
+  - internal/envconfig
+  - internal/grpcrand
+  - internal/grpcsync
+  - internal/syscall
+  - internal/transport
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - resolver/dns
+  - resolver/passthrough
+  - stats
+  - status
+  - tap
 - name: gopkg.in/alecthomas/kingpin.v2
   version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
 testImports:
@@ -121,3 +182,6 @@ testImports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
+- name: code.cloudfoundry.org/tlsconfig
+  version: bbe0f8da39b3c59d42217afcc79019c754dabdfb
+
