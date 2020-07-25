@@ -59,7 +59,7 @@ var _ = Describe("Splunk", func() {
 		//using routing to serialize envelope
 		memSink = testing.NewMemorySinkMock()
 		rconfig := &eventrouter.Config{
-			SelectedEvents: "ContainerMetric, CounterEvent, Error, HttpStartStop, LogMessage, ValueMetric",
+			SelectedEvents: "ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric",
 		}
 		eventRouter, err = eventrouter.New(cache.NewNoCache(), memSink, rconfig)
 		Ω(err).ShouldNot(HaveOccurred())
