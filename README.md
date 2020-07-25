@@ -125,7 +125,7 @@ on user authentication.
 1. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    vim ci/nozzle_manifest.yml
+    vim .circleci/nozzle_manifest.yml
     ```
 
 1. Push the nozzle
@@ -394,7 +394,7 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.8.x
+| go | go1.12.x
 | glide | 0.12.x
 
 Then install all dependent packages via [Glide](https://glide.sh/):
