@@ -10,7 +10,6 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-// Config struct type with fields for configuration params.
 type Config struct {
 	ApiEndpoint  string `json:"api-endpoint"`
 	User         string `json:"-"`
@@ -42,13 +41,12 @@ type Config struct {
 	WantedEvents string `json:"wanted-events"`
 	ExtraFields  string `json:"extra-fields"`
 
-	FlushInterval     time.Duration `json:"flush-interval"`
-	QueueSize         int           `json:"queue-size"`
-	BatchSize         int           `json:"batch-size"`
-	RLPGatewayRetries int           `json:"rlp-gateway-retries"`
-	Retries           int           `json:"retries"`
-	HecWorkers        int           `json:"hec-workers"`
-	SplunkVersion     string        `json:"splunk-version"`
+	FlushInterval time.Duration `json:"flush-interval"`
+	QueueSize     int           `json:"queue-size"`
+	BatchSize     int           `json:"batch-size"`
+	Retries       int           `json:"retries"`
+	HecWorkers    int           `json:"hec-workers"`
+	SplunkVersion string        `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
@@ -60,7 +58,6 @@ type Config struct {
 	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 }
 
-// NewConfigFromCmdFlags provides Splunk Nozzle config params.
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	c := &Config{}
 
@@ -106,8 +103,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 
 	kingpin.Flag("add-app-info", fmt.Sprintf("Comma separated list of app metadata to enrich event. Valid options are %s", events.AuthorizedMetadata())).
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("").StringVar(&c.AddAppInfo)
-
-	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from PCF").
+	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from Cloud Foundry foundation").
 		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
 		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
@@ -131,8 +127,6 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("CONSUMER_QUEUE_SIZE").Default("10000").IntVar(&c.QueueSize)
 	kingpin.Flag("hec-batch-size", "Batchsize of the events pushing to HEC").
 		OverrideDefaultFromEnvar("HEC_BATCH_SIZE").Default("100").IntVar(&c.BatchSize)
-	kingpin.Flag("rlp-gateway-retries", "Number of retries to connect to RLP gateway").
-		OverrideDefaultFromEnvar("RLP_GATEWAY_RETRIES").Default("5").IntVar(&c.RLPGatewayRetries)
 	kingpin.Flag("hec-retries", "Number of retries before dropping events").
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
@@ -144,14 +138,13 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
-	kingpin.Flag("status-monitor-interval", "Time interval for monitoring consumer-queue-size status to help with back-pressure insights").
+	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 
 	kingpin.Parse()
 	return c
 }
 
-// ToMap returns configuration in json structure
 func (c *Config) ToMap() map[string]interface{} {
 	data, _ := json.Marshal(c)
 	var r map[string]interface{}

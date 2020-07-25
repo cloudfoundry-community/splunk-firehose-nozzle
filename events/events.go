@@ -35,6 +35,46 @@ var AppMetadata = []string{
 	"SpaceGuid",
 }
 
+func HttpStart(msg *events.Envelope) *Event {
+	httpStart := msg.GetHttpStart()
+	fields := logrus.Fields{
+		"timestamp":         httpStart.GetTimestamp(),
+		"request_id":        utils.FormatUUID(httpStart.GetRequestId()),
+		"method":            httpStart.GetMethod().String(),
+		"uri":               httpStart.GetUri(),
+		"remote_addr":       httpStart.GetRemoteAddress(),
+		"user_agent":        httpStart.GetUserAgent(),
+		"parent_request_id": utils.FormatUUID(httpStart.GetParentRequestId()),
+		"cf_app_id":         utils.FormatUUID(httpStart.GetApplicationId()),
+		"instance_index":    httpStart.GetInstanceIndex(),
+		"instance_id":       httpStart.GetInstanceId(),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
+}
+
+func HttpStop(msg *events.Envelope) *Event {
+	httpStop := msg.GetHttpStop()
+
+	fields := logrus.Fields{
+		"timestamp":      httpStop.GetTimestamp(),
+		"uri":            httpStop.GetUri(),
+		"request_id":     utils.FormatUUID(httpStop.GetRequestId()),
+		"peer_type":      httpStop.GetPeerType().String(),
+		"status_code":    httpStop.GetStatusCode(),
+		"content_length": httpStop.GetContentLength(),
+		"cf_app_id":      utils.FormatUUID(httpStop.GetApplicationId()),
+	}
+
+	return &Event{
+		Fields: fields,
+		Msg:    "",
+	}
+}
+
 func HttpStartStop(msg *events.Envelope) *Event {
 	httpStartStop := msg.GetHttpStartStop()
 
@@ -159,7 +199,6 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
-		//cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
 		if cf_app_name != "" && config.AddAppName {
@@ -185,14 +224,10 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
-		//removing cf_ignored_app as per INGEST-17639
-		//e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
 
 func (e *Event) AnnotateWithCFMetaData() {
-	//removing cf_origin as per INGEST-17639
-	//e.Fields["cf_origin"] = "firehose"
 	e.Fields["event_type"] = e.Type
 }
 

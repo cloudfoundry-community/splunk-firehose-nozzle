@@ -1,12 +1,11 @@
 package splunknozzle
 
 import (
-	"code.cloudfoundry.org/lager"
-	"fmt"
-	"log"
 	"os"
+	"strings"
 	"time"
 
+	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
@@ -14,22 +13,17 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
+
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
-	"github.com/cloudfoundry-incubator/uaago"
 	"github.com/google/uuid"
-	"strings"
 )
 
-var gatewayLoggerAddr = log.New(os.Stderr, "RLP_Gateway Error - ", 3)
-var gatewayErrChan = make(chan error, 1)
-
-// SplunkFirehoseNozzle struct type with config fields.
 type SplunkFirehoseNozzle struct {
 	config *Config
 	logger lager.Logger
 }
 
-// NewSplunkFirehoseNozzle create new function of type *SplunkFirehoseNozzle
+//create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
@@ -51,7 +45,7 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 	return eventrouter.New(cache, eventSink, config)
 }
 
-// PCFClient creates a client object which can talk to PCF
+// CFClient creates a client object which can talk to Cloud Foundry
 func (s *SplunkFirehoseNozzle) PCFClient() (*cfclient.Client, error) {
 	cfConfig := &cfclient.Config{
 		ApiAddress:        s.config.ApiEndpoint,
@@ -87,6 +81,7 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 	if s.config.Debug {
 		return &eventsink.Std{}, nil
 	}
+
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
@@ -136,38 +131,28 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 }
 
 // EventSource creates eventsource.Source object which can read events from
-func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) (*eventsource.Firehose, error) {
+func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
 	config := &eventsource.FirehoseConfig{
-		KeepAlive:             s.config.KeepAlive,
-		SkipSSL:               s.config.SkipSSLCF,
-		Endpoint:              strings.Replace(s.config.ApiEndpoint, "api", "log-stream", 1),
-		SubscriptionID:        s.config.SubscriptionID,
-		GatewayLoggerAddr:     gatewayLoggerAddr,
-		GatewayErrChanAddr:    &gatewayErrChan,
-		GatewayMaxRetries:     s.config.RLPGatewayRetries,
-		StatusMonitorInterval: s.config.StatusMonitorInterval,
-		Logger:                s.logger,
-	}
-	uaa, err := uaago.NewClient(pcfClient.Endpoint.AuthEndpoint)
-	if err != nil {
-		fmt.Println("unable to connect to get token from uaa", err)
-		return nil, err
+		KeepAlive:      s.config.KeepAlive,
+		SkipSSL:        s.config.SkipSSLCF,
+		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+		SubscriptionID: s.config.SubscriptionID,
 	}
 
-	ac := eventsource.NewHttp(uaa, pcfClient.Config.ClientID, pcfClient.Config.ClientSecret, pcfClient.Config.SkipSslValidation)
-	return eventsource.NewFirehose(ac, config), nil
+	return eventsource.NewFirehose(pcfClient, config)
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router
 func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRouter eventrouter.Router) *nozzle.Nozzle {
 	firehoseConfig := &nozzle.Config{
-		Logger: s.logger,
+		Logger:                s.logger,
+		StatusMonitorInterval: s.config.StatusMonitorInterval,
 	}
 
 	return nozzle.New(eventSource, eventRouter, firehoseConfig)
 }
 
-// Run creates all necessary objects, reading events from PCF firehose and sending to target Splunk index
+// Run creates all necessary objects, reading events from CF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 	eventSink, err := s.EventSink()
@@ -180,7 +165,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {
-		s.logger.Error("Failed to get info from PCF Server", nil)
+		s.logger.Error("Failed to get info from CF Server", nil)
 		return err
 	}
 
@@ -203,17 +188,8 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		return err
 	}
 
-	eventSource, err := s.EventSource(pcfClient)
-
-	if err != nil {
-		return err
-	}
-
+	eventSource := s.EventSource(pcfClient)
 	noz := s.Nozzle(eventSource, eventRouter)
-
-	go func() {
-
-	}()
 
 	// Continuous Loop will run forever
 	go func() {
@@ -223,16 +199,10 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		}
 		shutdownChan <- os.Interrupt
 	}()
-	select {
-	case <-shutdownChan:
-		s.logger.Info("Splunk Nozzle is going to exit gracefully")
-		noz.Close()
-		return eventSink.Close()
-	case gatewayError := <-gatewayErrChan:
-		s.logger.Error("Error from RLP gateway", gatewayError)
-		noz.Close()
-		eventSink.Close()
-		return gatewayError
-	}
 
+	<-shutdownChan
+
+	s.logger.Info("Splunk Nozzle is going to exit gracefully")
+	noz.Close()
+	return eventSink.Close()
 }

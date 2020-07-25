@@ -1,6 +1,6 @@
 ---
 name: splunk-nozzle
-label: Splunk Firehose Nozzle for VMware Tanzu
+label: Splunk Firehose Nozzle for Vmware Tanzu
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
@@ -97,6 +97,7 @@ forms:
     type: string
     label: Firehose Subscription ID
     description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
+    optional: true
   - name: add_app_info
     type: multi_select_options
     label: Add App Information
@@ -112,7 +113,6 @@ forms:
       - name: SpaceGuid
         label: SpaceGuid
     description: Enriches event raw data with application metadata
-    optional: true
   - name: extra_fields
     type: string
     label: Additional Fields
@@ -138,26 +138,31 @@ forms:
     label: Consumer Queue Size
     default: 10000
     description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
+  - name: status_monitor_interval
+    type: string
+    label: Monitor Queue Pressure
+    default: 0s
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
   - name: flush_interval
     type: string
     label: Flush Interval
     default: 5s
-    description: Time interval (in sec, min or hour) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
   - name: missing_app_cache_invalidate_ttl
     type: string
     label: Missing App Cache Invalidate TTL
     default: 0s
-    description: Time interval (in sec, min or hour) between refreshing the missing app info cache. Set to 0 to maintain cache until nozzle restart.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the missing app info cache. Set to 0s to maintain cache until nozzle restart.
   - name: app_cache_invalidate_ttl
     type: string
     label: App Cache Invalidate TTL
     default: 0s
-    description: Time interval (in sec) between refreshing the app info local cache. Set to 0 to only populate the cache during startup or restart of the nozzle.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the app info local cache. Set to 0s to only populate the cache during startup or restart of the nozzle.
   - name: org_space_cache_invalidate_ttl
     type: string
     label: Org Space Cache Invalidate TTL
     default: 72h
-    description: Time interval (in sec, min or hour) between refreshing the org and space cache.
+    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the org and space cache. Defaults to 72h.
   - name: app_limits
     type: integer
     label: App Limits
@@ -171,18 +176,8 @@ forms:
   - name: firehose_keep_alive
     type: string
     label: Firehose Keep Alive
-    description: Keep alive duration (in sec, min or hour) for the firehose consumer.
+    description: Keep alive duration (in sec) for the firehose consumer.
     default: 25s
-  - name: status_monitor_interval
-    type: string
-    label: Monitor Queue Pressure
-    default: 0s
-    description: Time interval for monitoring memory queue pressure to help with back-pressure insights.
-  - name: rlp_gateway_retries
-    type: integer
-    label: RLP Gateway Retries
-    default: 5
-    description: Number of retries to connect to RLP gateway
   - name: enable_event_tracing
     type: boolean
     label: Enable Event Tracing
@@ -192,7 +187,7 @@ forms:
     type: boolean
     label: Ignore Missing App
     default: true
-    description: If the application is missing, then stop repeatedly querying application info from Cloud Foundry.
+    description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 packages:
 - name: splunk_firehose_nozzle

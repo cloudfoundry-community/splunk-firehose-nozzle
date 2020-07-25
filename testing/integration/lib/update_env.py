@@ -4,6 +4,7 @@ from .helper import *
 import time
 import yaml
 import json
+import configparser
 from os.path import join
 
 _env_var = os.environ
@@ -13,7 +14,7 @@ _path = get_project_folder()
 def get_default_env():
     default_dict = \
         {
-            'ADD_APP_INFO': True,
+            'ADD_APP_INFO': "AppName,OrgName,OrgGuid,SpaceName,SpaceGuid",
             'API_ENDPOINT': _env_var.get('API_ENDPOINT'),
             'API_USER': _env_var.get('API_USER'),
             'API_PASSWORD': _env_var.get('API_PASSWORD'),

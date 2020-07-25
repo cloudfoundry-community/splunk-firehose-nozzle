@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
+
+	"sync/atomic"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
@@ -76,6 +77,7 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 	if len(msg) > 0 {
 		fields["msg"] = msg
 	}
+
 	s.events <- fields
 	return nil
 }
@@ -129,7 +131,6 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 			}
 			return nil
 		}
-		// add length of batch to counter
 		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
 		time.Sleep(getRetryInterval(i))
 	}
@@ -247,6 +248,7 @@ func (s *Splunk) LogStatus() {
 		}
 	}
 }
+
 func getRetryInterval(attempt int) time.Duration {
 	// algorithm taken from https://en.wikipedia.org/wiki/Exponential_backoff
 	timeInSec := 5 + (0.5 * (math.Exp2(float64(attempt)) - 1.0))

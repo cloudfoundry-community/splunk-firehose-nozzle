@@ -48,12 +48,12 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "index={0} cf_space_id=*",  # when cf_space_id is true, cf_org_name is searchable
-        "index={0} cf_org_id=*",  # cf_org_id add_app_info is true, cf_org_name is searchable
-        "index={0} cf_org_name=*",  # when add_app_info is true, cf_org_name is searchable
-        "index={0} cf_space_name=*"  # when add_app_info is true, cf_space_name is searchable
+        "index={0} cf_space_id=*",  # when cf_space_id is not empty, cf_org_name is searchable
+        "index={0} cf_org_id=*",  # cf_org_id add_app_info is not empty, cf_org_name is searchable
+        "index={0} cf_org_name=*",  # when add_app_info is not empty, cf_org_name is searchable
+        "index={0} cf_space_name=*"  # when add_app_info is not empty, cf_space_name is searchable
     ])
-    def test_add_app_info_is_true(self, test_env, splunk_logger, query_input):
+    def test_add_app_info_is_not_empty(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
 
         search_results = self.splunk_api.check_events_from_splunk(
@@ -81,7 +81,7 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "index={} name::splunk-pcf-ci"
+        "index={} name::update-ci-test"
     ])
     def test_search_by_extra_fields(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)

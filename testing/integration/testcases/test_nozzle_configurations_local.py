@@ -13,7 +13,7 @@ class TestSplunkNozzleLocal():
         update_environment_variables(input_dict={'EVENTS': 'LogMessage',
                                                  'EXTRA_FIELDS': 'test_tag:{},test2.0:nozzle2.0'.format(_tag),
                                                  'ENABLE_EVENT_TRACING': False,
-                                                 'ADD_APP_INFO': False}
+                                                 'ADD_APP_INFO': ''}
                                      )
 
         path = os.path.join(get_integration_folder(), "scripts")

@@ -15,7 +15,7 @@ jobs:
           name: Builder
           command: make build
       - run:
-          name: Run unit tests
+          name: Run tests
           command: |
             make testall
             cp splunk-firehose-nozzle /tmp
@@ -85,6 +85,11 @@ jobs:
             cf push -f .circleci/data_gen_manifest.yml -u process -p tools/data_gen --random-route
             sleep 10
       - run:
+          name: Nozzle Log
+          command: |
+            cf logs splunk-firehose-nozzle
+          background: true
+      - run:
           name: Prepare test environment
           command: |
             .circleci/pre-functional-test.sh
@@ -98,37 +103,6 @@ jobs:
             echo "Teardown deployment env"
             cf delete splunk-firehose-nozzle -f
             cf delete data_gen -f
-            cf delete-org splunk-ci-org -f
-          when:
-            always
-
-  execute_perf_tests:
-    docker:
-      - image: circleci/golang:1.12
-    working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
-    steps:
-      - attach_workspace:
-          at: /tmp
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            curl https://glide.sh/get | sh
-            go get -t ./...
-            cp -R /tmp/splunk-firehose-nozzle .
-      - run:
-          name: Prepare test environment
-          command: |
-            .circleci/pre-req.sh
-            .circleci/pre-functional-test.sh
-      - run:
-          name: Executing perf tests
-          command: |
-            .circleci/performance-test.sh
-      - run:
-          name: Teardown
-          command: |
-            echo "Teardown deployment env"
             cf delete-org splunk-ci-org -f
           when:
             always
@@ -150,25 +124,8 @@ workflows:
       - execute_tests:
           requires:
             - deploy-nozzle
-
-
-#      - execute_perf_tests:
-#          requires:
-#            - build
-#          filters:
-#            branches:
-#              only:
-#                - dev/pcf-performance-testing
-#  nightly:
-#    triggers:
-#      - schedule:
-#          cron: "0 7 * * *"
-#          filters:
-#            branches:
-#              only:
-#                - dev/pcf-performance-testing
-#    jobs:
-#      - build
-#      - execute_perf_tests:
-#          requires:
-#            - build
+          filters:
+            branches:
+              only:
+                - master
+                - release/v1.2.0
