@@ -101,6 +101,7 @@ forms:
   - name: add_app_info
     type: multi_select_options
     label: Add App Information
+    optional: true
     options:
       - name: AppName
         label: AppName
