@@ -128,4 +128,4 @@ workflows:
             branches:
               only:
                 - master
-                - release/v1.2.0
+                - develop

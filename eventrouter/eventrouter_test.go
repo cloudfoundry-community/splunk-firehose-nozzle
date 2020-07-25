@@ -31,7 +31,7 @@ var _ = Describe("eventrouter", func() {
 		noCache = testing.NewMemoryCacheMock()
 		memSink = &testing.MemorySinkMock{}
 		config := &Config{
-			SelectedEvents: "LogMessage,HttpStart,HttpStop,HttpStartStop,ValueMetric,CounterEvent,Error,ContainerMetric",
+			SelectedEvents: "LogMessage,HttpStartStop,ValueMetric,CounterEvent,Error,ContainerMetric",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -66,8 +66,7 @@ var _ = Describe("eventrouter", func() {
 
 	It("Route valid message", func() {
 		eventTypes := []events.Envelope_EventType{
-			events.Envelope_LogMessage, events.Envelope_HttpStart,
-			events.Envelope_HttpStop, events.Envelope_HttpStartStop,
+			events.Envelope_LogMessage, events.Envelope_HttpStartStop,
 			events.Envelope_ValueMetric, events.Envelope_CounterEvent,
 			events.Envelope_Error, events.Envelope_ContainerMetric,
 		}
@@ -82,12 +81,12 @@ var _ = Describe("eventrouter", func() {
 
 	It("Route un-selected message", func() {
 		config := &Config{
-			SelectedEvents: "HttpStart",
+			SelectedEvents: "ValueMetric",
 		}
 		r, err = New(noCache, memSink, config)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		eventType = events.Envelope_HttpStop
+		eventType = events.Envelope_HttpStartStop
 		err := r.Route(msg)
 		Ω(err).ShouldNot(HaveOccurred())
 		Expect(len(memSink.Events)).To(Equal(0))
