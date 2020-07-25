@@ -1,9 +1,9 @@
 ## PCF Nozzle Integration Tests Environment Setup
 
-#### Setup PCF Nozzle
+#### Setup Cloud Foundry Nozzle
  - Using remote nozzle environment
 
-    Deploy nozzle to PCF env via `cf push`
+    Deploy nozzle to Cloud Foundry env via `cf push`
     ```
     cf login --skip-ssl-validation -a https://api.<your cf sys domain> -u <your cf user name> -p <your cf password>
     
@@ -25,8 +25,8 @@
     export SPLUNK_INDEX=<TARGET-SPLUNK-INDEX>
     export FIREHOSE_SUBSCRIPTION_ID=splunk-nozzle
     export FIREHOSE_KEEP_ALIVE=25s
-    export CLIENT_ID=<PCF CLIENT ID>
-    export CLIENT_SECRET=<PCF CLIENT SECRET>
+    export CLIENT_ID=<CF CLIENT ID>
+    export CLIENT_SECRET=<CF CLIENT SECRET>
     ``````
     Start nozzle binary
     ```

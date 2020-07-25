@@ -103,7 +103,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 
 	kingpin.Flag("add-app-info", fmt.Sprintf("Comma separated list of app metadata to enrich event. Valid options are %s", events.AuthorizedMetadata())).
 		OverrideDefaultFromEnvar("ADD_APP_INFO").Default("").StringVar(&c.AddAppInfo)
-	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from PCF").
+	kingpin.Flag("ignore-missing-app", "If app is missing, stop repeatedly querying app info from Cloud Foundry foundation").
 		OverrideDefaultFromEnvar("IGNORE_MISSING_APP").Default("true").BoolVar(&c.IgnoreMissingApps)
 	kingpin.Flag("missing-app-cache-invalidate-ttl", "How frequently the missing app info cache invalidates").
 		OverrideDefaultFromEnvar("MISSING_APP_CACHE_INVALIDATE_TTL").Default("0s").DurationVar(&c.MissingAppCacheTTL)
