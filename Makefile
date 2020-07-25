@@ -53,7 +53,7 @@ PKGS=$(shell go list ./... | grep -v vendor | grep -v tools | grep -v testing | 
 deploy: deploy-nozzle deploy-data-gen
 
 deploy-nozzle:
-	@cf push -f .circleci/nozzle_manifest.yml -u process --random-route
+	@cf push -f .circleci/ci_nozzle_manifest.yml -u process --random-route
 
 deploy-data-gen:
 	@cf push -f .circleci/data_gen_manifest.yml -u process -p tools/data_gen --random-route

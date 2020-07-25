@@ -125,7 +125,7 @@ on user authentication.
 1. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    vim .circleci/nozzle_manifest.yml
+    vim .circleci/ci_nozzle_manifest.yml
     ```
 
 1. Push the nozzle
