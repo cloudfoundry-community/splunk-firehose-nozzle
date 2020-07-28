@@ -190,6 +190,13 @@ forms:
     default: true
     description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
+migration: |
+  if (properties['properties']['.properties.add_app_info']['value']==true) {
+  		properties['properties']['.properties.add_app_info']['value']="AppName,OrgName,OrgGuid,SpaceName,SpaceGuid";
+  } else {
+  	properties['properties']['.properties.add_app_info']['value']="";
+  }
+
 packages:
 - name: splunk_firehose_nozzle
   type: app
@@ -204,9 +211,3 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-migration: |
-  if (properties['.forms.{advanced}.properties.{add_app_info}']['value']=='true') {
-      properties['.forms.{advanced}.properties.{add_app_info}']['value'] = "AppName,OrgName,OrgGuid,SpaceName,SpaceGuid"
-  } else {
-      properties['.forms.{advanced}.properties.{add_app_info}']['value'] = ""
-  }
