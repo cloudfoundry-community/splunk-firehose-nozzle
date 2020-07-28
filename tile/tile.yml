@@ -204,3 +204,9 @@ packages:
     command: ./splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
+migration: |
+  if (properties['.forms.{advanced}.properties.{add_app_info}']['value']=='true') {
+      properties['.forms.{advanced}.properties.{add_app_info}']['value'] = "AppName,OrgName,OrgGuid,SpaceName,SpaceGuid"
+  } else {
+      properties['.forms.{advanced}.properties.{add_app_info}']['value'] = ""
+  }
