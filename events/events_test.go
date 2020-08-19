@@ -89,7 +89,7 @@ var _ = Describe("Events", func() {
 		Expect(evt.Fields["value"]).To(Equal(value))
 		Expect(evt.Fields["unit"]).To(Equal(unit))
 	})
-	
+
 	It("ValueMetric NaN", func() {
 		msg = NewValueMetric()
 		nan := math.NaN()
@@ -116,7 +116,7 @@ var _ = Describe("Events", func() {
 		Expect(evt.Fields["unit"]).To(Equal(unit))
 	})
 
-	It("ValueMetric +Infinity", func() {
+	It("ValueMetric -Infinity", func() {
 		msg = NewValueMetric()
 		inf := math.Inf(-1)
 		msg.ValueMetric.Value = &inf
