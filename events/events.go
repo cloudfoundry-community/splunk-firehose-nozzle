@@ -199,6 +199,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
+		cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
 		if cf_app_name != "" && config.AddAppName {
@@ -224,6 +225,9 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
+
+		//removing cf_ignored_app as per INGEST-17639
+		e.Fields["cf_ignored_app"] = cf_ignored_app
 	}
 }
 
