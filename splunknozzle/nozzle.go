@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventfilter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
@@ -43,7 +44,13 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
 		AddTags:        s.config.AddTags,
 	}
-	return eventrouter.New(cache, eventSink, config)
+
+	filter, err := eventfilter.New(s.config.Filters)
+	if err != nil {
+		return nil, err
+	}
+
+	return eventrouter.New(cache, eventSink, config, filter)
 }
 
 // CFClient creates a client object which can talk to Cloud Foundry

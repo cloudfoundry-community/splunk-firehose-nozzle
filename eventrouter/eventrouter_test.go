@@ -1,6 +1,7 @@
 package eventrouter_test
 
 import (
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventfilter"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -33,7 +34,7 @@ var _ = Describe("eventrouter", func() {
 		config := &Config{
 			SelectedEvents: "LogMessage,HttpStart,HttpStop,HttpStartStop,ValueMetric,CounterEvent,Error,ContainerMetric",
 		}
-		r, err = New(noCache, memSink, config)
+		r, err = New(noCache, memSink, config, nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		timestampNano = 1467040874046121775
@@ -84,7 +85,7 @@ var _ = Describe("eventrouter", func() {
 		config := &Config{
 			SelectedEvents: "HttpStart",
 		}
-		r, err = New(noCache, memSink, config)
+		r, err = New(noCache, memSink, config, nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		eventType = events.Envelope_HttpStop
@@ -98,7 +99,7 @@ var _ = Describe("eventrouter", func() {
 		config := &Config{
 			SelectedEvents: "",
 		}
-		r, err = New(noCache, memSink, config)
+		r, err = New(noCache, memSink, config, nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		eventType = events.Envelope_LogMessage
@@ -127,7 +128,7 @@ var _ = Describe("eventrouter", func() {
 		config := &Config{
 			SelectedEvents: "invalid",
 		}
-		r, err = New(noCache, memSink, config)
+		r, err = New(noCache, memSink, config, nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		eventType = invalid
@@ -160,7 +161,95 @@ var _ = Describe("eventrouter", func() {
 		config := &Config{
 			SelectedEvents: "invalid-event",
 		}
-		_, err = New(noCache, memSink, config)
+		_, err = New(noCache, memSink, config, nil)
 		Ω(err).Should(HaveOccurred())
 	})
 })
+
+var _ = Describe("eventrouter filtering", func() {
+	var msg *events.Envelope
+	var router Router
+	var filters eventfilter.Filters
+	var sink *devNullSink
+
+	BeforeEach(func() {
+		msg = &events.Envelope{
+			Origin: p("some origin"),
+		}
+		sink = &devNullSink{}
+	})
+
+	JustBeforeEach(func() {
+		config := &Config{
+			SelectedEvents: "LogMessage,HttpStart,HttpStop,HttpStartStop,ValueMetric,CounterEvent,Error,ContainerMetric",
+		}
+		var err error
+
+		router, err = New(nullCache{}, sink, config, filters)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = router.Route(msg)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Context("with a nil filter", func() {
+		BeforeEach(func() {
+			filters = nil
+		})
+		It("routes the message", func() {
+			Expect(sink.msgs).To(Equal(1))
+		})
+	})
+
+	Context("with a filter that blocks everything", func() {
+		BeforeEach(func() {
+			filters = blockingFilter{}
+		})
+		It("discards the message", func() {
+			Expect(sink.msgs).To(Equal(0))
+		})
+	})
+
+	Context("with an accepting origin filter", func() {
+		BeforeEach(func() {
+			filters = originFilter{allowedOrigin: msg.GetOrigin()}
+		})
+		It("routes the message", func() {
+			Expect(sink.msgs).To(Equal(1))
+		})
+	})
+
+	Context("with an blocking origin filter", func() {
+		BeforeEach(func() {
+			filters = originFilter{allowedOrigin: "Invalid origin"}
+		})
+		It("discards the message", func() {
+			Expect(sink.msgs).To(Equal(0))
+		})
+	})
+})
+
+type fakeFilter struct{}
+
+func (fakeFilter) Length() int { return 1 }
+
+type allowingFilter struct{ fakeFilter }
+
+func (allowingFilter) Accepts(m *events.Envelope) bool {
+	return true
+}
+
+type blockingFilter struct{ fakeFilter }
+
+func (blockingFilter) Accepts(m *events.Envelope) bool {
+	return false
+}
+
+type originFilter struct {
+	fakeFilter
+	allowedOrigin string
+}
+
+func (of originFilter) Accepts(m *events.Envelope) bool {
+	return of.allowedOrigin == m.GetOrigin()
+}

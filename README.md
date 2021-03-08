@@ -98,6 +98,10 @@ This is recommended for dev environments only.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
 * `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
+* `FILTERS`: Filter events on deployment, job, or origin. The format is `field₀:comperator₀:value₀;field₁:comperator₁:value₁;…;fieldₙ,comperatorₙ,valueₙ` where
+  * `<field>` is the messages field to check against, e.g. deployment or job
+  * `<comperator>` how to compare the <field>'s value to the user provided <value>, e.g.: mustContain, mustNotContain
+  * `<value>` the actual value the message's <field> should be checked for
     
 - - - -
 

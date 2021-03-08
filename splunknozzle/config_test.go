@@ -67,6 +67,8 @@ var _ = Describe("Config", func() {
 			os.Setenv("DEBUG", "true")
 			os.Setenv("DROP_WARN_THRESHOLD", "100")
 
+			os.Setenv("FILTERS", "some filters")
+
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.com"))
@@ -114,6 +116,8 @@ var _ = Describe("Config", func() {
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.DropWarnThreshold).To(Equal(100))
+
+			Expect(c.Filters).To(Equal("some filters"))
 		})
 
 		It("check defaults", func() {
@@ -148,6 +152,8 @@ var _ = Describe("Config", func() {
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
 			Expect(c.DropWarnThreshold).To(Equal(1000))
+
+			Expect(c.Filters).To(Equal(""))
 		})
 	})
 
@@ -196,6 +202,7 @@ var _ = Describe("Config", func() {
 				"--enable-event-tracing",
 				"--debug",
 				"--drop-warn-threshold=10",
+				"--filters=some filters",
 			}
 			os.Args = args
 		})
@@ -248,6 +255,7 @@ var _ = Describe("Config", func() {
 			Expect(c.Commit).To(Equal(commit))
 			Expect(c.BuildOS).To(Equal(buildos))
 
+			Expect(c.Filters).To(Equal("some filters"))
 		})
 	})
 })
