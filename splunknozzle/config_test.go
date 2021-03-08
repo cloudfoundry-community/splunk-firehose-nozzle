@@ -66,6 +66,8 @@ var _ = Describe("Config", func() {
 			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
 
+			os.Setenv("FILTERS", "some filters")
+
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.com"))
@@ -112,6 +114,8 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
+
+			Expect(c.Filters).To(Equal("some filters"))
 		})
 
 		It("check defaults", func() {
@@ -145,6 +149,8 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
+
+			Expect(c.Filters).To(Equal(""))
 		})
 	})
 
@@ -192,6 +198,7 @@ var _ = Describe("Config", func() {
 				"--splunk-version=5.2",
 				"--enable-event-tracing",
 				"--debug",
+				"--filters=some filters",
 			}
 			os.Args = args
 		})
@@ -243,6 +250,7 @@ var _ = Describe("Config", func() {
 			Expect(c.Commit).To(Equal(commit))
 			Expect(c.BuildOS).To(Equal(buildos))
 
+			Expect(c.Filters).To(Equal("some filters"))
 		})
 	})
 })

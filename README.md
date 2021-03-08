@@ -88,6 +88,10 @@ This is recommended for dev environments only.
 * `BOLTDB_PATH`: Bolt database path.
 * `EVENTS`: A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
 * `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value).
+* `FILTERS`: Filter events on deployment, job, or origin. The format is `field₀:comperator₀:value₀;field₁:comperator₁:value₁;…;fieldₙ,comperatorₙ,valueₙ` where
+  * `<field>` is the messages field to check against, e.g. deployment or job
+  * `<comperator>` how to compare the <field>'s value to the user provided <value>, e.g.: mustContain, mustNotContain
+  * `<value>` the actual value the message's <field> should be checked for
 * `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
 * `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.
 * `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
