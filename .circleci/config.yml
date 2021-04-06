@@ -112,20 +112,20 @@ workflows:
   build-and-deploy-nozzle:
     jobs:
       - build
-      - deploy-nozzle:
-          requires:
-            - build
-#      - tile-builder:
-#          requires:
-#            - deploy-nozzle
-#          filters:
-#            branches:
-#              only: master
-      - execute_tests:
-          requires:
-            - deploy-nozzle
-          filters:
-            branches:
-              only:
-                - master
-                - release/v1.2.0
+#       - deploy-nozzle:
+#           requires:
+#             - build
+# #      - tile-builder:
+# #          requires:
+# #            - deploy-nozzle
+# #          filters:
+# #            branches:
+# #              only: master
+#       - execute_tests:
+#           requires:
+#             - deploy-nozzle
+#           filters:
+#             branches:
+#               only:
+#                 - master
+#                 - release/v1.2.0

@@ -138,6 +138,15 @@ var _ = Describe("eventrouter", func() {
 		Expect(len(memSink.Messages)).To(Equal(0))
 	})
 
+	It("Route ignore app", func() {
+		noCache.SetIgnoreApp(true)
+		eventType = events.Envelope_LogMessage
+		err := r.Route(msg)
+		Ω(err).ShouldNot(HaveOccurred())
+		Expect(len(memSink.Events)).To(Equal(0))
+		Expect(len(memSink.Messages)).To(Equal(0))
+	})
+
 	It("Route sink error", func() {
 		memSink.ReturnErr = true
 		eventType = events.Envelope_LogMessage
