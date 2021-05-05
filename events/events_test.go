@@ -1,6 +1,8 @@
 package events_test
 
 import (
+	"math"
+
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 	. "github.com/cloudfoundry/sonde-go/events"
@@ -85,6 +87,45 @@ var _ = Describe("Events", func() {
 		Expect(evt.Msg).To(Equal(""))
 		Expect(evt.Fields["name"]).To(Equal(name))
 		Expect(evt.Fields["value"]).To(Equal(value))
+		Expect(evt.Fields["unit"]).To(Equal(unit))
+	})
+
+	It("ValueMetric NaN", func() {
+		msg = NewValueMetric()
+		nan := math.NaN()
+		msg.ValueMetric.Value = &nan
+		evt := fevents.ValueMetric(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["name"]).To(Equal(name))
+		Expect(evt.Fields["value"]).To(Equal("NaN"))
+		Expect(evt.Fields["unit"]).To(Equal(unit))
+	})
+
+	It("ValueMetric +Infinity", func() {
+		msg = NewValueMetric()
+		inf := math.Inf(1)
+		msg.ValueMetric.Value = &inf
+		evt := fevents.ValueMetric(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["name"]).To(Equal(name))
+		Expect(evt.Fields["value"]).To(Equal("Infinity"))
+		Expect(evt.Fields["unit"]).To(Equal(unit))
+	})
+
+	It("ValueMetric -Infinity", func() {
+		msg = NewValueMetric()
+		inf := math.Inf(-1)
+		msg.ValueMetric.Value = &inf
+		evt := fevents.ValueMetric(msg)
+		Expect(evt).ToNot(BeNil())
+		Expect(evt.Fields).ToNot(BeNil())
+		Expect(evt.Msg).To(Equal(""))
+		Expect(evt.Fields["name"]).To(Equal(name))
+		Expect(evt.Fields["value"]).To(Equal("-Infinity"))
 		Expect(evt.Fields["unit"]).To(Equal(unit))
 	})
 

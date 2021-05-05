@@ -3,6 +3,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -121,11 +122,21 @@ func LogMessage(msg *events.Envelope) *Event {
 
 func ValueMetric(msg *events.Envelope) *Event {
 	valMetric := msg.GetValueMetric()
+	value := valMetric.GetValue()
 
 	fields := logrus.Fields{
 		"name":  valMetric.GetName(),
 		"unit":  valMetric.GetUnit(),
-		"value": valMetric.GetValue(),
+		"value": value,
+	}
+
+	// Convert special values
+	if math.IsNaN(value) {
+		fields["value"] = "NaN"
+	} else if math.IsInf(value, 1) {
+		fields["value"] = "Infinity"
+	} else if math.IsInf(value, -1) {
+		fields["value"] = "-Infinity"
 	}
 
 	return &Event{
@@ -199,6 +210,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		cf_space_name := appInfo.SpaceName
 		cf_org_id := appInfo.OrgGuid
 		cf_org_name := appInfo.OrgName
+		cf_ignored_app := appInfo.IgnoredApp
 		app_env := appInfo.CfAppEnv
 
 		if cf_app_name != "" && config.AddAppName {
@@ -224,6 +236,11 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		if app_env["SPLUNK_INDEX"] != nil {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
+
+		if cf_ignored_app != false {
+			e.Fields["cf_ignored_app"] = cf_ignored_app
+		}
+
 	}
 }
 
