@@ -87,7 +87,7 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	//Add app headers for HEC telemetry
 	//Todo: update static values with appName and appVersion variables
 	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
-	req.Header.Set("__splunk_app_version", "1.2.0")
+	req.Header.Set("__splunk_app_version", "1.2.2")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

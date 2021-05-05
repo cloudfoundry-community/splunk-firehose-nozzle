@@ -9,8 +9,8 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            curl https://glide.sh/get | sh
-            go get -t ./...
+            go get -u -v -t github.com/Masterminds/glide
+            glide install --strip-vendor
       - run:
           name: Builder
           command: make build
@@ -20,7 +20,7 @@ jobs:
             make testall
             cp splunk-firehose-nozzle /tmp
       - persist_to_workspace:
-          root: /tmp
+          root: /tmp  
           paths:
             - splunk-firehose-nozzle
 
@@ -35,8 +35,8 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            curl https://glide.sh/get | sh
-            go get -t ./...
+            go get -u -v -t github.com/Masterminds/glide
+            glide install --strip-vendor
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy nozzle
@@ -75,8 +75,8 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            curl https://glide.sh/get | sh
-            go get -t ./...
+            go get -u -v -t github.com/Masterminds/glide
+            glide install --strip-vendor
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy data-gen
@@ -112,20 +112,21 @@ workflows:
   build-and-deploy-nozzle:
     jobs:
       - build
-#       - deploy-nozzle:
-#           requires:
-#             - build
-# #      - tile-builder:
-# #          requires:
-# #            - deploy-nozzle
-# #          filters:
-# #            branches:
-# #              only: master
-#       - execute_tests:
-#           requires:
-#             - deploy-nozzle
-#           filters:
-#             branches:
-#               only:
-#                 - master
-#                 - release/v1.2.0
+      - deploy-nozzle:
+          requires:
+            - build
+#      - tile-builder:
+#          requires:
+#            - deploy-nozzle
+#          filters:
+#            branches:
+#              only: master
+      - execute_tests:
+          requires:
+            - deploy-nozzle
+          filters:
+            branches:
+              only:
+                - develop
+                - master
+#                - release/v1.2.0
