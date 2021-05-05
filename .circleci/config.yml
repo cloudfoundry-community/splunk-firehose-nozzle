@@ -127,6 +127,6 @@ workflows:
           filters:
             branches:
               only:
-                - update-hec-telemetry
-#               - master
-#               - release/v1.2.0
+                - develop
+                - master
+#                - release/v1.2.0
