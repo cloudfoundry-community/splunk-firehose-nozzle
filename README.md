@@ -19,7 +19,7 @@ In addition, logs from the nozzle itself are of sourcetype `cf:splunknozzle`.
 
 ### Setup
 
-The Nozzle requires a client with the authorities `doppler.firehose` and `cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is true) and grant-types `client_credentials` and `refresh_token`. If `cloud_controller.admin_read_only` is not
+The Nozzle requires a client with the authorities `doppler.firehose` and `cloud_controller.admin_read_only` (the latter is only required if `ADD_APP_INFO` is enabled) and grant-types `client_credentials` and `refresh_token`. If `cloud_controller.admin_read_only` is not
 available in the system, switch to use `cloud_controller.admin`.
 
 You can either
@@ -152,6 +152,10 @@ $ ./dump_app_info --skip-ssl-validation --api-endpoint=https://<your api endpoin
 
 After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
 specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
+
+### Disable logging for noisy applications
+Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manifest to disable logging.
+
 
 ### Index routing
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
@@ -333,7 +337,7 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      skip-ssl: true
      splunk-host: http://localhost:8088
      splunk-index: atomic
-     splunk-version: 6.6
+     splunk-version: 8.1
      subscription-id: splunk-firehose
      trace-logging: true
      status-monitor-interval: 0s
@@ -417,7 +421,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.2.0
+$ make VERSION=1.2.2
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)

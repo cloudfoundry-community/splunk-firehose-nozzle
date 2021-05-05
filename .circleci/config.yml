@@ -129,4 +129,4 @@ workflows:
               only:
                 - develop
                 - master
-#                - release/v1.2.0
+                - release/v1.2.2
