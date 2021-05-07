@@ -32,7 +32,8 @@ func NewSplunk(config *SplunkConfig) Writer {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipSSL},
-	}
+               Proxy:           http.ProxyFromEnvironment,
++	}
 	httpClient.Transport = tr
 
 	return &splunkClient{
