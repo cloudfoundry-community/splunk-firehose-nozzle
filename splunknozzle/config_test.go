@@ -1,6 +1,7 @@
 package splunknozzle_test
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -12,13 +13,30 @@ import (
 
 var _ = Describe("Config", func() {
 
+	var (
+		version        = "1.0"
+		branch         = "develop"
+		commit         = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
+		buildos        = "Linux"
+		mapping        = `{"default_index":"otherindex","mappings":[{"by":"cf_org_id","value":"cf_org_id_test","index":"cf_org_id_idx"},{"by":"cf_space_id","value":"cf_space_id_test","index":"cf_space_id_idx"},{"by": "cf_app_id","value":"cf_app_id_test","index":"cf_app_id_idx"}]}`
+		invalidMapping = `{"default_index":"main","mappings":[{"by":"cf_org_id","value": "testing", "index": null}]}}`
+	)
+
+	verifyIndexMapping := func(indexMapping *drain.IndexMapConfig) {
+		Expect(indexMapping).ShouldNot(Equal(nil))
+		Expect(indexMapping.DefaultIndex).To(Equal("otherindex"))
+		Expect(indexMapping.Mappings).ShouldNot(Equal(nil))
+		Expect(len(indexMapping.Mappings)).To(Equal(3))
+
+		byIDs := []string{drain.CF_ORG_ID, drain.CF_SPACE_ID, drain.CF_APP_ID}
+		for i, idxMap := range indexMapping.Mappings {
+			Expect(idxMap.By).To(Equal(byIDs[i]))
+			Expect(idxMap.Value).To(Equal(byIDs[i] + "_test"))
+			Expect(*idxMap.Index).To(Equal(byIDs[i] + "_idx"))
+		}
+	}
+
 	Context("Env config parsing", func() {
-		var (
-			version = "1.0"
-			branch  = "develop"
-			commit  = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
-			buildos = "Linux"
-		)
 
 		BeforeEach(func() {
 			// FIX "nozzle.test: error: unknown short flag '-t', try --help" error when coverage
@@ -33,7 +51,7 @@ var _ = Describe("Config", func() {
 
 			os.Setenv("SPLUNK_TOKEN", "sometoken")
 			os.Setenv("SPLUNK_HOST", "splunk.example.com")
-			os.Setenv("SPLUNK_INDEX", "splunk_index")
+			os.Setenv("SPLUNK_INDEX_MAPPING", mapping)
 		})
 
 		It("parses config from environment", func() {
@@ -66,7 +84,8 @@ var _ = Describe("Config", func() {
 			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
 
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.com"))
 			Expect(c.User).To(Equal("admin"))
@@ -96,7 +115,7 @@ var _ = Describe("Config", func() {
 
 			Expect(c.BoltDBPath).To(Equal("foo.db"))
 			Expect(c.WantedEvents).To(Equal("LogMessage"))
-			Expect(c.ExtraFields).To(Equal("foo:bar"))
+			Expect(c.ExtraFields["foo"]).To(Equal("bar"))
 
 			Expect(c.FlushInterval).To(Equal(43 * time.Second))
 			Expect(c.QueueSize).To(Equal(15000))
@@ -115,7 +134,8 @@ var _ = Describe("Config", func() {
 		})
 
 		It("check defaults", func() {
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.JobName).To(Equal("splunk-nozzle"))
 			Expect(c.JobIndex).To(Equal("-1"))
@@ -146,16 +166,21 @@ var _ = Describe("Config", func() {
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
 		})
+
+		It("Invalid index mapping with invliad json", func() {
+			os.Setenv("SPLUNK_INDEX_MAPPING", invalidMapping)
+			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Invalid extra fields", func() {
+			os.Setenv("EXTRA_FIELDS", "abc")
+			_, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 
 	Context("Flags config parsing", func() {
-		var (
-			version = "1.0"
-			branch  = "develop"
-			commit  = "08a9e9bd557ca9038e9b391d9a77d47aa56210a3"
-			buildos = "Linux"
-		)
-
 		BeforeEach(func() {
 			os.Clearenv()
 			// FIX "nozzle.test: error: unknown short flag '-t', try --help" error when coverage
@@ -197,7 +222,8 @@ var _ = Describe("Config", func() {
 		})
 
 		It("parses config from cli flags", func() {
-			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			c, err := NewConfigFromCmdFlags(version, branch, commit, buildos)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(c.ApiEndpoint).To(Equal("api.bosh-lite.comc"))
 			Expect(c.User).To(Equal("adminc"))

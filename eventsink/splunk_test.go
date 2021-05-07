@@ -67,6 +67,10 @@ var _ = Describe("Splunk", func() {
 		mockClient = &testing.EventWriterMock{}
 		mockClient2 = &testing.EventWriterMock{}
 
+		indexMapConfig := &drain.IndexMapConfig{
+			DefaultIndex: "main",
+		}
+
 		logger = lager.NewLogger("test")
 		config := &eventsink.SplunkConfig{
 			FlushInterval: time.Millisecond,
@@ -77,6 +81,7 @@ var _ = Describe("Splunk", func() {
 			Version:       "6.6",
 			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
 			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			IndexMapping:  indexMapConfig,
 			Logger:        logger,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)

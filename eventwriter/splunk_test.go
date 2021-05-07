@@ -164,9 +164,9 @@ var _ = Describe("Splunk", func() {
 			Expect(capturedRequest).NotTo(BeNil())
 
 			expectedPayload := strings.TrimSpace(`
-{"event":{"greeting":"hello world"},"index":"index_cf"}
+{"event":{"greeting":"hello world"}}
 
-{"event":{"greeting":"hello mars"},"index":"index_cf"}
+{"event":{"greeting":"hello mars"}}
 `)
 			Expect(string(capturedBody)).To(Equal(expectedPayload))
 		})
