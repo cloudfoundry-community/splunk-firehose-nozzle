@@ -1,12 +1,14 @@
 package nozzle
 
 import (
-	"code.cloudfoundry.org/lager"
 	"sync/atomic"
 	"time"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
+	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
 )
 
@@ -41,11 +43,22 @@ func (f *Nozzle) Start() error {
 	if err != nil {
 		return err
 	}
-
+	unRoutedEvents := make(chan *events.Envelope, 5000)
 	defer close(f.closed)
 
+	for i := 0; i < 10; i++ {
+		go func() {
+			for {
+				event := <-unRoutedEvents
+				if err := f.eventRouter.Route(event); err != nil {
+					f.config.Logger.Error("Failed to route event", err)
+				}
+			}
+		}()
+	}
 	var lastErr error
-	events, errs := f.eventSource.Read()
+	readEvents, errs := f.eventSource.Read()
+	dropped := 0
 	if f.config.StatusMonitorInterval > time.Second*0 {
 		var receivedCount uint64 = 0
 		timer := time.NewTimer(f.config.StatusMonitorInterval)
@@ -60,14 +73,18 @@ func (f *Nozzle) Start() error {
 			}
 
 			select {
-			case event, ok := <-events:
+			case event, ok := <-readEvents:
 				if !ok {
 					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 					return lastErr
 				}
 				atomic.AddUint64(&receivedCount, uint64(1))
-				if err := f.eventRouter.Route(event); err != nil {
-					f.config.Logger.Error("Failed to route event", err)
+				select {
+				case unRoutedEvents <- event:
+				default:
+					if dropped%1000 == 0 {
+						f.config.Logger.Error("Dropping envelopes", nil, lager.Data{"Total Dropped": dropped})
+					}
 				}
 
 			case lastErr = <-errs:
@@ -80,14 +97,18 @@ func (f *Nozzle) Start() error {
 	} else {
 		for {
 			select {
-			case event, ok := <-events:
+			case event, ok := <-readEvents:
 				if !ok {
 					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 					return lastErr
 				}
 
-				if err := f.eventRouter.Route(event); err != nil {
-					f.config.Logger.Error("Failed to route event", err)
+				select {
+				case unRoutedEvents <- event:
+				default:
+					if dropped%1000 == 0 {
+						f.config.Logger.Error("Dropping envelopes", nil, lager.Data{"Total Dropped": dropped})
+					}
 				}
 
 			case lastErr = <-errs:
