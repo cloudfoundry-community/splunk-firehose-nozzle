@@ -114,6 +114,11 @@ forms:
       - name: SpaceGuid
         label: SpaceGuid
     description: Enriches event raw data with application metadata
+  - name: add_tags
+    type: boolean
+    label: Add Tags
+    default: false
+    description: Add additional tags from envelope to Splunk Event.
   - name: extra_fields
     type: string
     label: Additional Fields
