@@ -26,6 +26,7 @@ type Config struct {
 	AddOrgGuid     bool
 	AddSpaceName   bool
 	AddSpaceGuid   bool
+	AddTags        bool
 }
 
 var AppMetadata = []string{
@@ -248,13 +249,17 @@ func (e *Event) AnnotateWithCFMetaData() {
 	e.Fields["event_type"] = e.Type
 }
 
-func (e *Event) AnnotateWithEnvelopeData(msg *events.Envelope) {
+func (e *Event) AnnotateWithEnvelopeData(msg *events.Envelope, config *Config) {
 	e.Fields["origin"] = msg.GetOrigin()
 	e.Fields["deployment"] = msg.GetDeployment()
 	e.Fields["ip"] = msg.GetIp()
 	e.Fields["job"] = msg.GetJob()
 	e.Fields["job_index"] = msg.GetIndex()
 	e.Type = msg.GetEventType().String()
+
+	if config.AddTags {
+		e.Fields["tags"] = msg.GetTags()
+	}
 }
 
 func IsAuthorizedEvent(wantedEvent string) bool {

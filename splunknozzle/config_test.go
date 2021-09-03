@@ -56,6 +56,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("BOLTDB_PATH", "foo.db")
 			os.Setenv("EVENTS", "LogMessage")
 			os.Setenv("EXTRA_FIELDS", "foo:bar")
+			os.Setenv("ADD_TAGS", "true")
 
 			os.Setenv("FLUSH_INTERVAL", "43s")
 			os.Setenv("CONSUMER_QUEUE_SIZE", "15000")
@@ -97,6 +98,7 @@ var _ = Describe("Config", func() {
 			Expect(c.BoltDBPath).To(Equal("foo.db"))
 			Expect(c.WantedEvents).To(Equal("LogMessage"))
 			Expect(c.ExtraFields).To(Equal("foo:bar"))
+			Expect(c.AddTags).To(BeTrue())
 
 			Expect(c.FlushInterval).To(Equal(43 * time.Second))
 			Expect(c.QueueSize).To(Equal(15000))
@@ -131,6 +133,7 @@ var _ = Describe("Config", func() {
 			Expect(c.MissingAppCacheTTL).To(Equal(0 * time.Second))
 			Expect(c.AppCacheTTL).To(Equal(0 * time.Second))
 			Expect(c.AppLimits).To(Equal(0))
+			Expect(c.AddTags).To(BeFalse())
 
 			Expect(c.BoltDBPath).To(Equal("cache.db"))
 			Expect(c.WantedEvents).To(Equal("ValueMetric,CounterEvent,ContainerMetric"))
@@ -183,6 +186,7 @@ var _ = Describe("Config", func() {
 				"--app-limits=35",
 				"--boltdb-path=foo.dbc",
 				"--events=LogMessagec",
+				"--add-tags",
 				"--extra-fields=foo:barc",
 				"--flush-interval=34s",
 				"--consumer-queue-size=2323",
@@ -227,6 +231,7 @@ var _ = Describe("Config", func() {
 			Expect(c.BoltDBPath).To(Equal("foo.dbc"))
 			Expect(c.WantedEvents).To(Equal("LogMessagec"))
 			Expect(c.ExtraFields).To(Equal("foo:barc"))
+			Expect(c.AddTags).To(BeTrue())
 
 			Expect(c.FlushInterval).To(Equal(34 * time.Second))
 			Expect(c.QueueSize).To(Equal(2323))

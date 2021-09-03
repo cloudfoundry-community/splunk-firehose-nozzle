@@ -36,6 +36,7 @@ type Config struct {
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
 	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
+	AddTags            bool          `json:"add-tags"`
 
 	BoltDBPath   string `json:"boltdb-path"`
 	WantedEvents string `json:"wanted-events"`
@@ -113,6 +114,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ORG_SPACE_CACHE_INVALIDATE_TTL").Default("72h").DurationVar(&c.OrgSpaceCacheTTL)
 	kingpin.Flag("app-limits", "Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache").
 		OverrideDefaultFromEnvar("APP_LIMITS").Default("0").IntVar(&c.AppLimits)
+	kingpin.Flag("add-tags", "Add additional tags from envelope. (Default: false)").
+		OverrideDefaultFromEnvar("ADD_TAGS").Default("false").BoolVar(&c.AddTags)
 
 	kingpin.Flag("boltdb-path", "Bolt Database path ").
 		Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").StringVar(&c.BoltDBPath)
