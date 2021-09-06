@@ -12,13 +12,13 @@ endif
 default: installdeps build
 
 installdeps:
-	glide install --strip-vendor
+	go mod download	
 
 updatedeps:
-	glide update
+	go get -u
 
 initdeps:
-	glide create
+	go mod download	
 
 # -gcflags '-N -l' for debug
 # -ldflags -w for prod

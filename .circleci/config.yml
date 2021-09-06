@@ -9,8 +9,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod download
       - run:
           name: Builder
           command: make build
@@ -35,8 +34,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod tidy
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy nozzle
@@ -75,8 +73,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod tidy
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy data-gen
