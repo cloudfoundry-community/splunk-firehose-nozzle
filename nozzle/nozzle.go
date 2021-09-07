@@ -1,9 +1,10 @@
 package nozzle
 
 import (
-	"code.cloudfoundry.org/lager"
 	"sync/atomic"
 	"time"
+
+	"code.cloudfoundry.org/lager"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"

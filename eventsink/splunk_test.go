@@ -94,6 +94,37 @@ var _ = Describe("Splunk", func() {
 		}).Should(HaveLen(1))
 	})
 
+	It("does not block when downstream is blocked", func() {
+		config := &eventsink.SplunkConfig{
+			FlushInterval: time.Millisecond,
+			QueueSize:     1,
+			BatchSize:     1,
+			Retries:       1,
+			Hostname:      "localhost",
+			Version:       "6.6",
+			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
+			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:        logger,
+		}
+		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
+		eventType = events.Envelope_Error
+		eventRouter.Route(envelope)
+		eventRouter.Route(envelope)
+		mockClient.Block = true
+		mockClient2.Block = true
+
+		sink.Open()
+		sink.Write(memSink.Events[0], memSink.Messages[0])
+		sink.Write(memSink.Events[1], memSink.Messages[1])
+		mockClient.Block = false
+		mockClient2.Block = false
+
+		Eventually(func() []map[string]interface{} {
+			return mockClient.CapturedEvents()
+		}).Should(HaveLen(1))
+		Expect(sink.DroppedEvents).To(Equal(uint64(1)))
+	})
+
 	It("job_index is present, index is not", func() {
 		eventType = events.Envelope_Error
 		eventRouter.Route(envelope)
