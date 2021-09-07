@@ -6,7 +6,6 @@ require (
 	code.cloudfoundry.org/cfhttp v0.0.0-20160823172719-1d363866d79a
 	code.cloudfoundry.org/cflager v0.0.0-20160705185420-3b0406dd8038
 	code.cloudfoundry.org/lager v0.0.0-20161021174446-b273f19621a2
-	github.com/boltdb/bolt v0.0.0-20150318161107-4d30731e9122
 	github.com/cloudfoundry-community/go-cfclient v0.0.0-20190201205600-f136f9222381
 	github.com/cloudfoundry/noaa v2.1.1-0.20190110210640-5ce49363dfa6+incompatible
 	github.com/cloudfoundry/sonde-go v0.0.0-20160804000546-81c3f6be579c
@@ -17,6 +16,7 @@ require (
 	github.com/onsi/ginkgo v1.6.0
 	github.com/onsi/gomega v1.4.3
 	github.com/sirupsen/logrus v0.10.0
+	go.etcd.io/bbolt v1.3.6
 	gopkg.in/alecthomas/kingpin.v2 v2.2.3
 )
 

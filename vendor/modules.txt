@@ -29,9 +29,6 @@ github.com/alecthomas/template/parse
 github.com/alecthomas/units
 # github.com/apoydence/eachers v0.0.0-20181020210610-23942921fe77
 ## explicit
-# github.com/boltdb/bolt v0.0.0-20150318161107-4d30731e9122
-## explicit
-github.com/boltdb/bolt
 # github.com/cloudfoundry-community/go-cfclient v0.0.0-20190201205600-f136f9222381
 ## explicit
 github.com/cloudfoundry-community/go-cfclient
@@ -125,6 +122,9 @@ github.com/pkg/errors
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.7.0
 ## explicit; go 1.13
+# go.etcd.io/bbolt v1.3.6
+## explicit; go 1.12
+go.etcd.io/bbolt
 # golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 ## explicit; go 1.11
 golang.org/x/net/context

@@ -1,4 +1,4 @@
-package bolt
+package bbolt
 
 import (
 	"bytes"
@@ -11,14 +11,7 @@ const (
 	MaxKeySize = 32768
 
 	// MaxValueSize is the maximum length of a value, in bytes.
-	MaxValueSize = 4294967295
-)
-
-const (
-	maxUint = ^uint(0)
-	minUint = 0
-	maxInt  = int(^uint(0) >> 1)
-	minInt  = -maxInt - 1
+	MaxValueSize = (1 << 31) - 2
 )
 
 const bucketHeaderSize = int(unsafe.Sizeof(bucket{}))
@@ -99,6 +92,7 @@ func (b *Bucket) Cursor() *Cursor {
 
 // Bucket retrieves a nested bucket by name.
 // Returns nil if the bucket does not exist.
+// The bucket instance is only valid for the lifetime of the transaction.
 func (b *Bucket) Bucket(name []byte) *Bucket {
 	if b.buckets != nil {
 		if child := b.buckets[string(name)]; child != nil {
@@ -129,9 +123,19 @@ func (b *Bucket) Bucket(name []byte) *Bucket {
 func (b *Bucket) openBucket(value []byte) *Bucket {
 	var child = newBucket(b.tx)
 
+	// Unaligned access requires a copy to be made.
+	const unalignedMask = unsafe.Alignof(struct {
+		bucket
+		page
+	}{}) - 1
+	unaligned := uintptr(unsafe.Pointer(&value[0]))&unalignedMask != 0
+	if unaligned {
+		value = cloneBytes(value)
+	}
+
 	// If this is a writable transaction then we need to copy the bucket entry.
 	// Read-only transactions can point directly at the mmap entry.
-	if b.tx.writable {
+	if b.tx.writable && !unaligned {
 		child.bucket = &bucket{}
 		*child.bucket = *(*bucket)(unsafe.Pointer(&value[0]))
 	} else {
@@ -148,6 +152,7 @@ func (b *Bucket) openBucket(value []byte) *Bucket {
 
 // CreateBucket creates a new bucket at the given key and returns the new bucket.
 // Returns an error if the key already exists, if the bucket name is blank, or if the bucket name is too long.
+// The bucket instance is only valid for the lifetime of the transaction.
 func (b *Bucket) CreateBucket(key []byte) (*Bucket, error) {
 	if b.tx.db == nil {
 		return nil, ErrTxClosed
@@ -165,9 +170,8 @@ func (b *Bucket) CreateBucket(key []byte) (*Bucket, error) {
 	if bytes.Equal(key, k) {
 		if (flags & bucketLeafFlag) != 0 {
 			return nil, ErrBucketExists
-		} else {
-			return nil, ErrIncompatibleValue
 		}
+		return nil, ErrIncompatibleValue
 	}
 
 	// Create empty, inline bucket.
@@ -192,6 +196,7 @@ func (b *Bucket) CreateBucket(key []byte) (*Bucket, error) {
 
 // CreateBucketIfNotExists creates a new bucket if it doesn't already exist and returns a reference to it.
 // Returns an error if the bucket name is blank, or if the bucket name is too long.
+// The bucket instance is only valid for the lifetime of the transaction.
 func (b *Bucket) CreateBucketIfNotExists(key []byte) (*Bucket, error) {
 	child, err := b.CreateBucket(key)
 	if err == ErrBucketExists {
@@ -203,7 +208,7 @@ func (b *Bucket) CreateBucketIfNotExists(key []byte) (*Bucket, error) {
 }
 
 // DeleteBucket deletes a bucket at the given key.
-// Returns an error if the bucket does not exists, or if the key represents a non-bucket value.
+// Returns an error if the bucket does not exist, or if the key represents a non-bucket value.
 func (b *Bucket) DeleteBucket(key []byte) error {
 	if b.tx.db == nil {
 		return ErrTxClosed
@@ -225,7 +230,7 @@ func (b *Bucket) DeleteBucket(key []byte) error {
 	// Recursively delete all child buckets.
 	child := b.Bucket(key)
 	err := child.ForEach(func(k, v []byte) error {
-		if v == nil {
+		if _, _, childFlags := child.Cursor().seek(k); (childFlags & bucketLeafFlag) != 0 {
 			if err := child.DeleteBucket(k); err != nil {
 				return fmt.Errorf("delete bucket: %s", err)
 			}
@@ -252,6 +257,7 @@ func (b *Bucket) DeleteBucket(key []byte) error {
 
 // Get retrieves the value for a key in the bucket.
 // Returns a nil value if the key does not exist or if the key is a nested bucket.
+// The returned value is only valid for the life of the transaction.
 func (b *Bucket) Get(key []byte) []byte {
 	k, v, flags := b.Cursor().seek(key)
 
@@ -269,6 +275,7 @@ func (b *Bucket) Get(key []byte) []byte {
 
 // Put sets the value for a key in the bucket.
 // If the key exist then its previous value will be overwritten.
+// Supplied value must remain valid for the life of the transaction.
 // Returns an error if the bucket was created from a read-only transaction, if the key is blank, if the key is too large, or if the value is too large.
 func (b *Bucket) Put(key []byte, value []byte) error {
 	if b.tx.db == nil {
@@ -311,7 +318,12 @@ func (b *Bucket) Delete(key []byte) error {
 
 	// Move cursor to correct position.
 	c := b.Cursor()
-	_, _, flags := c.seek(key)
+	k, _, flags := c.seek(key)
+
+	// Return nil if the key doesn't exist.
+	if !bytes.Equal(key, k) {
+		return nil
+	}
 
 	// Return an error if there is already existing bucket value.
 	if (flags & bucketLeafFlag) != 0 {
@@ -321,6 +333,28 @@ func (b *Bucket) Delete(key []byte) error {
 	// Delete the node if we have a matching key.
 	c.node().del(key)
 
+	return nil
+}
+
+// Sequence returns the current integer for the bucket without incrementing it.
+func (b *Bucket) Sequence() uint64 { return b.bucket.sequence }
+
+// SetSequence updates the sequence number for the bucket.
+func (b *Bucket) SetSequence(v uint64) error {
+	if b.tx.db == nil {
+		return ErrTxClosed
+	} else if !b.Writable() {
+		return ErrTxNotWritable
+	}
+
+	// Materialize the root node if it hasn't been already so that the
+	// bucket will be saved during commit.
+	if b.rootNode == nil {
+		_ = b.node(b.root, nil)
+	}
+
+	// Increment and return the sequence.
+	b.bucket.sequence = v
 	return nil
 }
 
@@ -345,7 +379,8 @@ func (b *Bucket) NextSequence() (uint64, error) {
 
 // ForEach executes a function for each key/value pair in a bucket.
 // If the provided function returns an error then the iteration is stopped and
-// the error is returned to the caller.
+// the error is returned to the caller. The provided function must not modify
+// the bucket; this will result in undefined behavior.
 func (b *Bucket) ForEach(fn func(k, v []byte) error) error {
 	if b.tx.db == nil {
 		return ErrTxClosed
@@ -376,7 +411,7 @@ func (b *Bucket) Stats() BucketStats {
 
 			if p.count != 0 {
 				// If page has any elements, add all element headers.
-				used += leafPageElementSize * int(p.count-1)
+				used += leafPageElementSize * uintptr(p.count-1)
 
 				// Add all element key, value sizes.
 				// The computation takes advantage of the fact that the position
@@ -384,16 +419,16 @@ func (b *Bucket) Stats() BucketStats {
 				// of all previous elements' keys and values.
 				// It also includes the last element's header.
 				lastElement := p.leafPageElement(p.count - 1)
-				used += int(lastElement.pos + lastElement.ksize + lastElement.vsize)
+				used += uintptr(lastElement.pos + lastElement.ksize + lastElement.vsize)
 			}
 
 			if b.root == 0 {
 				// For inlined bucket just update the inline stats
-				s.InlineBucketInuse += used
+				s.InlineBucketInuse += int(used)
 			} else {
 				// For non-inlined bucket update all the leaf stats
 				s.LeafPageN++
-				s.LeafInuse += used
+				s.LeafInuse += int(used)
 				s.LeafOverflowN += int(p.overflow)
 
 				// Collect stats from sub-buckets.
@@ -414,13 +449,13 @@ func (b *Bucket) Stats() BucketStats {
 
 			// used totals the used bytes for the page
 			// Add header and all element headers.
-			used := pageHeaderSize + (branchPageElementSize * int(p.count-1))
+			used := pageHeaderSize + (branchPageElementSize * uintptr(p.count-1))
 
 			// Add size of all keys and values.
 			// Again, use the fact that last element's position equals to
 			// the total of key, value sizes of all previous elements.
-			used += int(lastElement.pos + lastElement.ksize)
-			s.BranchInuse += used
+			used += uintptr(lastElement.pos + lastElement.ksize)
+			s.BranchInuse += int(used)
 			s.BranchOverflowN += int(p.overflow)
 		}
 
@@ -560,7 +595,7 @@ func (b *Bucket) inlineable() bool {
 	// our threshold for inline bucket size.
 	var size = pageHeaderSize
 	for _, inode := range n.inodes {
-		size += leafPageElementSize + len(inode.key) + len(inode.value)
+		size += leafPageElementSize + uintptr(len(inode.key)) + uintptr(len(inode.value))
 
 		if inode.flags&bucketLeafFlag != 0 {
 			return false
@@ -573,8 +608,8 @@ func (b *Bucket) inlineable() bool {
 }
 
 // Returns the maximum total size of a bucket to make it a candidate for inlining.
-func (b *Bucket) maxInlineBucketSize() int {
-	return b.tx.db.pageSize / 4
+func (b *Bucket) maxInlineBucketSize() uintptr {
+	return uintptr(b.tx.db.pageSize / 4)
 }
 
 // write allocates and writes a bucket to a byte slice.
