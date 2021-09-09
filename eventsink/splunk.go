@@ -251,6 +251,6 @@ func (s *Splunk) LogStatus() {
 
 func getRetryInterval(attempt int) time.Duration {
 	// algorithm taken from https://en.wikipedia.org/wiki/Exponential_backoff
-	timeInSec := 5 + (0.5 * (math.Exp2(float64(attempt)) - 1.0))
+	timeInSec := 1 + (0.5 * (math.Exp2(float64(attempt)) - 1.0))
 	return time.Millisecond * time.Duration(1000*timeInSec)
 }
