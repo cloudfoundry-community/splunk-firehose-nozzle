@@ -41,6 +41,7 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 		AddOrgGuid:     strings.Contains(LowerAddAppInfo, "orgguid"),
 		AddSpaceName:   strings.Contains(LowerAddAppInfo, "spacename"),
 		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
+		AddTags:        s.config.AddTags,
 	}
 	return eventrouter.New(cache, eventSink, config)
 }

@@ -64,7 +64,7 @@ func (r *router) Route(msg *events.Envelope) error {
 		return fmt.Errorf("Unsupported event type: %s", eventType.String())
 	}
 
-	event.AnnotateWithEnvelopeData(msg)
+	event.AnnotateWithEnvelopeData(msg, r.config)
 	event.AnnotateWithCFMetaData()
 
 	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
