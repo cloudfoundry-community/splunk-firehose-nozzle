@@ -9,9 +9,9 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/boltdb/bolt"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	json "github.com/mailru/easyjson"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (

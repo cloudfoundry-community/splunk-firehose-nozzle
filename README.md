@@ -398,10 +398,9 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.12.x
-| glide | 0.12.x
+| go | go1.17.x
 
-Then install all dependent packages via [Glide](https://glide.sh/):
+Then make sure that all dependent packages are there:
 
 ```
 $ cd <REPO_ROOT_DIRECTORY>
