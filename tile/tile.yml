@@ -196,10 +196,12 @@ forms:
     description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
 
 migration: |
-  if (properties['properties']['.properties.add_app_info']['value']==true) {
-  		properties['properties']['.properties.add_app_info']['value']="AppName,OrgName,OrgGuid,SpaceName,SpaceGuid";
-  } else {
-  	properties['properties']['.properties.add_app_info']['value']="";
+  if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
+    if (properties['properties']['.properties.add_app_info']['value']==true) {
+        properties['properties']['.properties.add_app_info']['value']="[AppName,OrgName,OrgGuid,SpaceName,SpaceGuid]";
+    } else {
+      properties['properties']['.properties.add_app_info']['value']="";
+    }
   }
 
 packages:
