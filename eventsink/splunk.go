@@ -1,6 +1,7 @@
 package eventsink
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -39,6 +40,7 @@ type Splunk struct {
 	wg            sync.WaitGroup
 	eventCount    uint64
 	sentCountChan chan uint64
+	DroppedEvents uint64
 
 	// cached IP
 	ip string
@@ -55,6 +57,7 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 		ip:            ip,
 		eventCount:    0,
 		sentCountChan: make(chan uint64, 100),
+		DroppedEvents: 0,
 	}
 }
 
@@ -78,7 +81,15 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 		fields["msg"] = msg
 	}
 
-	s.events <- fields
+	select {
+	case s.events <- fields:
+	default:
+		s.DroppedEvents += 1
+		if s.DroppedEvents%1000 == 0 {
+			// s.config.Logger.Warning("Downstream is slow, dropping 1000 events")
+			s.config.Logger.Error("Downstream is slow, dropping 1000 events", errors.New("Dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events"))
+		}
+	}
 	return nil
 }
 
