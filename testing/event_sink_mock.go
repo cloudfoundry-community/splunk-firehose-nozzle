@@ -1,17 +1,19 @@
 package testing
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/cloudfoundry/sonde-go/events"
+)
 
 type MemorySinkMock struct {
-	Events    []map[string]interface{}
-	Messages  []string
+	Events    []*events.Envelope
 	ReturnErr bool
 }
 
 func NewMemorySinkMock() *MemorySinkMock {
 	return &MemorySinkMock{
-		Events:   []map[string]interface{}{},
-		Messages: []string{},
+		Events: []*events.Envelope{},
 	}
 }
 
@@ -23,12 +25,12 @@ func (l *MemorySinkMock) Close() error {
 	return nil
 }
 
-func (l *MemorySinkMock) Write(fields map[string]interface{}, msg string) error {
+func (l *MemorySinkMock) Write(fields *events.Envelope) error {
 	if l.ReturnErr {
 		return errors.New("mockup error")
 	}
 
 	l.Events = append(l.Events, fields)
-	l.Messages = append(l.Messages, msg)
+	// l.Messages = append(l.Messages, msg)
 	return nil
 }

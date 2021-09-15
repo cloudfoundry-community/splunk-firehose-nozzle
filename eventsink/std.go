@@ -1,6 +1,10 @@
 package eventsink
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/cloudfoundry/sonde-go/events"
+)
 
 type Std struct{}
 
@@ -12,10 +16,10 @@ func (l *Std) Close() error {
 	return nil
 }
 
-func (l *Std) Write(fields map[string]interface{}, msg string) error {
+func (l *Std) Write(fields *events.Envelope) error {
 	fmt.Printf("%+v\n", fields)
-	if len(msg) > 0 {
-		fmt.Printf("\t%s\n", msg)
-	}
+	// if len(msg) > 0 {
+	// 	fmt.Printf("\t%s\n", msg)
+	// }
 	return nil
 }
