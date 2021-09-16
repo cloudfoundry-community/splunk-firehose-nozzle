@@ -15,7 +15,7 @@ type EventWriterMock struct {
 }
 
 func (m *EventWriterMock) Write(events []map[string]interface{}) (error, uint64) {
-	for m.Block {
+	if m.Block {
 		time.Sleep(time.Millisecond * 100)
 	}
 	if m.ReturnErr {

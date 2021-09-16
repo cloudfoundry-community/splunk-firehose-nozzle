@@ -116,8 +116,6 @@ var _ = Describe("Splunk", func() {
 		sink.Open()
 		sink.Write(memSink.Events[0], memSink.Messages[0])
 		sink.Write(memSink.Events[1], memSink.Messages[1])
-		mockClient.Block = false
-		mockClient2.Block = false
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
