@@ -85,9 +85,9 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 	case s.events <- fields:
 	default:
 		s.DroppedEvents += 1
+		s.config.Logger.Debug("Dropping an event due to slow downstream")
 		if s.DroppedEvents%1000 == 0 {
-			// s.config.Logger.Warning("Downstream is slow, dropping 1000 events")
-			s.config.Logger.Error("Downstream is slow, dropping 1000 events", errors.New("Dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events"))
+			s.config.Logger.Error("Downstream is slow, dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events", errors.New("dropped more than 1000 events"))
 		}
 	}
 	return nil
