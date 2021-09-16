@@ -119,6 +119,7 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 		UUID:                  nozzleUUID,
 		Logger:                s.logger,
 		StatusMonitorInterval: s.config.StatusMonitorInterval,
+		DropWarnThreshold:     s.config.DropWarnThreshold,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)

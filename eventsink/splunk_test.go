@@ -96,15 +96,16 @@ var _ = Describe("Splunk", func() {
 
 	It("does not block when downstream is blocked", func() {
 		config := &eventsink.SplunkConfig{
-			FlushInterval: time.Millisecond,
-			QueueSize:     1,
-			BatchSize:     1,
-			Retries:       1,
-			Hostname:      "localhost",
-			Version:       "6.6",
-			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
-			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:        logger,
+			FlushInterval:     time.Millisecond,
+			QueueSize:         1,
+			BatchSize:         1,
+			Retries:           1,
+			Hostname:          "localhost",
+			Version:           "6.6",
+			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
+			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:            logger,
+			DropWarnThreshold: 10,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
 		eventType = events.Envelope_Error

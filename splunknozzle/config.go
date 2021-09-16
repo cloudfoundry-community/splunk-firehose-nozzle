@@ -57,6 +57,7 @@ type Config struct {
 	TraceLogging          bool          `json:"trace-logging"`
 	Debug                 bool          `json:"debug"`
 	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
+	DropWarnThreshold     int           `json:"drop-warn-threshold"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -143,6 +144,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
 	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
+	kingpin.Flag("drop-warn-threshold", "Log error with dropped events count at each threshold count due to slow downstream").
+		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
 
 	kingpin.Parse()
 	return c
