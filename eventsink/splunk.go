@@ -1,6 +1,7 @@
 package eventsink
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -30,6 +31,7 @@ type SplunkConfig struct {
 	UUID                  string
 	Logger                lager.Logger
 	StatusMonitorInterval time.Duration
+	DropWarnThreshold     int
 }
 
 type Splunk struct {
@@ -39,6 +41,7 @@ type Splunk struct {
 	wg            sync.WaitGroup
 	eventCount    uint64
 	sentCountChan chan uint64
+	DroppedEvents uint64
 
 	// cached IP
 	ip string
@@ -55,6 +58,7 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
 		ip:            ip,
 		eventCount:    0,
 		sentCountChan: make(chan uint64, 100),
+		DroppedEvents: 0,
 	}
 }
 
@@ -78,7 +82,15 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 		fields["msg"] = msg
 	}
 
-	s.events <- fields
+	select {
+	case s.events <- fields:
+	default:
+		s.DroppedEvents += 1
+		if int(s.DroppedEvents)%s.config.DropWarnThreshold == 0 {
+			s.config.Logger.Error("Downstream is slow, dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events",
+				errors.New("dropped more "+strconv.FormatUint(uint64(s.config.DropWarnThreshold), 10)+" events, Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" dropped events"))
+		}
+	}
 	return nil
 }
 

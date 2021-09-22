@@ -66,6 +66,7 @@ var _ = Describe("Config", func() {
 
 			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
+			os.Setenv("DROP_WARN_THRESHOLD", "100")
 
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
@@ -114,6 +115,7 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
+			Expect(c.DropWarnThreshold).To(Equal(100))
 		})
 
 		It("check defaults", func() {
@@ -148,6 +150,7 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
+			Expect(c.DropWarnThreshold).To(Equal(1000))
 		})
 	})
 
@@ -196,6 +199,7 @@ var _ = Describe("Config", func() {
 				"--splunk-version=5.2",
 				"--enable-event-tracing",
 				"--debug",
+				"--drop-warn-threshold=10",
 			}
 			os.Args = args
 		})
@@ -242,6 +246,7 @@ var _ = Describe("Config", func() {
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.TraceLogging).To(BeTrue())
+			Expect(c.DropWarnThreshold).To(Equal(10))
 
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
