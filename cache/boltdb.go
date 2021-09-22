@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	MissingAndIgnoredErr = errors.New("App was missed and ignored")
+	ErrMissingAndIgnored = errors.New("App was missed and ignored")
 )
 
 type BoltdbConfig struct {
@@ -128,8 +128,9 @@ func (c *Boltdb) Close() error {
 }
 
 // GetApp tries first get app info from cache. If caches doesn't have this
-// app info (cache miss), it issues API to retrieve the app info from remote
-// if the app is not already missing and clients don't ignore the missing app
+// app info (cache miss), it issues API to retrieve the app info from remote.
+// If it doen't find app from remote, it'll try to retrieve from boltdb databse.
+// If it still doesn't find the app, the app is not already missing and clients don't ignore the missing app
 // info, and then add the app info to the cache
 // On the other hand, if the app is already missing and clients want to
 // save remote API and ignore missing app, then a nil app info and an error
@@ -146,14 +147,32 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		return app, nil
 	}
 
-	// First time seeing app
+	// First time seeing app or the app-cache is invalidate
 	app, err = c.getAppFromRemote(appGuid)
+
+	// Not able to find the app from remote. App may be deleted.
+	// Check if the app is available in boltdb cache
+	if app == nil {
+		dbApp, _ := c.getAppFromDatabase(appGuid)
+		if dbApp != nil {
+			c.config.Logger.Debug(fmt.Sprint("Using old app info for cf_app_id ", appGuid))
+			c.lock.Lock()
+			c.cache[appGuid] = dbApp
+			c.lock.Unlock()
+			c.fillOrgAndSpace(dbApp)
+			return dbApp, nil
+		}
+	}
+
+	//App is not available from in-memory cache, boltdb databse or remote
+	// Adding to missing app cache
 	if err != nil {
 		if c.config.IgnoreMissingApps {
 			// Record this missing app
 			c.lock.Lock()
 			c.missingApps[appGuid] = struct{}{}
 			c.lock.Unlock()
+			c.config.Logger.Debug(fmt.Sprint("added app in missingAppsCache", appGuid))
 		}
 		return nil, err
 	}
@@ -207,7 +226,7 @@ func (c *Boltdb) getAppFromCache(appGuid string) (*App, error) {
 	if c.config.IgnoreMissingApps && alreadyMissed {
 		// already missed
 		c.lock.RUnlock()
-		return nil, MissingAndIgnoredErr
+		return nil, ErrMissingAndIgnored
 	}
 	c.lock.RUnlock()
 
@@ -237,6 +256,25 @@ func (c *Boltdb) getAllAppsFromBoltDB() (map[string]*App, error) {
 	}
 
 	return apps, nil
+}
+
+// getAppFromDatabase will try to get the app from the database and return it.
+func (c *Boltdb) getAppFromDatabase(appGuid string) (*App, error) {
+	var appData []byte
+	c.appdb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(APP_BUCKET))
+
+		appData = b.Get([]byte(appGuid))
+		return nil
+	})
+	if appData == nil {
+		return nil, nil
+	}
+	var app App
+	if err := json.Unmarshal(appData, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
@@ -296,6 +334,7 @@ func (c *Boltdb) invalidateMissingAppCache() {
 				c.lock.Lock()
 				c.missingApps = make(map[string]struct{})
 				c.lock.Unlock()
+				c.config.Logger.Debug("invalidated missing app cache")
 			case <-c.closing:
 				return
 			}
@@ -321,6 +360,7 @@ func (c *Boltdb) invalidateCache() {
 					c.lock.Lock()
 					c.cache = apps
 					c.lock.Unlock()
+					c.config.Logger.Debug("invalidated in-memory app cache")
 				} else {
 					c.config.Logger.Error("Unable to fetch copy of cache from remote", err)
 				}
@@ -329,6 +369,7 @@ func (c *Boltdb) invalidateCache() {
 				c.orgNameCache = make(map[string]Org)
 				c.spaceNameCache = make(map[string]Space)
 				c.lock.Unlock()
+				c.config.Logger.Debug("invalidated orgName and spaceNameCache cache")
 			case <-c.closing:
 				return
 			}
@@ -341,12 +382,12 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 		c.appdb.Update(func(tx *bolt.Tx) error {
 			serialize, err := json.Marshal(app)
 			if err != nil {
-				return fmt.Errorf("Error Marshaling data: %s", err)
+				return fmt.Errorf("error Marshaling data: %s", err)
 			}
 
 			b := tx.Bucket([]byte(APP_BUCKET))
 			if err := b.Put([]byte(app.Guid), serialize); err != nil {
-				return fmt.Errorf("Error inserting data: %s", err)
+				return fmt.Errorf("error inserting data: %s", err)
 			}
 			return nil
 		})

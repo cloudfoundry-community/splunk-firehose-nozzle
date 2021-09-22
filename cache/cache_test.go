@@ -89,7 +89,7 @@ var _ = Describe("Cache", func() {
 			// recorded the missing app, so nil, err is expected to return
 			app, err = cache.GetApp(guid)
 			Ω(err).Should(HaveOccurred())
-			Expect(err).To(Equal(MissingAndIgnoredErr))
+			Expect(err).To(Equal(ErrMissingAndIgnored))
 			Expect(app).To(Equal(nilApp))
 
 			time.Sleep(missingAppCacheTTL + 3)
@@ -99,7 +99,7 @@ var _ = Describe("Cache", func() {
 			// will be returned instead of MissingAndIgnoredErr
 			app, err = cache.GetApp(guid)
 			Ω(err).Should(HaveOccurred())
-			Expect(err).NotTo(Equal(MissingAndIgnoredErr))
+			Expect(err).NotTo(Equal(ErrMissingAndIgnored))
 			Expect(app).To(Equal(nilApp))
 		})
 	})
