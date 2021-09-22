@@ -88,7 +88,7 @@ func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
 		s.DroppedEvents += 1
 		if int(s.DroppedEvents)%s.config.DropWarnThreshold == 0 {
 			s.config.Logger.Error("Downstream is slow, dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events",
-				errors.New("dropped more than "+strconv.FormatUint(uint64(s.config.DropWarnThreshold), 10)+" events"))
+				errors.New("dropped more "+strconv.FormatUint(uint64(s.config.DropWarnThreshold), 10)+" events, Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" dropped events"))
 		}
 	}
 	return nil
