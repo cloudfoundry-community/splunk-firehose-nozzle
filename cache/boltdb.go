@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	ErrMissingAndIgnored = errors.New("App was missed and ignored")
+	ErrMissingAndIgnored = errors.New("App was missing from the in-memory cache and ignored")
 )
 
 type BoltdbConfig struct {
@@ -127,14 +127,12 @@ func (c *Boltdb) Close() error {
 	return c.appdb.Close()
 }
 
-// GetApp tries first get app info from cache. If caches doesn't have this
-// app info (cache miss), it issues API to retrieve the app info from remote.
-// If it doen't find app from remote, it'll try to retrieve from boltdb databse.
-// If it still doesn't find the app, the app is not already missing and clients don't ignore the missing app
-// info, and then add the app info to the cache
-// On the other hand, if the app is already missing and clients want to
-// save remote API and ignore missing app, then a nil app info and an error
-// will be returned.
+// GetApp tries to retrieve the app info from in-memory cache. If it finds the app then it returns.
+// If the app is added to missing app cache then it will return ErrMissingAndIgnored.
+// If the app is not found in in-memory cache and missing app cache, it'll make an API request
+// to retrieve the app info from remote. If found, the app will be added to the cache and returns.
+// If not found on remote, it'll try to retrieve from boltdb databse. If found, returns.
+// If not found and IgnoreMissingApps congig is enabled, the app will be added to missingApps cache.
 func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 	app, err := c.getAppFromCache(appGuid)
 	if err != nil {
@@ -147,12 +145,12 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		return app, nil
 	}
 
-	// First time seeing app or the app-cache is invalidate
+	// App was not found in in-memory cache. Try to retrieve from remote and boltdb databse.
 	app, err = c.getAppFromRemote(appGuid)
 
-	// Not able to find the app from remote. App may be deleted.
-	// Check if the app is available in boltdb cache
 	if app == nil {
+		// Not able to find the app from remote. App may be deleted.
+		// Check if the app is available in boltdb cache
 		dbApp, _ := c.getAppFromDatabase(appGuid)
 		if dbApp != nil {
 			c.config.Logger.Debug(fmt.Sprint("Using old app info for cf_app_id ", appGuid))
@@ -164,15 +162,14 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		}
 	}
 
-	//App is not available from in-memory cache, boltdb databse or remote
-	// Adding to missing app cache
 	if err != nil {
+		// App is not available from in-memory cache, boltdb databse or remote
+		// Adding to missing app cache
 		if c.config.IgnoreMissingApps {
 			// Record this missing app
 			c.lock.Lock()
 			c.missingApps[appGuid] = struct{}{}
 			c.lock.Unlock()
-			c.config.Logger.Debug(fmt.Sprint("added app in missingAppsCache", appGuid))
 		}
 		return nil, err
 	}
@@ -334,7 +331,6 @@ func (c *Boltdb) invalidateMissingAppCache() {
 				c.lock.Lock()
 				c.missingApps = make(map[string]struct{})
 				c.lock.Unlock()
-				c.config.Logger.Debug("invalidated missing app cache")
 			case <-c.closing:
 				return
 			}
@@ -360,7 +356,6 @@ func (c *Boltdb) invalidateCache() {
 					c.lock.Lock()
 					c.cache = apps
 					c.lock.Unlock()
-					c.config.Logger.Debug("invalidated in-memory app cache")
 				} else {
 					c.config.Logger.Error("Unable to fetch copy of cache from remote", err)
 				}
@@ -369,7 +364,6 @@ func (c *Boltdb) invalidateCache() {
 				c.orgNameCache = make(map[string]Org)
 				c.spaceNameCache = make(map[string]Space)
 				c.lock.Unlock()
-				c.config.Logger.Debug("invalidated orgName and spaceNameCache cache")
 			case <-c.closing:
 				return
 			}
