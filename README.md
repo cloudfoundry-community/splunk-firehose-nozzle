@@ -157,26 +157,35 @@ specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manifest to disable logging.
 
 
-### Index routing
+## Index routing
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 
-#### Per application index routing via application manifest
+### Per application index routing via application manifest
+To enable per app index routing, you are required to set environmt variable `SPLUNK_INDEX` in your application. Make sure that given HEC token can ingest events to the SPLUNK_INDEX.
+
+There are two ways to set the variable: 
+
 In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to
 
 ```
 applications:
-- name: console
+- name: <App-Name>
   memory: 256M
   disk_quota: 256M
-  host: console
-  timeout: 180
-  buildpack: https://github.com/SUSE/stratos-buildpack
-  health-check-type: port
+  ...
   env:
-    SPLUNK_INDEX: testing_index
+    SPLUNK_INDEX: <SPLUNK_INDEX>
+    ...
 ```
 
-#### Index routing via Splunk configuration
+You can also update the env on the fly using cf-cli command:
+```
+cf set-env <APP_NAME> SPLUNK_INDEX <ENV_VAR_VALUE>
+```
+If you are updating env on the fly, make sure that `APP_CACHE_INVALIDATE_TTL` is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.
+
+
+### Index routing via Splunk configuration
 Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
 Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.
 
