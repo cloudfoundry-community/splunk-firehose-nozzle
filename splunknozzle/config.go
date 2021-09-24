@@ -3,6 +3,7 @@ package splunknozzle
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
@@ -145,6 +146,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 
 	kingpin.Parse()
+	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)
+	c.SplunkHost = strings.TrimRight(strings.TrimSpace(c.SplunkHost), "/")
 	return c
 }
 
