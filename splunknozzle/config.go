@@ -3,6 +3,7 @@ package splunknozzle
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
@@ -148,6 +149,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
 
 	kingpin.Parse()
+	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)
+	c.SplunkHost = strings.TrimRight(strings.TrimSpace(c.SplunkHost), "/")
 	return c
 }
 
