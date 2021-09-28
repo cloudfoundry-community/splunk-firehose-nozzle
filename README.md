@@ -74,7 +74,7 @@ __Advanced Configuration Features:__
 * `JOB_INDEX`: Tags nozzle log events with job index. (Default: -1)
 * `JOB_HOST`: Tags nozzle log events with job host. (Default: "")
 * `SKIP_SSL_VALIDATION_CF`: Skips SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted certificate authority.
-This is recommended for dev environments only.
+This is recommended for dev environments only. (Default: false)
 * `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. (Default: false)
 This is recommended for dev environments only.
 * `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html. (Default: splunk-firehose)
