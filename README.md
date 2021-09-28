@@ -87,7 +87,7 @@ This is recommended for dev environments only.
 * `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
 * `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
 * `BOLTDB_PATH`: Bolt database path. (Default: cache.db)
-* `EVENTS`: A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. (Default: "ValueMetric,CounterEvent,ContainerMetric")
+* `EVENTS`: A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If it is blank, nozzle will automatically select LogMessage (Default: "ValueMetric,CounterEvent,ContainerMetric")
 * `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value). (Default: "")
 * `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems. (Default: 5s)
 * `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full. (Default: 10000)
