@@ -161,7 +161,7 @@ Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manif
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 
 ### Per application index routing via application manifest
-To enable per app index routing, you are required to set environmt variable `SPLUNK_INDEX` in your application. Make sure that given HEC token can ingest events to the SPLUNK_INDEX.
+To enable per app index routing, you are required to set environmt variable `SPLUNK_INDEX`in your application and enable ADD_APP_INFO(Select at least one metadata) to enable app info caching. Make sure that given HEC token can ingest events to the SPLUNK_INDEX.
 
 There are two ways to set the variable: 
 
