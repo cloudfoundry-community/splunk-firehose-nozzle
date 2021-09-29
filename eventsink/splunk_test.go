@@ -100,7 +100,6 @@ var _ = Describe("Splunk", func() {
 			BatchSize:         1,
 			Retries:           1,
 			Hostname:          "localhost",
-			Version:           "6.6",
 			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
 			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
 			Logger:            logger,
