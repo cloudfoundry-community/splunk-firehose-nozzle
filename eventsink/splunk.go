@@ -24,7 +24,6 @@ type SplunkConfig struct {
 	BatchSize             int
 	Retries               int // No of retries to post events to HEC before dropping events
 	Hostname              string
-	Version               string
 	SubscriptionID        string
 	ExtraFields           map[string]string
 	TraceLogging          bool
@@ -189,12 +188,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 	for k, v := range s.config.ExtraFields {
 		extraFields[k] = v
 	}
-
-	if s.config.Version >= SPLUNK_HEC_FIELDS_SUPPORT_VERSION {
-		event["fields"] = extraFields
-	} else {
-		fields["pcf-extra"] = extraFields
-	}
+	event["fields"] = extraFields
 	event["event"] = fields
 	return event
 }
