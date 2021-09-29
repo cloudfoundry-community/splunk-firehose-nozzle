@@ -112,7 +112,6 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 		BatchSize:             s.config.BatchSize,
 		Retries:               s.config.Retries,
 		Hostname:              s.config.JobHost,
-		Version:               s.config.SplunkVersion,
 		SubscriptionID:        s.config.SubscriptionID,
 		TraceLogging:          s.config.TraceLogging,
 		ExtraFields:           parsedExtraFields,
