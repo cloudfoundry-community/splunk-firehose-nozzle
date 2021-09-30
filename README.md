@@ -161,12 +161,17 @@ Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manif
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 
 ### Per application index routing via application manifest
-To enable per app index routing, you are required to set environmt variable `SPLUNK_INDEX`in your application and enable ADD_APP_INFO(Select at least one metadata) to enable app info caching. Make sure that given HEC token can ingest events to the SPLUNK_INDEX.
+To enable per app index routing, 
+* Please set environment variable `SPLUNK_INDEX` in your application's manifest ([example below](#example-manifest-file))
+* Make sure Splunk nozzle is configured with `ADD_APP_INFO` (Select at least one of ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric) to enable app info caching
+* Make sure `SPLUNK_INDEX` specified in app's manifest exist in Splunk and can receive data for the configured Splunk HEC token.
+
 
 There are two ways to set the variable: 
 
-In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to
+In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to.
 
+#### Example Manifest file
 ```
 applications:
 - name: <App-Name>
@@ -182,7 +187,8 @@ You can also update the env on the fly using cf-cli command:
 ```
 cf set-env <APP_NAME> SPLUNK_INDEX <ENV_VAR_VALUE>
 ```
-If you are updating env on the fly, make sure that `APP_CACHE_INVALIDATE_TTL` is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.
+#### Please note
+> If you are updating env on the fly, make sure that `APP_CACHE_INVALIDATE_TTL` is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.
 
 
 ### Index routing via Splunk configuration
