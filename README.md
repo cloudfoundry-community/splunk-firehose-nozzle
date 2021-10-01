@@ -96,11 +96,6 @@ This is recommended for dev environments only.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
-    ###  Please note 
-    > SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
-    For Splunk version 6.3 or below, please deploy nozzle via CLI. Update nozzle_manifest.yml with splunk_version (For example: SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
-    
-    **[Tile](https://network.pivotal.io/products/splunk-nozzle/)** only supports deployment for Splunk version 6.4 or above
     
 - - - -
 
@@ -157,26 +152,42 @@ specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manifest to disable logging.
 
 
-### Index routing
+## Index routing
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 
-#### Per application index routing via application manifest
-In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to
+### Per application index routing via application manifest
+To enable per app index routing, 
+* Please set environment variable `SPLUNK_INDEX` in your application's manifest ([example below](#example-manifest-file))
+* Make sure Splunk nozzle is configured with `ADD_APP_INFO` (Select at least one of ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric) to enable app info caching
+* Make sure `SPLUNK_INDEX` specified in app's manifest exist in Splunk and can receive data for the configured Splunk HEC token.
 
+> **WARNING**: If `SPLUNK_INDEX` is invalid, events from other apps may also get lost as splunk will drop entire event batch if any of the event from batch is invalid (i.e. invalid index)
+
+There are two ways to set the variable: 
+
+In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to.
+
+#### Example Manifest file
 ```
 applications:
-- name: console
+- name: <App-Name>
   memory: 256M
   disk_quota: 256M
-  host: console
-  timeout: 180
-  buildpack: https://github.com/SUSE/stratos-buildpack
-  health-check-type: port
+  ...
   env:
-    SPLUNK_INDEX: testing_index
+    SPLUNK_INDEX: <SPLUNK_INDEX>
+    ...
 ```
 
-#### Index routing via Splunk configuration
+You can also update the env on the fly using cf-cli command:
+```
+cf set-env <APP_NAME> SPLUNK_INDEX <ENV_VAR_VALUE>
+```
+#### Please note
+> If you are updating env on the fly, make sure that `APP_CACHE_INVALIDATE_TTL` is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.
+
+
+### Index routing via Splunk configuration
 Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
 Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.
 
@@ -337,7 +348,6 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      skip-ssl: true
      splunk-host: http://localhost:8088
      splunk-index: atomic
-     splunk-version: 8.1
      subscription-id: splunk-firehose
      trace-logging: true
      status-monitor-interval: 0s
