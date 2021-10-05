@@ -9,7 +9,7 @@ require (
 	github.com/cloudfoundry-community/go-cfclient v0.0.0-20190201205600-f136f9222381
 	github.com/cloudfoundry/noaa v2.1.1-0.20190110210640-5ce49363dfa6+incompatible
 	github.com/cloudfoundry/sonde-go v0.0.0-20160804000546-81c3f6be579c
-	github.com/gogo/protobuf v0.0.0-20160804155430-a4cceea7a401
+	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v0.0.0-20170728174318-281f560d28af
 	github.com/gorilla/websocket v1.0.1-0.20160802133203-a69d25be2fe2
 	github.com/mailru/easyjson v0.0.0-20160816214844-3d7eb5818bd5
@@ -32,7 +32,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/elazarl/goproxy v0.0.0-20210801061803-8e322dfb79c4 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20210801061803-8e322dfb79c4 // indirect
-	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect

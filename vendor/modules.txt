@@ -47,12 +47,12 @@ github.com/cloudfoundry/sonde-go/events
 ## explicit
 # github.com/elazarl/goproxy/ext v0.0.0-20210801061803-8e322dfb79c4
 ## explicit
-# github.com/gogo/protobuf v0.0.0-20160804155430-a4cceea7a401
-## explicit
+# github.com/gogo/protobuf v1.3.2
+## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
-# github.com/golang/protobuf v1.3.2
+# github.com/golang/protobuf v1.2.0
 ## explicit
 github.com/golang/protobuf/proto
 # github.com/google/uuid v0.0.0-20170728174318-281f560d28af

@@ -1,6 +1,6 @@
 // Protocol Buffers for Go with Gadgets
 //
-// Copyright (c) 2013, The GoGo Authors. All rights reserved.
+// Copyright (c) 2018, The GoGo Authors. All rights reserved.
 // http://github.com/gogo/protobuf
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,34 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// +build purego appengine js
+
+// This file contains an implementation of proto field accesses using package reflect.
+// It is slower than the code in pointer_unsafe.go but it avoids package unsafe and can
+// be used on App Engine.
+
 package proto
 
-func NewRequiredNotSetError(field string) *RequiredNotSetError {
-	return &RequiredNotSetError{field}
+import (
+	"reflect"
+)
+
+// TODO: untested, so probably incorrect.
+
+func (p pointer) getRef() pointer {
+	return pointer{v: p.v.Addr()}
+}
+
+func (p pointer) appendRef(v pointer, typ reflect.Type) {
+	slice := p.getSlice(typ)
+	elem := v.asPointerTo(typ).Elem()
+	newSlice := reflect.Append(slice, elem)
+	slice.Set(newSlice)
+}
+
+func (p pointer) getSlice(typ reflect.Type) reflect.Value {
+	sliceTyp := reflect.SliceOf(typ)
+	slice := p.asPointerTo(sliceTyp)
+	slice = slice.Elem()
+	return slice
 }

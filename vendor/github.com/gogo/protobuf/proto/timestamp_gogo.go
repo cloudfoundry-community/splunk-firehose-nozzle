@@ -1,6 +1,6 @@
 // Protocol Buffers for Go with Gadgets
 //
-// Copyright (c) 2013, The GoGo Authors. All rights reserved.
+// Copyright (c) 2016, The GoGo Authors. All rights reserved.
 // http://github.com/gogo/protobuf
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,22 @@
 
 package proto
 
-func NewRequiredNotSetError(field string) *RequiredNotSetError {
-	return &RequiredNotSetError{field}
+import (
+	"reflect"
+	"time"
+)
+
+var timeType = reflect.TypeOf((*time.Time)(nil)).Elem()
+
+type timestamp struct {
+	Seconds int64 `protobuf:"varint,1,opt,name=seconds,proto3" json:"seconds,omitempty"`
+	Nanos   int32 `protobuf:"varint,2,opt,name=nanos,proto3" json:"nanos,omitempty"`
+}
+
+func (m *timestamp) Reset()       { *m = timestamp{} }
+func (*timestamp) ProtoMessage()  {}
+func (*timestamp) String() string { return "timestamp<string>" }
+
+func init() {
+	RegisterType((*timestamp)(nil), "gogo.protobuf.proto.timestamp")
 }
