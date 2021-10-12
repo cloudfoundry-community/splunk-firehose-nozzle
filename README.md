@@ -158,7 +158,7 @@ Index routing is a feature that can be used to send different Cloud Foundry logs
 ### Per application index routing via application manifest
 To enable per app index routing, 
 * Please set environment variable `SPLUNK_INDEX` in your application's manifest ([example below](#example-manifest-file))
-* Make sure Splunk nozzle is configured with `ADD_APP_INFO` (Select at least one of ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric) to enable app info caching
+* Make sure Splunk nozzle is configured with `ADD_APP_INFO` (Select at least one of AppName,OrgName,OrgGuid,SpaceName,SpaceGuid) to enable app info caching
 * Make sure `SPLUNK_INDEX` specified in app's manifest exist in Splunk and can receive data for the configured Splunk HEC token.
 
 > **WARNING**: If `SPLUNK_INDEX` is invalid, events from other apps may also get lost as splunk will drop entire event batch if any of the event from batch is invalid (i.e. invalid index)
