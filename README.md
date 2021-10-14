@@ -81,6 +81,7 @@ This is recommended for dev environments only.
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer. (Default: 25s)
 * `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid). (Default: "")
 * `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
+    (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
 * `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
 * `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
@@ -96,6 +97,7 @@ This is recommended for dev environments only.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
+* `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
     
 - - - -
 
@@ -376,7 +378,17 @@ As the Splunk Firehose Nozzle sends data to Splunk via HTTPS using the HTTP Even
   sourcetype="cf:splunknozzle" "dropping events"
 </pre>
 
-### 4. Check for data loss inside the Splunk Firehose Nozzle:
+### 4. Check for dropped events due to slow downstream(Network/Splunk):
+
+If the nozzle emits the ‘dropped events’ warning saying that downstream is slow, then the network or Splunk environment might needs to be scaled. (eg. Splunk HEC receiver node, Splunk Indexer, LB etc)
+
+Run the following search to determine if Splunk has indexed any events indicating such issues.
+
+<pre class="terminal">
+  sourcetype="cf:splunknozzle" "dropped Total of"
+</pre>
+
+### 5. Check for data loss inside the Splunk Firehose Nozzle:
 
 If "Event Tracing" is enabled, extra metadata will be attached to events. This allows searches to calculate the percentage of data loss inside the Splunk Firehose Nozzle, if applicable.
 
