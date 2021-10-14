@@ -21,7 +21,7 @@ var _ = Describe("Events", func() {
 		fcache = &testing.MemoryCacheMock{}
 		msg = NewLogMessage()
 		event = fevents.LogMessage(msg)
-		event.AnnotateWithEnvelopeData(msg)
+		event.AnnotateWithEnvelopeData(msg, &fevents.Config{})
 	})
 
 	It("HttpStart", func() {
@@ -195,6 +195,7 @@ var _ = Describe("Events", func() {
 				AddOrgGuid:   true,
 				AddSpaceName: true,
 				AddSpaceGuid: true,
+				AddTags:      true,
 			}
 			event.AnnotateWithAppData(fcache, config)
 			Expect(event.Fields["cf_app_name"]).To(Equal("testing-app"))
@@ -202,6 +203,9 @@ var _ = Describe("Events", func() {
 			Expect(event.Fields["cf_space_name"]).To(Equal("testing-space"))
 			Expect(event.Fields["cf_org_id"]).To(Equal("f964a41c-76ac-42c1-b2ba-663da3ec22d7"))
 			Expect(event.Fields["cf_org_name"]).To(Equal("testing-org"))
+
+			event.AnnotateWithEnvelopeData(msg, config)
+			Expect(event.Fields["tags"]).To(Equal(msg.GetTags()))
 		})
 	})
 

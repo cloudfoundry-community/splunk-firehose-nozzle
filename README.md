@@ -57,50 +57,47 @@ or later. Earlier versions should use `cloud_controller.admin` instead.
 - - - -
 #### Environment Parameters
 You can declare parameters by making a copy of the scripts/nozzle.sh.template.
-* `DEBUG`: Enable debug mode (forward to standard out instead of Splunk).
+* `DEBUG`: Enable debug mode (forward to standard out instead of Splunk). (Default: false).
 
 __Cloud Foundry configuration parameters:__
-* `API_ENDPOINT`: Cloud Foundry API endpoint address.
-* `CLIENT_ID`: UAA Client ID (Must have authorities and grant_types described above).
-* `CLIENT_SECRET`: Secret for Client ID.
+* `API_ENDPOINT`: Cloud Foundry API endpoint address. It is required parameter.
+* `CLIENT_ID`: UAA Client ID (Must have authorities and grant_types described above). It is required parameter.
+* `CLIENT_SECRET`: Secret for Client ID. It is required parameter.
 
 __Splunk configuration parameters:__
-* `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/).
-* `SPLUNK_HOST`: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088
-* `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter.
+* `SPLUNK_TOKEN`: [Splunk HTTP event collector token](http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/). It is required parameter.
+* `SPLUNK_HOST`: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088. It is required parameter.
+* `SPLUNK_INDEX`: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. It is required parameter.
 
 __Advanced Configuration Features:__
-* `JOB_NAME`: Tags nozzle log events with job name.
-* `JOB_INDEX`: Tags nozzle log events with job index.
-* `JOB_HOST`: Tags nozzle log events with job host.
+* `JOB_NAME`: Tags nozzle log events with job name. It is optional. (Default: 'splunk-nozzle')
+* `JOB_INDEX`: Tags nozzle log events with job index. (Default: -1)
+* `JOB_HOST`: Tags nozzle log events with job host. (Default: "")
 * `SKIP_SSL_VALIDATION_CF`: Skips SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted certificate authority.
+This is recommended for dev environments only. (Default: false)
+* `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. (Default: false)
 This is recommended for dev environments only.
-* `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority.
-This is recommended for dev environments only.
-* `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html.
-* `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer.
-* `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid).
-* `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry.
-* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
-* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
-* `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).
-* `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache.
-* `BOLTDB_PATH`: Bolt database path.
-* `EVENTS`: A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
-* `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value).
-* `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems.
-* `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.
-* `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).
-* `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.
-* `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.
-* `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.
-* `SPLUNK_VERSION`: The Splunk version that determines how HEC ingests metadata fields. Only required for Splunk version 6.3 or below.
+* `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html. (Default: splunk-firehose)
+* `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer. (Default: 25s)
+* `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid). (Default: "")
+* `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
+    (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
+* `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
+* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
+* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
+* `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
+* `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
+* `BOLTDB_PATH`: Bolt database path. (Default: cache.db)
+* `EVENTS`: A comma separated list of events to include. It is a required field. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If no eventtype is selected, nozzle will automatically select LogMessage to keep the nozzle running. (Default: "ValueMetric,CounterEvent,ContainerMetric")
+* `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value). (Default: "")
+* `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems. (Default: 5s)
+* `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full. (Default: 10000)
+* `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). (Default: 100)
+* `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss. (Default: 5)
+* `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
+* `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
-    ###  Please note 
-    > SPLUNK_VERSION configuration parameter is only required for Splunk version 6.3 and below. 
-    For Splunk version 6.3 or below, please deploy nozzle via CLI. Update nozzle_manifest.yml with splunk_version (For example: SPLUNK_VERSION: 6.3) as an env variable and [deploy nozzle as an app via CLI](#push-as-an-app-to-cloud-foundry).
-    
-    **[Tile](https://network.pivotal.io/products/splunk-nozzle/)** only supports deployment for Splunk version 6.4 or above
+* `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
     
 - - - -
 
@@ -157,26 +154,42 @@ specifying correct "--boltdb-path" flag or "BOLTDB_PATH" environment variable.
 Set F2S_DISABLE_LOGGING = true as a environment variable in applications's manifest to disable logging.
 
 
-### Index routing
+## Index routing
 Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.
 
-#### Per application index routing via application manifest
-In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to
+### Per application index routing via application manifest
+To enable per app index routing, 
+* Please set environment variable `SPLUNK_INDEX` in your application's manifest ([example below](#example-manifest-file))
+* Make sure Splunk nozzle is configured with `ADD_APP_INFO` (Select at least one of AppName,OrgName,OrgGuid,SpaceName,SpaceGuid) to enable app info caching
+* Make sure `SPLUNK_INDEX` specified in app's manifest exist in Splunk and can receive data for the configured Splunk HEC token.
 
+> **WARNING**: If `SPLUNK_INDEX` is invalid, events from other apps may also get lost as splunk will drop entire event batch if any of the event from batch is invalid (i.e. invalid index)
+
+There are two ways to set the variable: 
+
+In your app manifest provide an environment variable called `SPLUNK_INDEX` and assign it the index you would like to send the app data to.
+
+#### Example Manifest file
 ```
 applications:
-- name: console
+- name: <App-Name>
   memory: 256M
   disk_quota: 256M
-  host: console
-  timeout: 180
-  buildpack: https://github.com/SUSE/stratos-buildpack
-  health-check-type: port
+  ...
   env:
-    SPLUNK_INDEX: testing_index
+    SPLUNK_INDEX: <SPLUNK_INDEX>
+    ...
 ```
 
-#### Index routing via Splunk configuration
+You can also update the env on the fly using cf-cli command:
+```
+cf set-env <APP_NAME> SPLUNK_INDEX <ENV_VAR_VALUE>
+```
+#### Please note
+> If you are updating env on the fly, make sure that `APP_CACHE_INVALIDATE_TTL` is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.
+
+
+### Index routing via Splunk configuration
 Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
 Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.
 
@@ -337,7 +350,6 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      skip-ssl: true
      splunk-host: http://localhost:8088
      splunk-index: atomic
-     splunk-version: 8.1
      subscription-id: splunk-firehose
      trace-logging: true
      status-monitor-interval: 0s
@@ -366,7 +378,17 @@ As the Splunk Firehose Nozzle sends data to Splunk via HTTPS using the HTTP Even
   sourcetype="cf:splunknozzle" "dropping events"
 </pre>
 
-### 4. Check for data loss inside the Splunk Firehose Nozzle:
+### 4. Check for dropped events due to slow downstream(Network/Splunk):
+
+If the nozzle emits the ‘dropped events’ warning saying that downstream is slow, then the network or Splunk environment might needs to be scaled. (eg. Splunk HEC receiver node, Splunk Indexer, LB etc)
+
+Run the following search to determine if Splunk has indexed any events indicating such issues.
+
+<pre class="terminal">
+  sourcetype="cf:splunknozzle" "dropped Total of"
+</pre>
+
+### 5. Check for data loss inside the Splunk Firehose Nozzle:
 
 If "Event Tracing" is enabled, extra metadata will be attached to events. This allows searches to calculate the percentage of data loss inside the Splunk Firehose Nozzle, if applicable.
 
@@ -398,10 +420,9 @@ Make sure you have the following installed on your workstation:
 
 | Software | Version
 | --- | --- |
-| go | go1.12.x
-| glide | 0.12.x
+| go | go1.17.x
 
-Then install all dependent packages via [Glide](https://glide.sh/):
+Then make sure that all dependent packages are there:
 
 ```
 $ cd <REPO_ROOT_DIRECTORY>
@@ -421,7 +442,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.2.2
+$ make VERSION=1.2.3
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)

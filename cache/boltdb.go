@@ -9,9 +9,9 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/boltdb/bolt"
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	json "github.com/mailru/easyjson"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	MissingAndIgnoredErr = errors.New("App was missed and ignored")
+	ErrMissingAndIgnored = errors.New("App was missing from the in-memory cache and ignored")
 )
 
 type BoltdbConfig struct {
@@ -127,13 +127,12 @@ func (c *Boltdb) Close() error {
 	return c.appdb.Close()
 }
 
-// GetApp tries first get app info from cache. If caches doesn't have this
-// app info (cache miss), it issues API to retrieve the app info from remote
-// if the app is not already missing and clients don't ignore the missing app
-// info, and then add the app info to the cache
-// On the other hand, if the app is already missing and clients want to
-// save remote API and ignore missing app, then a nil app info and an error
-// will be returned.
+// GetApp tries to retrieve the app info from in-memory cache. If it finds the app then it returns.
+// If the app is added to missing app cache then it will return ErrMissingAndIgnored.
+// If the app is not found in in-memory cache and missing app cache, it'll make an API request
+// to retrieve the app info from remote. If found, the app will be added to the cache and returns.
+// If not found on remote, it'll try to retrieve from boltdb databse. If found, returns.
+// If not found and IgnoreMissingApps congig is enabled, the app will be added to missingApps cache.
 func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 	app, err := c.getAppFromCache(appGuid)
 	if err != nil {
@@ -146,9 +145,26 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		return app, nil
 	}
 
-	// First time seeing app
+	// App was not found in in-memory cache. Try to retrieve from remote and boltdb databse.
 	app, err = c.getAppFromRemote(appGuid)
+
+	if app == nil {
+		// Not able to find the app from remote. App may be deleted.
+		// Check if the app is available in boltdb cache
+		dbApp, _ := c.getAppFromDatabase(appGuid)
+		if dbApp != nil {
+			c.config.Logger.Debug(fmt.Sprint("Using old app info for cf_app_id ", appGuid))
+			c.lock.Lock()
+			c.cache[appGuid] = dbApp
+			c.lock.Unlock()
+			c.fillOrgAndSpace(dbApp)
+			return dbApp, nil
+		}
+	}
+
 	if err != nil {
+		// App is not available from in-memory cache, boltdb databse or remote
+		// Adding to missing app cache
 		if c.config.IgnoreMissingApps {
 			// Record this missing app
 			c.lock.Lock()
@@ -207,7 +223,7 @@ func (c *Boltdb) getAppFromCache(appGuid string) (*App, error) {
 	if c.config.IgnoreMissingApps && alreadyMissed {
 		// already missed
 		c.lock.RUnlock()
-		return nil, MissingAndIgnoredErr
+		return nil, ErrMissingAndIgnored
 	}
 	c.lock.RUnlock()
 
@@ -237,6 +253,25 @@ func (c *Boltdb) getAllAppsFromBoltDB() (map[string]*App, error) {
 	}
 
 	return apps, nil
+}
+
+// getAppFromDatabase will try to get the app from the database and return it.
+func (c *Boltdb) getAppFromDatabase(appGuid string) (*App, error) {
+	var appData []byte
+	c.appdb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(APP_BUCKET))
+
+		appData = b.Get([]byte(appGuid))
+		return nil
+	})
+	if appData == nil {
+		return nil, nil
+	}
+	var app App
+	if err := json.Unmarshal(appData, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
@@ -341,12 +376,12 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 		c.appdb.Update(func(tx *bolt.Tx) error {
 			serialize, err := json.Marshal(app)
 			if err != nil {
-				return fmt.Errorf("Error Marshaling data: %s", err)
+				return fmt.Errorf("error Marshaling data: %s", err)
 			}
 
 			b := tx.Bucket([]byte(APP_BUCKET))
 			if err := b.Put([]byte(app.Guid), serialize); err != nil {
-				return fmt.Errorf("Error inserting data: %s", err)
+				return fmt.Errorf("error inserting data: %s", err)
 			}
 			return nil
 		})

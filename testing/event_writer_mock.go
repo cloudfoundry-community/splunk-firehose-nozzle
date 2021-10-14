@@ -3,16 +3,21 @@ package testing
 import (
 	"errors"
 	"sync"
+	"time"
 )
 
 type EventWriterMock struct {
 	lock           sync.Mutex
+	Block          bool
 	capturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
 	ReturnErr      bool
 }
 
 func (m *EventWriterMock) Write(events []map[string]interface{}) (error, uint64) {
+	if m.Block {
+		time.Sleep(time.Millisecond * 100)
+	}
 	if m.ReturnErr {
 		return errors.New("mockup error"), 0
 	}

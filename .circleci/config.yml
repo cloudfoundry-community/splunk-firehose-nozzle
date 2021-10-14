@@ -2,15 +2,14 @@ version: 2 # use CircleCI 2.0
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.17
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
       - run:
           name: Install Dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod vendor
       - run:
           name: Builder
           command: make build
@@ -26,7 +25,7 @@ jobs:
 
   deploy-nozzle:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.17
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps: # steps that comprise the `deploy` job
       - attach_workspace:
@@ -35,8 +34,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod vendor
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy nozzle
@@ -47,7 +45,7 @@ jobs:
 
   tile-builder:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.17
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps:
       - attach_workspace:
@@ -66,7 +64,7 @@ jobs:
 
   execute_tests:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.17
     working_directory: /go/src/github.com/cloudfoundry-community/splunk-firehose-nozzle
     steps:
       - attach_workspace:
@@ -75,8 +73,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            go get -u -v -t github.com/Masterminds/glide
-            glide install --strip-vendor
+            go mod vendor
             cp -R /tmp/splunk-firehose-nozzle .
       - run:
           name: Deploy data-gen

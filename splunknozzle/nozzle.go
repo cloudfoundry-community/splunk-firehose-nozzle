@@ -41,6 +41,7 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 		AddOrgGuid:     strings.Contains(LowerAddAppInfo, "orgguid"),
 		AddSpaceName:   strings.Contains(LowerAddAppInfo, "spacename"),
 		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
+		AddTags:        s.config.AddTags,
 	}
 	return eventrouter.New(cache, eventSink, config)
 }
@@ -111,13 +112,13 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 		BatchSize:             s.config.BatchSize,
 		Retries:               s.config.Retries,
 		Hostname:              s.config.JobHost,
-		Version:               s.config.SplunkVersion,
 		SubscriptionID:        s.config.SubscriptionID,
 		TraceLogging:          s.config.TraceLogging,
 		ExtraFields:           parsedExtraFields,
 		UUID:                  nozzleUUID,
 		Logger:                s.logger,
 		StatusMonitorInterval: s.config.StatusMonitorInterval,
+		DropWarnThreshold:     s.config.DropWarnThreshold,
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig)

@@ -51,7 +51,6 @@ func newConfig() *Config {
 		BatchSize:     100,
 		Retries:       1,
 		HecWorkers:    8,
-		SplunkVersion: "6.4",
 
 		Version: "1.0",
 		Branch:  "develop",

@@ -22,6 +22,7 @@ func NewLogMessage() *Envelope {
 	var logMsg string = "Help, I'm a rock! Help, I'm a rock! Help, I'm a cop! Help, I'm a cop!"
 	var sourceInstance string = ">9000"
 	var appID string = "eea38ba5-53a5-4173-9617-b442d35ec2fd"
+	var tags map[string]string = map[string]string{"key": "value"}
 
 	logMessage := LogMessage{
 		Message:        []byte(logMsg),
@@ -36,6 +37,7 @@ func NewLogMessage() *Envelope {
 		EventType:  &eventType,
 		Origin:     &origin,
 		LogMessage: &logMessage,
+		Tags:       tags,
 	}
 	return envelope
 }

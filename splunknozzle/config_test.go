@@ -56,15 +56,16 @@ var _ = Describe("Config", func() {
 			os.Setenv("BOLTDB_PATH", "foo.db")
 			os.Setenv("EVENTS", "LogMessage")
 			os.Setenv("EXTRA_FIELDS", "foo:bar")
+			os.Setenv("ADD_TAGS", "true")
 
 			os.Setenv("FLUSH_INTERVAL", "43s")
 			os.Setenv("CONSUMER_QUEUE_SIZE", "15000")
 			os.Setenv("HEC_RETRIES", "10")
 			os.Setenv("HEC_WORKERS", "5")
-			os.Setenv("SPLUNK_VERSION", "6.2")
 
 			os.Setenv("ENABLE_EVENT_TRACING", "true")
 			os.Setenv("DEBUG", "true")
+			os.Setenv("DROP_WARN_THRESHOLD", "100")
 
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
@@ -97,13 +98,13 @@ var _ = Describe("Config", func() {
 			Expect(c.BoltDBPath).To(Equal("foo.db"))
 			Expect(c.WantedEvents).To(Equal("LogMessage"))
 			Expect(c.ExtraFields).To(Equal("foo:bar"))
+			Expect(c.AddTags).To(BeTrue())
 
 			Expect(c.FlushInterval).To(Equal(43 * time.Second))
 			Expect(c.QueueSize).To(Equal(15000))
 			Expect(c.BatchSize).To(Equal(100))
 			Expect(c.Retries).To(Equal(10))
 			Expect(c.HecWorkers).To(Equal(5))
-			Expect(c.SplunkVersion).To(Equal("6.2"))
 
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
@@ -112,6 +113,7 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
+			Expect(c.DropWarnThreshold).To(Equal(100))
 		})
 
 		It("check defaults", func() {
@@ -131,6 +133,7 @@ var _ = Describe("Config", func() {
 			Expect(c.MissingAppCacheTTL).To(Equal(0 * time.Second))
 			Expect(c.AppCacheTTL).To(Equal(0 * time.Second))
 			Expect(c.AppLimits).To(Equal(0))
+			Expect(c.AddTags).To(BeFalse())
 
 			Expect(c.BoltDBPath).To(Equal("cache.db"))
 			Expect(c.WantedEvents).To(Equal("ValueMetric,CounterEvent,ContainerMetric"))
@@ -141,10 +144,10 @@ var _ = Describe("Config", func() {
 			Expect(c.BatchSize).To(Equal(100))
 			Expect(c.Retries).To(Equal(5))
 			Expect(c.HecWorkers).To(Equal(8))
-			Expect(c.SplunkVersion).To(Equal("7.2"))
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
+			Expect(c.DropWarnThreshold).To(Equal(1000))
 		})
 	})
 
@@ -183,15 +186,16 @@ var _ = Describe("Config", func() {
 				"--app-limits=35",
 				"--boltdb-path=foo.dbc",
 				"--events=LogMessagec",
+				"--add-tags",
 				"--extra-fields=foo:barc",
 				"--flush-interval=34s",
 				"--consumer-queue-size=2323",
 				"--hec-batch-size=1234",
 				"--hec-retries=9",
 				"--hec-workers=16",
-				"--splunk-version=5.2",
 				"--enable-event-tracing",
 				"--debug",
+				"--drop-warn-threshold=10",
 			}
 			os.Args = args
 		})
@@ -227,16 +231,17 @@ var _ = Describe("Config", func() {
 			Expect(c.BoltDBPath).To(Equal("foo.dbc"))
 			Expect(c.WantedEvents).To(Equal("LogMessagec"))
 			Expect(c.ExtraFields).To(Equal("foo:barc"))
+			Expect(c.AddTags).To(BeTrue())
 
 			Expect(c.FlushInterval).To(Equal(34 * time.Second))
 			Expect(c.QueueSize).To(Equal(2323))
 			Expect(c.BatchSize).To(Equal(1234))
 			Expect(c.Retries).To(Equal(9))
 			Expect(c.HecWorkers).To(Equal(16))
-			Expect(c.SplunkVersion).To(Equal("5.2"))
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.TraceLogging).To(BeTrue())
+			Expect(c.DropWarnThreshold).To(Equal(10))
 
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))

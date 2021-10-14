@@ -3,6 +3,7 @@ package splunknozzle
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
@@ -36,6 +37,7 @@ type Config struct {
 	AppCacheTTL        time.Duration `json:"app-cache-ttl"`
 	OrgSpaceCacheTTL   time.Duration `json:"org-space-cache-ttl"`
 	AppLimits          int           `json:"app-limits"`
+	AddTags            bool          `json:"add-tags"`
 
 	BoltDBPath   string `json:"boltdb-path"`
 	WantedEvents string `json:"wanted-events"`
@@ -46,7 +48,6 @@ type Config struct {
 	BatchSize     int           `json:"batch-size"`
 	Retries       int           `json:"retries"`
 	HecWorkers    int           `json:"hec-workers"`
-	SplunkVersion string        `json:"splunk-version"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
@@ -56,6 +57,7 @@ type Config struct {
 	TraceLogging          bool          `json:"trace-logging"`
 	Debug                 bool          `json:"debug"`
 	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
+	DropWarnThreshold     int           `json:"drop-warn-threshold"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -113,6 +115,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("ORG_SPACE_CACHE_INVALIDATE_TTL").Default("72h").DurationVar(&c.OrgSpaceCacheTTL)
 	kingpin.Flag("app-limits", "Restrict to APP_LIMITS most updated apps per request when populating the app metadata cache").
 		OverrideDefaultFromEnvar("APP_LIMITS").Default("0").IntVar(&c.AppLimits)
+	kingpin.Flag("add-tags", "Add additional tags from envelope. (Default: false)").
+		OverrideDefaultFromEnvar("ADD_TAGS").Default("false").BoolVar(&c.AddTags)
 
 	kingpin.Flag("boltdb-path", "Bolt Database path ").
 		Default("cache.db").OverrideDefaultFromEnvar("BOLTDB_PATH").StringVar(&c.BoltDBPath)
@@ -131,8 +135,6 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
 		OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").IntVar(&c.HecWorkers)
-	kingpin.Flag("splunk-version", "Splunk version will determine how metadata fields are ingested for HEC '--splunk-version=7.2	").
-		OverrideDefaultFromEnvar("SPLUNK_VERSION").Default("7.2").StringVar(&c.SplunkVersion)
 
 	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
@@ -140,8 +142,12 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
 	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
+	kingpin.Flag("drop-warn-threshold", "Log error with dropped events count at each threshold count due to slow downstream").
+		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
 
 	kingpin.Parse()
+	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)
+	c.SplunkHost = strings.TrimRight(strings.TrimSpace(c.SplunkHost), "/")
 	return c
 }
 
