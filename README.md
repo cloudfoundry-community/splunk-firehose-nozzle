@@ -81,7 +81,7 @@ This is recommended for dev environments only.
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer. (Default: 25s)
 * `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid). (Default: "")
 * `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
-    (Note: Adding tags in the events will increase the event-size and can impact the performance of the Nozzle and Splunk. (During tests with simulator, the event size was increased by ~50% and the resource usage by the nozzle increased by 5-10%. This would vary with environment or CF configurations))
+    (Note: Adding tags in the events will increase the event-size and can impact the performance of the Nozzle and Splunk. (For example, during tests with simulator, the event size was increased by ~50% and the resource usage by the nozzle increased by 5-10%. This would vary with environment or CF configurations, and may impact other aspect of nozzle performance as well eg. total envelopes processed by nozzle or received by splunk))
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
 * `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
 * `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
@@ -380,7 +380,7 @@ As the Splunk Firehose Nozzle sends data to Splunk via HTTPS using the HTTP Even
 
 ### 4. Check for dropped events due to slow downstream(Network/Splunk):
 
-If the nozzle emits the ‘dropped events’ warning saying that downstream is slow, then the Splunk HEC might needs to be scaled.
+If the nozzle emits the ‘dropped events’ warning saying that downstream is slow, then the network or Splunk environment might needs to be scaled. (eg. Splunk HEC receiver node, Splunk Indexer, LB etc)
 
 Run the following search to determine if Splunk has indexed any events indicating such issues.
 
