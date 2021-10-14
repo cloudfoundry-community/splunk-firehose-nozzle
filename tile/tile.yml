@@ -194,6 +194,11 @@ forms:
     label: Ignore Missing App
     default: true
     description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
+  - name: drop_warn_threshold
+    type: integer
+    label: Drop Warn Threshold
+    default: 1000
+    description: Log error with dropped events count at each threshold count due to slow downstream
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
