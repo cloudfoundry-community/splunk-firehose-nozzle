@@ -398,6 +398,10 @@ Each instance of the Splunk Firehose Nozzle will run with a randomly generated U
 index=main | stats count as total_events, min(nozzle-event-counter) as min_number, max(nozzle-event-counter) as max_number by uuid | eval event_number =  max_number - min_number | eval success_percentage = total_events/event_number*100 | stats max(success_percentage) by uuid
 </pre>
 
+### 6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)
+
+Due to a known issue in an indirect dependency (an OAuth library), if the client secret has any special characters (eg. *!#$&@^) then it will not work. For now, user has to configure a client secret without any of this characters. Once the library in question is updated in the next release it will work even with the special characters.
+
 #### Searching Events
 
 Here are two short Splunk queries to start exploring some of the Cloud Foundry events in Splunk.
