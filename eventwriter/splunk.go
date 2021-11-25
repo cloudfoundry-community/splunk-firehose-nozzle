@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -98,6 +99,9 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	if resp.StatusCode > 299 {
 		responseBody, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
+	} else {
+		//Draining the response buffer, so that the same connection can be reused the next time
+		io.Copy(ioutil.Discard, resp.Body)
 	}
 
 	return nil
