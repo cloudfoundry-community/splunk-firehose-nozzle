@@ -19,6 +19,7 @@ type SplunkConfig struct {
 	Index   string
 	Fields  map[string]string
 	SkipSSL bool
+	Debug   bool
 
 	Logger lager.Logger
 }
@@ -70,9 +71,14 @@ func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 			)
 		}
 	}
-	bodyBytes := bodyBuffer.Bytes()
 
-	return s.send(&bodyBytes), count
+	if s.config.Debug {
+		bodyString := bodyBuffer.String()
+		return s.dump(bodyString), count
+	} else {
+		bodyBytes := bodyBuffer.Bytes()
+		return s.send(&bodyBytes), count
+	}
 }
 
 func (s *splunkClient) send(postBody *[]byte) error {
@@ -99,6 +105,13 @@ func (s *splunkClient) send(postBody *[]byte) error {
 		responseBody, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	}
+
+	return nil
+}
+
+//To dump the event on stdout instead of Splunk, in case of 'debug' mode
+func (s *splunkClient) dump(eventString string) error {
+	fmt.Println(string(eventString))
 
 	return nil
 }
