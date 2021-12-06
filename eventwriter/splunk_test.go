@@ -209,6 +209,15 @@ var _ = Describe("Splunk", func() {
 			Expect(err).To(BeNil())
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
 		})
+
+		It("Writes to stdout in debug without error", func() {
+			config.Debug = true
+			client := NewSplunk(config)
+			events := []map[string]interface{}{}
+			err, _ := client.Write(events)
+
+			Expect(err).To(BeNil())
+		})
 	})
 
 	It("returns error on bad splunk host", func() {
