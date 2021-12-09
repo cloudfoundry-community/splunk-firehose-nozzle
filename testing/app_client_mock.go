@@ -101,6 +101,12 @@ func (m *AppClientMock) CreateApp(appID, spaceID string) {
 	m.apps[appID] = app
 }
 
+func (m *AppClientMock) DeleteApp(appID string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	delete(m.apps, appID)
+}
+
 func getApps(n int) map[string]cfclient.App {
 	apps := make(map[string]cfclient.App, n)
 	for i := 0; i < n; i++ {

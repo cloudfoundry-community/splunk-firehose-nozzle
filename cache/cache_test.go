@@ -32,6 +32,7 @@ var _ = Describe("Cache", func() {
 			MissingAppCacheTTL: missingAppCacheTTL,
 			OrgSpaceCacheTTL:   orgSpaceCacheTTL,
 			Logger:             lager.NewLogger("test"),
+			AppLimits:          n,
 		}
 
 		client *testing.AppClientMock = nil
@@ -101,6 +102,22 @@ var _ = Describe("Cache", func() {
 			Ω(err).Should(HaveOccurred())
 			Expect(err).NotTo(Equal(ErrMissingAndIgnored))
 			Expect(app).To(Equal(nilApp))
+		})
+	})
+
+	Context("When orphan app is requested", func() {
+
+		It("Should found app in cache", func() {
+			app_guid := "orphan_app_id"
+			client.CreateApp(app_guid, "orphan_space_id")
+			Ω(cache.GetApp(app_guid)).NotTo(Equal(nil))
+			client.DeleteApp(app_guid)
+			cache.ManuallyInvalidateCaches()
+
+			app, err := cache.GetApp(app_guid)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(app).NotTo(Equal(nil))
+			Expect(app.Guid).To(Equal(app_guid))
 		})
 	})
 
