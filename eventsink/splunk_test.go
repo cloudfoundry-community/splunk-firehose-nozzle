@@ -1,7 +1,9 @@
 package eventsink_test
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -32,6 +34,7 @@ var _ = Describe("Splunk", func() {
 
 		memSink *testing.MemorySinkMock
 		sink    *eventsink.Splunk
+		config  *eventsink.SplunkConfig
 
 		event      map[string]interface{}
 		logger     lager.Logger
@@ -68,7 +71,7 @@ var _ = Describe("Splunk", func() {
 		mockClient2 = &testing.EventWriterMock{}
 
 		logger = lager.NewLogger("test")
-		config := &eventsink.SplunkConfig{
+		config = &eventsink.SplunkConfig{
 			FlushInterval: time.Millisecond,
 			QueueSize:     1000,
 			BatchSize:     1,
@@ -79,6 +82,58 @@ var _ = Describe("Splunk", func() {
 			Logger:        logger,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
+	})
+	Context("When LogStatus is executed", func() {
+		var buffer strings.Builder
+		flushInterval := time.Second * 2
+		BeforeEach(func() {
+			config.StatusMonitorInterval = time.Second * 1
+			config.FlushInterval = flushInterval
+			buffer = strings.Builder{}
+			loggerSink := lager.NewReconfigurableSink(lager.NewWriterSink(&buffer, lager.DEBUG), lager.DEBUG)
+			config.Logger.RegisterSink(loggerSink)
+			go sink.LogStatus()
+		})
+		It("Tests Pressure Too High", func() {
+
+			tempEvent := make(map[string]interface{})
+			for i := 0; i < config.QueueSize; i++ {
+				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			logMessage := buffer.String()
+			Expect(logMessage).Should(ContainSubstring("status\":\"too high"))
+		})
+
+		It("Tests pressure is high", func() {
+			tempEvent := make(map[string]interface{})
+			for i := 0; i < int(float64(config.QueueSize)*0.92); i++ {
+				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			logMessage := buffer.String()
+			Expect(logMessage).Should(ContainSubstring("status\":\"high"))
+		})
+
+		It("Tests pressure is medium", func() {
+			tempEvent := make(map[string]interface{})
+			for i := 0; i < int(float64(config.QueueSize)*0.52); i++ {
+				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			logMessage := buffer.String()
+			Expect(logMessage).Should(ContainSubstring("status\":\"medium"))
+		})
+
+		It("Tests pressure is low", func() {
+			tempEvent := make(map[string]interface{})
+			for i := 0; i < int(float64(config.QueueSize)*0.1); i++ {
+				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			logMessage := buffer.String()
+			Expect(logMessage).Should(ContainSubstring("status\":\"low"))
+		})
 	})
 
 	It("sends events to client", func() {
