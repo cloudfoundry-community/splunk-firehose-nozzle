@@ -2,8 +2,8 @@ package eventsink_test
 
 import (
 	"fmt"
+	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -72,67 +72,60 @@ var _ = Describe("Splunk", func() {
 
 		logger = lager.NewLogger("test")
 		config = &eventsink.SplunkConfig{
-			FlushInterval: time.Millisecond,
-			QueueSize:     1000,
-			BatchSize:     1,
-			Retries:       1,
-			Hostname:      "localhost",
-			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
-			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:        logger,
+			FlushInterval:     time.Millisecond,
+			QueueSize:         1000,
+			BatchSize:         1,
+			Retries:           1,
+			Hostname:          "localhost",
+			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
+			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:            logger,
+			DropWarnThreshold: 1000,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
 	})
 	Context("When LogStatus is executed", func() {
-		var buffer strings.Builder
-		flushInterval := time.Second * 2
 		BeforeEach(func() {
 			config.StatusMonitorInterval = time.Second * 1
+			flushInterval := time.Second * 2
 			config.FlushInterval = flushInterval
-			buffer = strings.Builder{}
-			loggerSink := lager.NewReconfigurableSink(lager.NewWriterSink(&buffer, lager.DEBUG), lager.DEBUG)
-			config.Logger.RegisterSink(loggerSink)
+			file, _ := os.OpenFile("lager.log", os.O_CREATE|os.O_RDWR, 0600)
+			loggerSink := lager.NewReconfigurableSink(lager.NewWriterSink(file, lager.DEBUG), lager.DEBUG)
+			myLogger := lager.NewLogger("LogStatus")
+			myLogger.RegisterSink(loggerSink)
+			config.Logger = myLogger
+			defer file.Close()
 			go sink.LogStatus()
-		})
-		It("Tests Pressure Too High", func() {
-
-			tempEvent := make(map[string]interface{})
-			for i := 0; i < config.QueueSize; i++ {
-				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			// low pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.12); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+			}
+			// medium pressure
+			time.Sleep(flushInterval)
+			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
 			}
 			time.Sleep(flushInterval)
-			logMessage := buffer.String()
-			Expect(logMessage).Should(ContainSubstring("status\":\"too high"))
-		})
-
-		It("Tests pressure is high", func() {
-			tempEvent := make(map[string]interface{})
-			for i := 0; i < int(float64(config.QueueSize)*0.92); i++ {
-				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			// high pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
 			}
 			time.Sleep(flushInterval)
-			logMessage := buffer.String()
-			Expect(logMessage).Should(ContainSubstring("status\":\"high"))
-		})
-
-		It("Tests pressure is medium", func() {
-			tempEvent := make(map[string]interface{})
-			for i := 0; i < int(float64(config.QueueSize)*0.52); i++ {
-				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
+			// too high pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.08); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
 			}
 			time.Sleep(flushInterval)
-			logMessage := buffer.String()
-			Expect(logMessage).Should(ContainSubstring("status\":\"medium"))
 		})
 
-		It("Tests pressure is low", func() {
-			tempEvent := make(map[string]interface{})
-			for i := 0; i < int(float64(config.QueueSize)*0.1); i++ {
-				sink.Write(tempEvent, fmt.Sprintf("event %d", i))
-			}
-			time.Sleep(flushInterval)
-			logMessage := buffer.String()
-			Expect(logMessage).Should(ContainSubstring("status\":\"low"))
+		It("tests pressure status", func() {
+			data, _ := os.ReadFile("lager.log")
+			log := string(data)
+			Expect(log).Should(ContainSubstring("status\":\"too high"))
+			Expect(log).Should(ContainSubstring("status\":\"high"))
+			Expect(log).Should(ContainSubstring("status\":\"medium"))
+			Expect(log).Should(ContainSubstring("status\":\"low"))
+			os.Remove("lager.log")
 		})
 	})
 
