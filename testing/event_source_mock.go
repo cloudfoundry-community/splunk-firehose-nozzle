@@ -19,6 +19,7 @@ type MemoryEventSourceMock struct {
 	done        chan struct{}
 	lock        sync.Mutex
 	started     bool
+	MockOpenErr bool
 }
 
 const (
@@ -59,6 +60,9 @@ func NewMemoryEventSourceMock(eps int, totalEvents int64, errCode int) *MemoryEv
 }
 
 func (e *MemoryEventSourceMock) Open() error {
+	if e.MockOpenErr {
+		return MockupErr
+	}
 	return nil
 }
 

@@ -1,6 +1,8 @@
 package eventsink_test
 
 import (
+	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -32,6 +34,7 @@ var _ = Describe("Splunk", func() {
 
 		memSink *testing.MemorySinkMock
 		sink    *eventsink.Splunk
+		config  *eventsink.SplunkConfig
 
 		event      map[string]interface{}
 		logger     lager.Logger
@@ -68,17 +71,62 @@ var _ = Describe("Splunk", func() {
 		mockClient2 = &testing.EventWriterMock{}
 
 		logger = lager.NewLogger("test")
-		config := &eventsink.SplunkConfig{
-			FlushInterval: time.Millisecond,
-			QueueSize:     1000,
-			BatchSize:     1,
-			Retries:       1,
-			Hostname:      "localhost",
-			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
-			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:        logger,
+		config = &eventsink.SplunkConfig{
+			FlushInterval:     time.Millisecond,
+			QueueSize:         1000,
+			BatchSize:         1,
+			Retries:           1,
+			Hostname:          "localhost",
+			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
+			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:            logger,
+			DropWarnThreshold: 1000,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
+	})
+	Context("When LogStatus is executed", func() {
+		BeforeEach(func() {
+			config.StatusMonitorInterval = time.Second * 1
+			flushInterval := time.Second * 2
+			config.FlushInterval = flushInterval
+			file, _ := os.OpenFile("lager.log", os.O_CREATE|os.O_RDWR, 0600)
+			loggerSink := lager.NewReconfigurableSink(lager.NewWriterSink(file, lager.DEBUG), lager.DEBUG)
+			myLogger := lager.NewLogger("LogStatus")
+			myLogger.RegisterSink(loggerSink)
+			config.Logger = myLogger
+			defer file.Close()
+			go sink.LogStatus()
+			// low pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.12); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+			}
+			// medium pressure
+			time.Sleep(flushInterval)
+			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			// high pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+			// too high pressure
+			for i := 0; i < int(float64(config.QueueSize)*0.08); i++ {
+				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+			}
+			time.Sleep(flushInterval)
+		})
+
+		It("tests pressure status", func() {
+			data, _ := os.ReadFile("lager.log")
+			log := string(data)
+			Expect(log).Should(ContainSubstring("status\":\"too high"))
+			Expect(log).Should(ContainSubstring("status\":\"high"))
+			Expect(log).Should(ContainSubstring("status\":\"medium"))
+			Expect(log).Should(ContainSubstring("status\":\"low"))
+			os.Remove("lager.log")
+		})
 	})
 
 	It("sends events to client", func() {
