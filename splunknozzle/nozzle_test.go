@@ -130,7 +130,7 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 	It("Nozzle", func() {
 		src := testing.NewMemoryEventSourceMock(1, 10, -1)
-		router := testing.NewEventRouterMock()
+		router := testing.NewEventRouterMock(false)
 		n := noz.Nozzle(src, router)
 		Expect(n).ToNot(BeNil())
 	})

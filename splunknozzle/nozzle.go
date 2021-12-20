@@ -79,16 +79,13 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, er
 
 // EventSink creates std sink or Splunk sink
 func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
-	if s.config.Debug {
-		return &eventsink.Std{}, nil
-	}
-
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
 		Token:   s.config.SplunkToken,
 		Index:   s.config.SplunkIndex,
 		SkipSSL: s.config.SkipSSLSplunk,
+		Debug:   s.config.Debug,
 		Logger:  s.logger,
 	}
 

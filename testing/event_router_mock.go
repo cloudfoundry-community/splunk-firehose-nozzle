@@ -1,21 +1,26 @@
 package testing
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type EventRouterMock struct {
-	lock   sync.Mutex
-	events []*events.Envelope
+	lock           sync.Mutex
+	events         []*events.Envelope
+	MockRouteError bool
 }
 
-func NewEventRouterMock() *EventRouterMock {
-	return &EventRouterMock{}
+func NewEventRouterMock(mockRouteError bool) *EventRouterMock {
+	return &EventRouterMock{MockRouteError: mockRouteError}
 }
 
 func (router *EventRouterMock) Route(msg *events.Envelope) error {
+	if router.MockRouteError {
+		return errors.New("mockup error")
+	}
 	router.lock.Lock()
 	router.events = append(router.events, msg)
 	router.lock.Unlock()

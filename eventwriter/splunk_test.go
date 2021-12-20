@@ -104,7 +104,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets app appVersion", func() {
-			appVersion := "1.2.2"
+			appVersion := "1.2.4"
 
 			client := NewSplunk(config)
 			events := []map[string]interface{}{}
@@ -208,6 +208,15 @@ var _ = Describe("Splunk", func() {
 
 			Expect(err).To(BeNil())
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
+		})
+
+		It("Writes to stdout in debug without error", func() {
+			config.Debug = true
+			client := NewSplunk(config)
+			events := []map[string]interface{}{}
+			err, _ := client.Write(events)
+
+			Expect(err).To(BeNil())
 		})
 	})
 
