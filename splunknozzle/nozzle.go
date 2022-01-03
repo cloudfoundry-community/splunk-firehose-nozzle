@@ -87,6 +87,7 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 		SkipSSL: s.config.SkipSSLSplunk,
 		Debug:   s.config.Debug,
 		Logger:  s.logger,
+		Version: s.config.Version,
 	}
 
 	var writers []eventwriter.Writer

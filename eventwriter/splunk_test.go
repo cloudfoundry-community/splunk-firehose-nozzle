@@ -104,7 +104,8 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets app appVersion", func() {
-			appVersion := "1.2.4"
+			appVersion := "1.2.5"
+			config.Version = "1.2.5"
 
 			client := NewSplunk(config)
 			events := []map[string]interface{}{}

@@ -21,6 +21,7 @@ type SplunkConfig struct {
 	Fields  map[string]string
 	SkipSSL bool
 	Debug   bool
+	Version string
 
 	Logger lager.Logger
 }
@@ -92,9 +93,8 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.config.Token))
 	//Add app headers for HEC telemetry
-	//Todo: update static values with appName and appVersion variables
 	req.Header.Set("__splunk_app_name", "Splunk Firehose Nozzle")
-	req.Header.Set("__splunk_app_version", "1.2.4")
+	req.Header.Set("__splunk_app_version", s.config.Version)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
