@@ -416,6 +416,14 @@ sourcetype="cf:counterevent"
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
+
+### 7. Nozzle is not collecting any data with 'websocket' (bad handshake) error
+
+If the nozzle reports below error, then check if the configured "subscription-id" has '#' as a prefix. Please remove the prefix or prepend any other character than '#' to fix this issue.
+```
+Error dialing trafficcontroller server: websocket: bad handshake.\nPlease ask your Cloud Foundry Operator to check the platform configuration (trafficcontroller is wss://****:443).
+```
+
 ### Development
 
 #### Software Requirements
