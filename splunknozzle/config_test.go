@@ -115,8 +115,7 @@ var _ = Describe("Config", func() {
 		It("check defaults", func() {
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
-			hostname, _ := os.Hostname()
-			Expect(c.JobHost).To(Equal(hostname))
+			Expect(c.JobHost).To(Equal(""))
 
 			Expect(c.SkipSSLCF).To(BeFalse())
 			Expect(c.SkipSSLCF).To(BeFalse())
