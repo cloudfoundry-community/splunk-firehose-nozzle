@@ -3,7 +3,6 @@ package splunknozzle
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -86,9 +85,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("splunk-index", "Splunk index").
 		OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().StringVar(&c.SplunkIndex)
 
-	hostname, _ := os.Hostname()
 	kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_HOST").Default(hostname).StringVar(&c.JobHost)
+		OverrideDefaultFromEnvar("JOB_HOST").Default("").StringVar(&c.JobHost)
 
 	kingpin.Flag("skip-ssl-validation-cf", "Skip cert validation (for dev environments").
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_CF").Default("false").BoolVar(&c.SkipSSLCF)
