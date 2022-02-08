@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventfilter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -42,6 +43,8 @@ type Config struct {
 	BoltDBPath   string `json:"boltdb-path"`
 	WantedEvents string `json:"wanted-events"`
 	ExtraFields  string `json:"extra-fields"`
+
+	Filters string `json:"filters"`
 
 	FlushInterval time.Duration `json:"flush-interval"`
 	QueueSize     int           `json:"queue-size"`
@@ -124,6 +127,23 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("EVENTS").Default("ValueMetric,CounterEvent,ContainerMetric").StringVar(&c.WantedEvents)
 	kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").
 		OverrideDefaultFromEnvar("EXTRA_FIELDS").Default("").StringVar(&c.ExtraFields)
+
+	kingpin.Flag("filters", fmt.Sprintf(
+		"Filter events. A valid filter looks like '<field>:<comperator>:<value>'. Multiple of those "+
+			"filters can be given by separating them with ';', in which case they run in the order given. "+
+			"<field> is what part of a message to check against, must be one of %q. "+
+			"<comperator> how to compare the <field>'s value against <value>, must be one of %q. "+
+			"<value> what to check a message for. "+
+			"The more filters are specified, the more work needs to be done per incoming event. "+
+			"Example: given the filter "+
+			"'deployment:mustContain:healthwatch2; deployment:mustNotContain:exporters; job:mustContain:someJob' "+
+			"and events coming from the deployments %v, only events from the deployment %q and "+
+			"the job %q would be forwarded, all other events would be dropped.",
+		eventfilter.SupportedFilterKeys, eventfilter.SupportedFilters,
+		[]string{"p-healthwatch2-UUID", "p-healthwatch2-exporters-UUID", "cf-UUID"},
+		"p-healthwatch2-UUID", "someJob",
+	)).
+		OverrideDefaultFromEnvar("FILTERS").Default("").StringVar(&c.Filters)
 
 	kingpin.Flag("flush-interval", "Every interval flushes to Splunk Http Event Collector server").
 		OverrideDefaultFromEnvar("FLUSH_INTERVAL").Default("5s").DurationVar(&c.FlushInterval)

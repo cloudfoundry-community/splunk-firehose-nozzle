@@ -64,7 +64,7 @@ var _ = Describe("Splunk", func() {
 		rconfig := &eventrouter.Config{
 			SelectedEvents: "ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric",
 		}
-		eventRouter, err = eventrouter.New(cache.NewNoCache(), memSink, rconfig)
+		eventRouter, err = eventrouter.New(cache.NewNoCache(), memSink, rconfig, nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		mockClient = &testing.EventWriterMock{}

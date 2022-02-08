@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventfilter"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -18,29 +19,34 @@ type router struct {
 	config         *Config
 }
 
-func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, error) {
-	selectedEvents, err := fevents.ParseSelectedEvents(config.SelectedEvents)
+type filteringRouter struct {
+	*router
+	filters eventfilter.Filters
+}
 
+func New(appCache cache.Cache, sink eventsink.Sink, config *Config, filters eventfilter.Filters) (Router, error) {
+	selectedEvents, err := fevents.ParseSelectedEvents(config.SelectedEvents)
 	if err != nil {
 		return nil, err
 	}
 
-	return &router{
+	r := &router{
 		appCache:       appCache,
 		sink:           sink,
 		selectedEvents: selectedEvents,
 		config:         config,
-	}, nil
-}
-
-func (r *router) Route(msg *events.Envelope) error {
-	eventType := msg.GetEventType()
-
-	if _, ok := r.selectedEvents[eventType.String()]; !ok {
-		// Ignore this event since we are not interested
-		return nil
 	}
 
+	// if no filters were defined, we return the original router,
+	// otherwise we return the filtering router
+	if filters == nil || filters.Length() < 1 {
+		return r, nil
+	}
+
+	return &filteringRouter{router: r, filters: filters}, nil
+}
+
+func (r *router) processMessage(msg *events.Envelope, eventType events.Envelope_EventType) error {
 	var event *fevents.Event
 	switch eventType {
 	case events.Envelope_HttpStartStop:
@@ -83,5 +89,30 @@ func (r *router) Route(msg *events.Envelope) error {
 		fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
 		r.sink.Write(fields, "Failed to write events")
 	}
+
 	return err
+}
+
+func (r *router) Route(msg *events.Envelope) error {
+	eventType := msg.GetEventType()
+	if _, ok := r.selectedEvents[eventType.String()]; !ok {
+		// Ignore this event since we are not interested
+		return nil
+	}
+
+	return r.processMessage(msg, eventType)
+}
+
+func (r *filteringRouter) Route(msg *events.Envelope) error {
+	eventType := msg.GetEventType()
+	if _, ok := r.selectedEvents[eventType.String()]; !ok {
+		// Ignore this event since we are not interested
+		return nil
+	}
+
+	if !r.filters.Accepts(msg) {
+		return nil
+	}
+
+	return r.processMessage(msg, eventType)
 }
