@@ -100,6 +100,7 @@ This is recommended for dev environments only.
 * `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
 
 __About app cache params:__
+
 When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.
 
 Now, when there is a change in this app data in remote, the nozzle has to update this local cache. For this, the config has APP_CACHE_INVALIDATE_TTL parameter. At every APP_CACHE_INVALIDATE_TTL interval, the nozzle will update the local cache by querying the remote (CF APIs).
