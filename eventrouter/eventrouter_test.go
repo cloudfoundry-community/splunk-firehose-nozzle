@@ -76,22 +76,7 @@ var _ = Describe("eventrouter", func() {
 			err := r.Route(msg)
 			Ω(err).ShouldNot(HaveOccurred())
 			Expect(len(memSink.Events)).To(Equal(i + 1))
-			Expect(len(memSink.Messages)).To(Equal(i + 1))
 		}
-	})
-
-	It("Route un-selected message", func() {
-		config := &Config{
-			SelectedEvents: "HttpStart",
-		}
-		r, err = New(noCache, memSink, config)
-		Ω(err).ShouldNot(HaveOccurred())
-
-		eventType = events.Envelope_HttpStop
-		err := r.Route(msg)
-		Ω(err).ShouldNot(HaveOccurred())
-		Expect(len(memSink.Events)).To(Equal(0))
-		Expect(len(memSink.Messages)).To(Equal(0))
 	})
 
 	It("Route default selected message", func() {
@@ -105,55 +90,6 @@ var _ = Describe("eventrouter", func() {
 		err := r.Route(msg)
 		Ω(err).ShouldNot(HaveOccurred())
 		Expect(len(memSink.Events)).To(Equal(1))
-		Expect(len(memSink.Messages)).To(Equal(1))
-	})
-
-	It("Route invalid message, no error", func() {
-		eventType = events.Envelope_EventType(1000)
-		err := r.Route(msg)
-		// Since we will error out first
-		Ω(err).ShouldNot(HaveOccurred())
-		Expect(len(memSink.Events)).To(Equal(0))
-		Expect(len(memSink.Messages)).To(Equal(0))
-	})
-
-	It("Route invalid message, error out", func() {
-		invalid := events.Envelope_EventType(-1)
-
-		// Update the map
-		events.Envelope_EventType_value["invalid"] = int32(invalid)
-		events.Envelope_EventType_name[int32(invalid)] = "invalid"
-
-		config := &Config{
-			SelectedEvents: "invalid",
-		}
-		r, err = New(noCache, memSink, config)
-		Ω(err).ShouldNot(HaveOccurred())
-
-		eventType = invalid
-		err := r.Route(msg)
-
-		Ω(err).Should(HaveOccurred())
-		Expect(len(memSink.Events)).To(Equal(0))
-		Expect(len(memSink.Messages)).To(Equal(0))
-	})
-
-	It("Route ignore app", func() {
-		noCache.SetIgnoreApp(true)
-		eventType = events.Envelope_LogMessage
-		err := r.Route(msg)
-		Ω(err).ShouldNot(HaveOccurred())
-		Expect(len(memSink.Events)).To(Equal(0))
-		Expect(len(memSink.Messages)).To(Equal(0))
-	})
-
-	It("Route sink error", func() {
-		memSink.ReturnErr = true
-		eventType = events.Envelope_LogMessage
-		err := r.Route(msg)
-		Ω(err).Should(HaveOccurred())
-		Expect(len(memSink.Events)).To(Equal(0))
-		Expect(len(memSink.Messages)).To(Equal(0))
 	})
 
 	It("Invalid event", func() {
