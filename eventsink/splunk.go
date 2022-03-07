@@ -85,13 +85,9 @@ func (s *Splunk) Close() error {
 	return nil
 }
 
+//parseEvent parses the event receieved from the doppler
 func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, string) {
 	eventType := msg.GetEventType()
-
-	// if _, ok := r.selectedEvents[eventType.String()]; !ok {
-	// 	// Ignore this event since we are not interested
-	// 	return nil
-	// }
 
 	var event *fevents.Event
 	switch eventType {
@@ -113,7 +109,6 @@ func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, strin
 		event = fevents.HttpStop(msg)
 
 	default:
-		// return fmt.Errorf("unsupported event type: %s", eventType.String())
 		return nil, ""
 	}
 
@@ -135,10 +130,6 @@ func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, strin
 }
 
 func (s *Splunk) Write(fields *events.Envelope) error {
-	// if len(msg) > 0 {
-	// 	fields["msg"] = msg
-	// }
-
 	select {
 	case s.events <- fields:
 	default:
@@ -168,12 +159,13 @@ LOOP:
 			}
 
 			parsedEvent, _ := s.parseEvent(event)
-
-			finalEvent := s.buildEvent(parsedEvent)
-			batch = append(batch, finalEvent)
-			if len(batch) >= s.config.BatchSize {
-				batch = s.indexEvents(writer, batch)
-				timer.Reset(s.config.FlushInterval) // reset channel timer
+			if parsedEvent != nil {
+				finalEvent := s.buildEvent(parsedEvent)
+				batch = append(batch, finalEvent)
+				if len(batch) >= s.config.BatchSize {
+					batch = s.indexEvents(writer, batch)
+					timer.Reset(s.config.FlushInterval) // reset channel timer
+				}
 			}
 
 		case <-timer.C:

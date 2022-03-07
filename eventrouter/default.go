@@ -1,8 +1,6 @@
 package eventrouter
 
 import (
-	// "fmt"
-
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
@@ -34,13 +32,6 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 }
 
 func (r *router) Route(msg *events.Envelope) error {
-
-	// err := r.sink.Write(event.Fields, event.Msg)
-	// if err != nil {
-	// 	fields := map[string]interface{}{"err": fmt.Sprintf("%s", err)}
-	// 	r.sink.Write(fields, "Failed to write events")
-	// }
-
 	_ = r.sink.Write(msg)
 
 	return nil

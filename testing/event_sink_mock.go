@@ -31,6 +31,5 @@ func (l *MemorySinkMock) Write(fields *events.Envelope) error {
 	}
 
 	l.Events = append(l.Events, fields)
-	// l.Messages = append(l.Messages, msg)
 	return nil
 }

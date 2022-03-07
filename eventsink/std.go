@@ -18,8 +18,5 @@ func (l *Std) Close() error {
 
 func (l *Std) Write(fields *events.Envelope) error {
 	fmt.Printf("%+v\n", fields)
-	// if len(msg) > 0 {
-	// 	fmt.Printf("\t%s\n", msg)
-	// }
 	return nil
 }
