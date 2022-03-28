@@ -83,8 +83,8 @@ This is recommended for dev environments only.
 * `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
     (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
-* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
-* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
+* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
+* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
 * `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
 * `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
 * `BOLTDB_PATH`: Bolt database path. (Default: cache.db)
@@ -98,7 +98,21 @@ This is recommended for dev environments only.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
 * `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
-    
+
+__About app cache params:__
+
+When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.
+
+Now, when there is a change in this app data in remote, the nozzle has to update this local cache. For this, the config has APP_CACHE_INVALIDATE_TTL parameter. At every APP_CACHE_INVALIDATE_TTL interval, the nozzle will update the local cache by querying the remote (CF APIs).
+
+If APP_CACHE_INVALIDATE_TTL is set to 10s, the nozzle will refresh the local cache at every 10s. So, AppCacheTTL should be set based on how frequently the app data is expected to change.
+
+When the nozzle receives events from the doppler, it will check the local cache for the given app-id. But on cache-miss, it will query remote for that specific app. If it doesn’t find the app data from remote too, then the nozzle will add that app to MissingAppCache (if IGNORE_MISSING_APP config is **enabled**. so that the nozzle does not waste time in querying the remote for an app which is likely not to be found). So, from the next time onwards, the nozzle will first check in the MissingAppCache, if found then it will ignore the app and move on to the next event with a warning.
+
+MISSING_APP_CACHE_INVALIDATE_TTL is used to clear the MissingAppCache so nozzle can retry querying from remote.
+
+For example, given MISSING_APP_CACHE_INVALIDATE_TTL is set to 60s, when nozzle receives event from app that is not available in local cache and remote, it’ll add it to MissingAppCache. Until next MISSING_APP_CACHE_INVALIDATE_TTL, nozzle will not query from remote for the missing app.
+
 - - - -
 
 ### Push as an App to Cloud Foundry
