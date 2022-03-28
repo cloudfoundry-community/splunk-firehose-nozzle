@@ -26,9 +26,7 @@ func newConfig() *Config {
 		SplunkHost:  "localhost:8088",
 		SplunkIndex: "main",
 
-		JobName:  "testing",
-		JobIndex: "-1",
-		JobHost:  "localhost",
+		JobHost: "localhost",
 
 		SkipSSLCF:      true,
 		SkipSSLSplunk:  true,

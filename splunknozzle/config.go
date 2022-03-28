@@ -22,9 +22,7 @@ type Config struct {
 	SplunkHost  string `json:"splunk-host"`
 	SplunkIndex string `json:"splunk-index"`
 
-	JobName  string `json:"job-name"`
-	JobIndex string `json:"job-index"`
-	JobHost  string `json:"job-host"`
+	JobHost string `json:"job-host"`
 
 	SkipSSLCF      bool          `json:"skip-ssl-cf"`
 	SkipSSLSplunk  bool          `json:"skip-ssl-splunk"`
@@ -87,10 +85,6 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("splunk-index", "Splunk index").
 		OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().StringVar(&c.SplunkIndex)
 
-	kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").StringVar(&c.JobName)
-	kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").StringVar(&c.JobIndex)
 	kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_HOST").Default("").StringVar(&c.JobHost)
 
