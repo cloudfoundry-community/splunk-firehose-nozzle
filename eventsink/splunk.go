@@ -86,7 +86,7 @@ func (s *Splunk) Close() error {
 }
 
 //parseEvent parses the event receieved from the doppler
-func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, string) {
+func (s *Splunk) parseEvent(msg *events.Envelope) map[string]interface{} {
 	eventType := msg.GetEventType()
 
 	var event *fevents.Event
@@ -109,7 +109,7 @@ func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, strin
 		event = fevents.HttpStop(msg)
 
 	default:
-		return nil, ""
+		return nil
 	}
 
 	event.AnnotateWithEnvelopeData(msg, s.parseConfig)
@@ -122,11 +122,17 @@ func (s *Splunk) parseEvent(msg *events.Envelope) (map[string]interface{}, strin
 	if ignored, ok := event.Fields["cf_ignored_app"]; ok {
 		if ignoreApp, ok := ignored.(bool); ok && ignoreApp {
 			// Ignore events from this app since end user tag to ignore this app
-			return nil, ""
+			return nil
 		}
 	}
 
-	return event.Fields, event.Msg
+	parsedEvent := event.Fields
+
+	if len(event.Msg) > 0 {
+		parsedEvent["msg"] = event.Msg
+	}
+
+	return parsedEvent
 }
 
 func (s *Splunk) Write(fields *events.Envelope) error {
@@ -158,7 +164,7 @@ LOOP:
 				break LOOP
 			}
 
-			parsedEvent, _ := s.parseEvent(event)
+			parsedEvent := s.parseEvent(event)
 			if parsedEvent != nil {
 				finalEvent := s.buildEvent(parsedEvent)
 				batch = append(batch, finalEvent)
