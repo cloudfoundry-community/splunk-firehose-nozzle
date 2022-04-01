@@ -61,7 +61,7 @@ func GetHostIPInfo(host string) (string, string, error) {
 
 func NanoSecondsToSeconds(nanoseconds int64) string {
 	seconds := float64(nanoseconds) * math.Pow(1000, -3)
-	return fmt.Sprintf("%.3f", seconds)
+	return fmt.Sprintf("%.9f", seconds)
 }
 
 // ToJSON tries to detect the JSON pattern for msg first, if msg contains JSON pattern either
