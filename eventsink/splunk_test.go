@@ -277,7 +277,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -340,7 +340,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses event timestamp", func() {
-			eventTimeSeconds := "1467128185.055"
+			eventTimeSeconds := "1467128185.055072010"
 			Expect(event["time"]).To(Equal(eventTimeSeconds))
 		})
 
@@ -393,7 +393,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -448,7 +448,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -503,7 +503,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -563,7 +563,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
