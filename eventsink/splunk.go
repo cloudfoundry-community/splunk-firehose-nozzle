@@ -12,8 +12,11 @@ import (
 	"sync/atomic"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
+	"github.com/cloudfoundry/sonde-go/events"
 )
 
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
@@ -33,10 +36,14 @@ type SplunkConfig struct {
 	DropWarnThreshold     int
 }
 
+type ParseConfig = fevents.Config
+
 type Splunk struct {
 	writers       []eventwriter.Writer
 	config        *SplunkConfig
-	events        chan map[string]interface{}
+	parseConfig   *ParseConfig
+	appCache      cache.Cache
+	events        chan *events.Envelope
 	wg            sync.WaitGroup
 	eventCount    uint64
 	sentCountChan chan uint64
@@ -46,14 +53,16 @@ type Splunk struct {
 	ip string
 }
 
-func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
+func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig, parseConfig *ParseConfig, appCache cache.Cache) *Splunk {
 	hostname, ip, _ := utils.GetHostIPInfo(config.Hostname)
 	config.Hostname = hostname
 
 	return &Splunk{
 		writers:       writers,
 		config:        config,
-		events:        make(chan map[string]interface{}, config.QueueSize),
+		parseConfig:   parseConfig,
+		appCache:      appCache,
+		events:        make(chan *events.Envelope, config.QueueSize),
 		ip:            ip,
 		eventCount:    0,
 		sentCountChan: make(chan uint64, 100),
@@ -76,11 +85,57 @@ func (s *Splunk) Close() error {
 	return nil
 }
 
-func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
-	if len(msg) > 0 {
-		fields["msg"] = msg
+//parseEvent parses the event receieved from the doppler
+func (s *Splunk) parseEvent(msg *events.Envelope) map[string]interface{} {
+	eventType := msg.GetEventType()
+
+	var event *fevents.Event
+	switch eventType {
+	case events.Envelope_HttpStartStop:
+		event = fevents.HttpStartStop(msg)
+	case events.Envelope_LogMessage:
+		event = fevents.LogMessage(msg)
+	case events.Envelope_ValueMetric:
+		event = fevents.ValueMetric(msg)
+	case events.Envelope_CounterEvent:
+		event = fevents.CounterEvent(msg)
+	case events.Envelope_Error:
+		event = fevents.ErrorEvent(msg)
+	case events.Envelope_ContainerMetric:
+		event = fevents.ContainerMetric(msg)
+	case events.Envelope_HttpStart:
+		event = fevents.HttpStart(msg)
+	case events.Envelope_HttpStop:
+		event = fevents.HttpStop(msg)
+
+	default:
+		return nil
 	}
 
+	event.AnnotateWithEnvelopeData(msg, s.parseConfig)
+	event.AnnotateWithCFMetaData()
+
+	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
+		event.AnnotateWithAppData(s.appCache, s.parseConfig)
+	}
+
+	if ignored, ok := event.Fields["cf_ignored_app"]; ok {
+		if ignoreApp, ok := ignored.(bool); ok && ignoreApp {
+			// Ignore events from this app since end user tag to ignore this app
+			return nil
+		}
+	}
+
+	parsedEvent := event.Fields
+
+	if len(event.Msg) > 0 {
+		parsedEvent["msg"] = event.Msg
+	}
+
+	return parsedEvent
+}
+
+func (s *Splunk) Write(fields *events.Envelope) error {
 	select {
 	case s.events <- fields:
 	default:
@@ -109,11 +164,14 @@ LOOP:
 				break LOOP
 			}
 
-			event = s.buildEvent(event)
-			batch = append(batch, event)
-			if len(batch) >= s.config.BatchSize {
-				batch = s.indexEvents(writer, batch)
-				timer.Reset(s.config.FlushInterval) // reset channel timer
+			parsedEvent := s.parseEvent(event)
+			if parsedEvent != nil {
+				finalEvent := s.buildEvent(parsedEvent)
+				batch = append(batch, finalEvent)
+				if len(batch) >= s.config.BatchSize {
+					batch = s.indexEvents(writer, batch)
+					timer.Reset(s.config.FlushInterval) // reset channel timer
+				}
 			}
 
 		case <-timer.C:

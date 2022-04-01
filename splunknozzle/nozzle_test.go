@@ -75,11 +75,12 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("EventSink", func() {
-		_, err := noz.EventSink()
+		c := testing.NewMemoryCacheMock()
+		_, err := noz.EventSink(c)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		config.Debug = true
-		_, err = noz.EventSink()
+		_, err = noz.EventSink(c)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 

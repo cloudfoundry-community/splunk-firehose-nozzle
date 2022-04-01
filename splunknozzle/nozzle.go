@@ -78,7 +78,8 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, er
 }
 
 // EventSink creates std sink or Splunk sink
-func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
+func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, error) {
+
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
 		Host:    s.config.SplunkHost,
@@ -119,7 +120,18 @@ func (s *SplunkFirehoseNozzle) EventSink() (eventsink.Sink, error) {
 		DropWarnThreshold:     s.config.DropWarnThreshold,
 	}
 
-	splunkSink := eventsink.NewSplunk(writers, sinkConfig)
+	LowerAddAppInfo := strings.ToLower(s.config.AddAppInfo)
+	parseConfig := &eventsink.ParseConfig{
+		SelectedEvents: s.config.WantedEvents,
+		AddAppName:     strings.Contains(LowerAddAppInfo, "appname"),
+		AddOrgName:     strings.Contains(LowerAddAppInfo, "orgname"),
+		AddOrgGuid:     strings.Contains(LowerAddAppInfo, "orgguid"),
+		AddSpaceName:   strings.Contains(LowerAddAppInfo, "spacename"),
+		AddSpaceGuid:   strings.Contains(LowerAddAppInfo, "spaceguid"),
+		AddTags:        s.config.AddTags,
+	}
+
+	splunkSink := eventsink.NewSplunk(writers, sinkConfig, parseConfig, cache)
 	splunkSink.Open()
 
 	s.logger.RegisterSink(splunkSink)
@@ -154,14 +166,6 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 // Run creates all necessary objects, reading events from CF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
-	eventSink, err := s.EventSink()
-	if err != nil {
-		s.logger.Error("Failed to create event sink", nil)
-		return err
-	}
-
-	s.logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
-
 	pcfClient, err := s.PCFClient()
 	if err != nil {
 		s.logger.Error("Failed to get info from CF Server", nil)
@@ -180,6 +184,14 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		return err
 	}
 	defer appCache.Close()
+
+	eventSink, err := s.EventSink(appCache)
+	if err != nil {
+		s.logger.Error("Failed to create event sink", nil)
+		return err
+	}
+
+	s.logger.Info("Running splunk-firehose-nozzle with following configuration variables ", s.config.ToMap())
 
 	eventRouter, err := s.EventRouter(appCache, eventSink)
 	if err != nil {
