@@ -107,7 +107,10 @@ func (s *splunkClient) send(postBody *[]byte) error {
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	} else {
 		//Draining the response buffer, so that the same connection can be reused the next time
-		io.Copy(ioutil.Discard, resp.Body)
+		_, err := io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			s.config.Logger.Error("Error discarding response body", err)
+		}
 	}
 
 	return nil
