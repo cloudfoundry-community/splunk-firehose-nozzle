@@ -260,6 +260,8 @@ DEST_KEY =_MetaData:Index
 REGEX = (sourcetype::cf:splunknozzle)
 FORMAT = new_index
 ```
+<p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5,timestamp will use nanosecond precision instead of milliseconds.</p>
+
 
 ## <a id='walkthrough'></a> Troubleshooting
 This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.
