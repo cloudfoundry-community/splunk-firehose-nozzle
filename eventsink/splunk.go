@@ -225,7 +225,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 
 	// Timestamp
 	if timestamp == "" {
-		timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+		timestamp = utils.NanoSecondsToSeconds(time.Now().UnixNano())
 	}
 	event["time"] = timestamp
 
