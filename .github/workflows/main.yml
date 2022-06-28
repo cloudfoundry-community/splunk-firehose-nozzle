@@ -1,0 +1,191 @@
+name: PCF
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+      # Install Dependencies
+      - name: check-files
+        run: ls -la
+      - name: Install Dependencies
+        run: |
+            go mod vendor
+
+      # Builder
+      - name: Builder
+        run: make build
+
+      # Run tests
+      - name: Run tests
+        run: |
+          make testall
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+          path: splunk-firehose-nozzle
+
+  deploy_nozzle:
+    
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+            go mod vendor
+
+      # Deploy nozzle
+      - name: Deploy nozzle
+        run: |
+            .github/update_manifest.sh
+            .github/pre-req.sh
+            cf push -f .github/workflows/ci_nozzle_manifest.yml -u process --random-route
+
+
+  tile-builder:
+
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+
+
+    needs: deploy_nozzle
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+  
+      # Tile builder
+      - name: Tile builder
+        run: |
+            .github/tile-builder.sh
+            
+      # Push tile to internal s3
+      - name: Push tile to internal s3
+        run: |
+            .github/push_tile.sh
+            
+      # Nozzle Log
+      - name: Nozzle Log
+        run: |
+          cf logs splunk-firehose-nozzle &
+
+  execute_tests:
+
+    needs: tile-builder
+    runs-on: ubuntu-latest
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
+      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
+      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          go mod vendor
+          chmod +x splunk-firehose-nozzle
+          
+      # Deploy data-gen
+      - name: Deploy data-gen
+        run: |
+          .github/pre-req.sh
+          cf push -f .github/workflows/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+          sleep 10
+          
+
+      # Nozzle Log
+      - name: Nozzle Log
+        run: |
+            cf logs splunk-firehose-nozzle &
+
+      # Prepare test environment
+      - name: Prepare test environment
+        run: |
+          .github/pre-functional-test.sh
+          
+
+      # Executing tests
+      - name: Executing tests
+        run: |          
+            .github/functional-test.sh
+            
+      # Teardown
+      - name: Teardown
+        if: always()
+        run: |
+            echo "Teardown deployment env"
+            cf delete splunk-firehose-nozzle -f
+            cf delete data_gen -f
+            cf delete-org splunk-ci-org -f
