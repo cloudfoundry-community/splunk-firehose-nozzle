@@ -50,17 +50,17 @@ build-app-dump:
 	go build -o tools/dump_app_info/dump_app_info ./tools/dump_app_info/dump_app_info.go
 
 build-data-gen:
-	go build -o .circleci/data_gen/data_gen tools/data_gen/data_gen.go
+	go build -o .github/data_gen/data_gen tools/data_gen/data_gen.go
 
 PKGS=$(shell go list ./... | grep -v vendor | grep -v tools | grep -v testing | grep -v "splunk-firehose-nozzle$$")
 
 deploy: deploy-nozzle deploy-data-gen
 
 deploy-nozzle:
-	@cf push -f .circleci/ci_nozzle_manifest.yml -u process --random-route
+	@cf push -f github/workflows/ci_nozzle_manifest.yml -u process --random-route
 
 deploy-data-gen:
-	@cf push -f .circleci/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+	@cf push -f github/workflows/data_gen_manifest.yml -u process -p tools/data_gen --random-route
 
 integration-test: deploy-nozzle deploy-data-generation-app test
 

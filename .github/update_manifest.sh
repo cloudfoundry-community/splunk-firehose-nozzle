@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-#Set below params in CircleCI env variable settings
+#Set below params in github env variable settings
 # API_ENDPOINT, API_USER, API_PASSWORD, SPLUNK_TOKEN, SPLUNK_HOST, SPLUNK_INDEX
 #Update manifest for deployment
 sed -i 's@API_ENDPOINT:.*@'"API_ENDPOINT: $API_ENDPOINT"'@' .github/workflows/ci_nozzle_manifest.yml
