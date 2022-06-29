@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
+echo "start"
 set -e
 wget https://github.com/cf-platform-eng/tile-generator/releases/download/v13.0.2/pcf_linux-64bit > /dev/null 2>&1
 chmod +x pcf_linux-64bit
 sudo mv pcf_linux-64bit /usr/local/bin/tile
-sudo apt install python-pip > /dev/null 2>&1
-echo "installing vurtualenv"
-sudo /usr/bin/easy_install virtualenv > /dev/null 2>&1
-virtualenv -p python tile-generator-env
+python3 -m venv tile-generator-env > /dev/null 2>&1
 source tile-generator-env/bin/activate
 echo "Installing tile-generator..."
+pip install wheel
+pip install jinja2==3.0.3
 pip install tile-generator
 cd tile
 echo "Installing bosh..."

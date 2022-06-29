@@ -27,7 +27,7 @@ applications:
       APP_CACHE_INVALIDATE_TTL: 86440s
       APP_LIMITS: 1000
       BOLTDB_PATH: cache.db
-      EVENTS: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+      EVENTS: ValueMetric,CounterEvent,Error,HttpStartStop,LogMessage,ContainerMetric
       EXTRA_FIELDS: name:update-ci-test
       FIREHOSE_SUBSCRIPTION_ID: splunk-ci
       FLUSH_INTERVAL: 5s
