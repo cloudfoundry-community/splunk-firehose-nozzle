@@ -32,6 +32,13 @@ func New(appCache cache.Cache, sink eventsink.Sink, config *Config) (Router, err
 }
 
 func (r *router) Route(msg *events.Envelope) error {
+	eventType := msg.GetEventType()
+
+	if _, ok := r.selectedEvents[eventType.String()]; !ok {
+		// Ignore this event since we are not interested
+		return nil
+	}
+	
 	_ = r.sink.Write(msg)
 
 	return nil
