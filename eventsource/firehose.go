@@ -27,7 +27,7 @@ type Firehose struct {
 }
 
 func NewFirehose(tokenClient TokenClient, config *FirehoseConfig) *Firehose {
-	c := consumer.New(config.Endpoint, &tls.Config{InsecureSkipVerify: config.SkipSSL}, nil)
+	c := consumer.New(config.Endpoint, &tls.Config{InsecureSkipVerify: config.SkipSSL, MinVersion: tls.VersionTLS12}, nil)
 	c.SetIdleTimeout(config.KeepAlive)
 
 	f := &Firehose{

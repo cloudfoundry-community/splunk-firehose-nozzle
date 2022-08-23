@@ -271,7 +271,7 @@ func IsAuthorizedEvent(wantedEvent string) bool {
 	return ok
 }
 
-func AuthorizedEvents() string {
+func AuthorizedEvents() string {  // nosemgrep
 	arrEvents := []string{}
 	for _, listEvent := range events.Envelope_EventType_name {
 		arrEvents = append(arrEvents, listEvent)
@@ -280,7 +280,7 @@ func AuthorizedEvents() string {
 	return strings.Join(arrEvents, ", ")
 }
 
-func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
+func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {  // nosemgrep
 	wantedEvents = strings.TrimSpace(wantedEvents)
 	selectedEvents := make(map[string]bool)
 	if wantedEvents == "" {
@@ -312,7 +312,7 @@ func getKeyValueFromString(kvPair string) (string, string, error) {
 	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
 }
 
-func ParseExtraFields(extraEventsString string) (map[string]string, error) {
+func ParseExtraFields(extraEventsString string) (map[string]string, error) {  // nosemgrep
 	extraEvents := map[string]string{}
 
 	for _, kvPair := range strings.Split(extraEventsString, ",") {
