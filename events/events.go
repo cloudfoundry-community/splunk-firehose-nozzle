@@ -271,7 +271,7 @@ func IsAuthorizedEvent(wantedEvent string) bool {
 	return ok
 }
 
-func AuthorizedEvents() string {  // nosemgrep
+func AuthorizedEvents() string {  // nosemgrep false-positive : `Envelope_EventType_name` is not pointer.
 	arrEvents := []string{}
 	for _, listEvent := range events.Envelope_EventType_name {
 		arrEvents = append(arrEvents, listEvent)
@@ -280,7 +280,7 @@ func AuthorizedEvents() string {  // nosemgrep
 	return strings.Join(arrEvents, ", ")
 }
 
-func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {  // nosemgrep
+func ParseSelectedEvents(wantedEvents string) (map[string]bool, error) {
 	wantedEvents = strings.TrimSpace(wantedEvents)
 	selectedEvents := make(map[string]bool)
 	if wantedEvents == "" {
@@ -312,7 +312,7 @@ func getKeyValueFromString(kvPair string) (string, string, error) {
 	return strings.TrimSpace(values[0]), strings.TrimSpace(values[1]), nil
 }
 
-func ParseExtraFields(extraEventsString string) (map[string]string, error) {  // nosemgrep
+func ParseExtraFields(extraEventsString string) (map[string]string, error) {
 	extraEvents := map[string]string{}
 
 	for _, kvPair := range strings.Split(extraEventsString, ",") {

@@ -318,7 +318,7 @@ func (c *Boltdb) createBucket() error {
 // invalidateMissingAppCache perodically cleanup inmemory house keeping for
 // not found apps. When the this cache is cleaned up, end clients have chance
 // to retry missing apps
-func (c *Boltdb) invalidateMissingAppCache() {  // nosemgrep
+func (c *Boltdb) invalidateMissingAppCache() {  // nosemgrep false-positive : Execution of ticker `ticker` more times than desired will not be causing any issues for function "invalidateMissingAppCache".
 	ticker := time.NewTicker(c.config.MissingAppCacheTTL)
 
 	c.wg.Add(1)
@@ -340,7 +340,7 @@ func (c *Boltdb) invalidateMissingAppCache() {  // nosemgrep
 
 // invalidateCache perodically fetches a full copy apps info from remote
 // and update boltdb and in-memory cache
-func (c *Boltdb) invalidateCache() {  // nosemgrep
+func (c *Boltdb) invalidateCache() {  // nosemgrep false-positive : Execution of ticker `ticker` and `orgSpaceTicker` more times than desired will not be causing any issues for function "invalidateCache".
 	ticker := time.NewTicker(c.config.AppCacheTTL)
 	orgSpaceTicker := time.NewTicker(c.config.OrgSpaceCacheTTL)
 
