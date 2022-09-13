@@ -199,6 +199,11 @@ forms:
     label: Drop Warn Threshold
     default: 1000
     description: Log error with dropped events count at each threshold count due to slow downstream
+  - name: memory_ballast_size
+    type: integer
+    label: Memory Ballast Size
+    default: 0
+    description: Size of memory allocated to reduce GC cycles. Default is 0, Size should be less than the total memory.
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {

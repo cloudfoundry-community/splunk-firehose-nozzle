@@ -56,6 +56,7 @@ type Config struct {
 	Debug                 bool          `json:"debug"`
 	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 	DropWarnThreshold     int           `json:"drop-warn-threshold"`
+	MemoryBallastSize     int           `json:"memory-ballast-size"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -138,6 +139,8 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 	kingpin.Flag("drop-warn-threshold", "Log error with dropped events count at each threshold count due to slow downstream").
 		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
+	kingpin.Flag("memory-ballast-size", "Size of ballast in MB").
+		OverrideDefaultFromEnvar("MEMORY_BALLAST_SIZE").Default("0").IntVar(&c.MemoryBallastSize)
 
 	kingpin.Parse()
 	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)
