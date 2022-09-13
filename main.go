@@ -27,6 +27,11 @@ func main() {
 	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGTERM)
 
 	config := splunknozzle.NewConfigFromCmdFlags(version, branch, commit, buildos)
+	if config.MemoryBallastSize > 0 {
+		ballast := make([]byte, config.MemoryBallastSize<<20)
+		_ = ballast
+	}
+
 	if config.AppCacheTTL == 0 && config.OrgSpaceCacheTTL > 0 {
 		logger.Info("Apps are not being cached. When apps are not cached, the org and space caching TTL is ineffective")
 	}
