@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.cloudfoundry.org/cflager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 )
 
@@ -18,9 +18,9 @@ var (
 )
 
 func main() {
-	cflager.AddFlags(flag.CommandLine)
+	lagerflags.AddFlags(flag.CommandLine)
 
-	logger, _ := cflager.New("splunk-nozzle-logger")
+	logger, _ := lagerflags.New("splunk-nozzle-logger")
 	logger.Info("Running splunk-firehose-nozzle")
 
 	shutdownChan := make(chan os.Signal, 2)
