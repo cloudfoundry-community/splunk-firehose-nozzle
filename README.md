@@ -97,6 +97,7 @@ This is recommended for dev environments only.
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
 * `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
+* `MEMORY_BALLAST_SIZE`: Size of memory allocated to reduce GC cycles. Default is 0, Size should be less than the total memory.
 
 __About app cache params:__
 
