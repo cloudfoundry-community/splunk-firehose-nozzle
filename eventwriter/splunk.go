@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -103,11 +102,11 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
-		responseBody, _ := ioutil.ReadAll(resp.Body)
+		responseBody, _ := io.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	} else {
 		//Draining the response buffer, so that the same connection can be reused the next time
-		_, err := io.Copy(ioutil.Discard, resp.Body)
+		_, err := io.Copy(io.Discard, resp.Body)
 		if err != nil {
 			s.config.Logger.Error("Error discarding response body", err)
 		}

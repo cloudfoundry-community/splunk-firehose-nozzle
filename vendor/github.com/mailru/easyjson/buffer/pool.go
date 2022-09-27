@@ -4,6 +4,7 @@ package buffer
 
 import (
 	"io"
+	"net"
 	"sync"
 )
 
@@ -52,14 +53,12 @@ func putBuf(buf []byte) {
 
 // getBuf gets a chunk from reuse pool or creates a new one if reuse failed.
 func getBuf(size int) []byte {
-	if size < config.PooledSize {
-		return make([]byte, 0, size)
-	}
-
-	if c := buffers[size]; c != nil {
-		v := c.Get()
-		if v != nil {
-			return v.([]byte)
+	if size >= config.PooledSize {
+		if c := buffers[size]; c != nil {
+			v := c.Get()
+			if v != nil {
+				return v.([]byte)
+			}
 		}
 	}
 	return make([]byte, 0, size)
@@ -78,9 +77,12 @@ type Buffer struct {
 // EnsureSpace makes sure that the current chunk contains at least s free bytes,
 // possibly creating a new chunk.
 func (b *Buffer) EnsureSpace(s int) {
-	if cap(b.Buf)-len(b.Buf) >= s {
-		return
+	if cap(b.Buf)-len(b.Buf) < s {
+		b.ensureSpaceSlow(s)
 	}
+}
+
+func (b *Buffer) ensureSpaceSlow(s int) {
 	l := len(b.Buf)
 	if l > 0 {
 		if cap(b.toPool) != cap(b.Buf) {
@@ -105,18 +107,22 @@ func (b *Buffer) EnsureSpace(s int) {
 
 // AppendByte appends a single byte to buffer.
 func (b *Buffer) AppendByte(data byte) {
-	if cap(b.Buf) == len(b.Buf) { // EnsureSpace won't be inlined.
-		b.EnsureSpace(1)
-	}
+	b.EnsureSpace(1)
 	b.Buf = append(b.Buf, data)
 }
 
 // AppendBytes appends a byte slice to buffer.
 func (b *Buffer) AppendBytes(data []byte) {
+	if len(data) <= cap(b.Buf)-len(b.Buf) {
+		b.Buf = append(b.Buf, data...) // fast path
+	} else {
+		b.appendBytesSlow(data)
+	}
+}
+
+func (b *Buffer) appendBytesSlow(data []byte) {
 	for len(data) > 0 {
-		if cap(b.Buf) == len(b.Buf) { // EnsureSpace won't be inlined.
-			b.EnsureSpace(1)
-		}
+		b.EnsureSpace(1)
 
 		sz := cap(b.Buf) - len(b.Buf)
 		if sz > len(data) {
@@ -128,12 +134,18 @@ func (b *Buffer) AppendBytes(data []byte) {
 	}
 }
 
-// AppendBytes appends a string to buffer.
+// AppendString appends a string to buffer.
 func (b *Buffer) AppendString(data string) {
+	if len(data) <= cap(b.Buf)-len(b.Buf) {
+		b.Buf = append(b.Buf, data...) // fast path
+	} else {
+		b.appendStringSlow(data)
+	}
+}
+
+func (b *Buffer) appendStringSlow(data string) {
 	for len(data) > 0 {
-		if cap(b.Buf) == len(b.Buf) { // EnsureSpace won't be inlined.
-			b.EnsureSpace(1)
-		}
+		b.EnsureSpace(1)
 
 		sz := cap(b.Buf) - len(b.Buf)
 		if sz > len(data) {
@@ -156,18 +168,14 @@ func (b *Buffer) Size() int {
 
 // DumpTo outputs the contents of a buffer to a writer and resets the buffer.
 func (b *Buffer) DumpTo(w io.Writer) (written int, err error) {
-	var n int
-	for _, buf := range b.bufs {
-		if err == nil {
-			n, err = w.Write(buf)
-			written += n
-		}
-		putBuf(buf)
+	bufs := net.Buffers(b.bufs)
+	if len(b.Buf) > 0 {
+		bufs = append(bufs, b.Buf)
 	}
+	n, err := bufs.WriteTo(w)
 
-	if err == nil {
-		n, err = w.Write(b.Buf)
-		written += n
+	for _, buf := range b.bufs {
+		putBuf(buf)
 	}
 	putBuf(b.toPool)
 
@@ -175,22 +183,29 @@ func (b *Buffer) DumpTo(w io.Writer) (written int, err error) {
 	b.Buf = nil
 	b.toPool = nil
 
-	return
+	return int(n), err
 }
 
 // BuildBytes creates a single byte slice with all the contents of the buffer. Data is
-// copied if it does not fit in a single chunk.
-func (b *Buffer) BuildBytes() []byte {
+// copied if it does not fit in a single chunk. You can optionally provide one byte
+// slice as argument that it will try to reuse.
+func (b *Buffer) BuildBytes(reuse ...[]byte) []byte {
 	if len(b.bufs) == 0 {
-
 		ret := b.Buf
 		b.toPool = nil
 		b.Buf = nil
-
 		return ret
 	}
 
-	ret := make([]byte, 0, b.Size())
+	var ret []byte
+	size := b.Size()
+
+	// If we got a buffer as argument and it is big enough, reuse it.
+	if len(reuse) == 1 && cap(reuse[0]) >= size {
+		ret = reuse[0][:0]
+	} else {
+		ret = make([]byte, 0, size)
+	}
 	for _, buf := range b.bufs {
 		ret = append(ret, buf...)
 		putBuf(buf)
@@ -198,6 +213,62 @@ func (b *Buffer) BuildBytes() []byte {
 
 	ret = append(ret, b.Buf...)
 	putBuf(b.toPool)
+
+	b.bufs = nil
+	b.toPool = nil
+	b.Buf = nil
+
+	return ret
+}
+
+type readCloser struct {
+	offset int
+	bufs   [][]byte
+}
+
+func (r *readCloser) Read(p []byte) (n int, err error) {
+	for _, buf := range r.bufs {
+		// Copy as much as we can.
+		x := copy(p[n:], buf[r.offset:])
+		n += x // Increment how much we filled.
+
+		// Did we empty the whole buffer?
+		if r.offset+x == len(buf) {
+			// On to the next buffer.
+			r.offset = 0
+			r.bufs = r.bufs[1:]
+
+			// We can release this buffer.
+			putBuf(buf)
+		} else {
+			r.offset += x
+		}
+
+		if n == len(p) {
+			break
+		}
+	}
+	// No buffers left or nothing read?
+	if len(r.bufs) == 0 {
+		err = io.EOF
+	}
+	return
+}
+
+func (r *readCloser) Close() error {
+	// Release all remaining buffers.
+	for _, buf := range r.bufs {
+		putBuf(buf)
+	}
+	// In case Close gets called multiple times.
+	r.bufs = nil
+
+	return nil
+}
+
+// ReadCloser creates an io.ReadCloser with all the contents of the buffer.
+func (b *Buffer) ReadCloser() io.ReadCloser {
+	ret := &readCloser{0, append(b.bufs, b.Buf)}
 
 	b.bufs = nil
 	b.toPool = nil

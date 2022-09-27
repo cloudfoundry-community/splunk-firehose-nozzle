@@ -2,7 +2,7 @@ package eventwriter_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -43,7 +43,7 @@ var _ = Describe("Splunk", func() {
 			splunkResponse = []byte("{}")
 			testServer = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				capturedRequest = request
-				body, err := ioutil.ReadAll(request.Body)
+				body, err := io.ReadAll(request.Body)
 				if err != nil {
 					panic(err)
 				}
