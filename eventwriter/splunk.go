@@ -34,7 +34,7 @@ type splunkClient struct {
 func NewSplunk(config *SplunkConfig) Writer {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipSSL},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipSSL, MinVersion: tls.VersionTLS12},
 	}
 	httpClient.Transport = tr
 

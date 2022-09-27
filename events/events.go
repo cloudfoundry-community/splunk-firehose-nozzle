@@ -271,7 +271,7 @@ func IsAuthorizedEvent(wantedEvent string) bool {
 	return ok
 }
 
-func AuthorizedEvents() string {
+func AuthorizedEvents() string {  // nosemgrep false-positive : `Envelope_EventType_name` is not pointer.
 	arrEvents := []string{}
 	for _, listEvent := range events.Envelope_EventType_name {
 		arrEvents = append(arrEvents, listEvent)
