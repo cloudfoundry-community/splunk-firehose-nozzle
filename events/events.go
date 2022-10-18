@@ -242,6 +242,10 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
 
+		if app_env["SPLUNK_LOGGING_INDEX"] != nil {
+			e.Fields["log_splunk_index"] = app_env["SPLUNK_LOGGING_INDEX"]
+		}
+
 		if cf_ignored_app != false {
 			e.Fields["cf_ignored_app"] = cf_ignored_app
 		}
@@ -271,7 +275,7 @@ func IsAuthorizedEvent(wantedEvent string) bool {
 	return ok
 }
 
-func AuthorizedEvents() string {  // nosemgrep false-positive : `Envelope_EventType_name` is not pointer.
+func AuthorizedEvents() string { // nosemgrep false-positive : `Envelope_EventType_name` is not pointer.
 	arrEvents := []string{}
 	for _, listEvent := range events.Envelope_EventType_name {
 		arrEvents = append(arrEvents, listEvent)

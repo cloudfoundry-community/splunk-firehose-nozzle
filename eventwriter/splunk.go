@@ -48,10 +48,12 @@ func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	count := uint64(len(events))
 	for i, event := range events {
 
-		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
-			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
-		} else if s.config.Index != "" {
-			event["index"] = s.config.Index
+		if event["index"] == nil {
+			if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
+				event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
+			} else if s.config.Index != "" {
+				event["index"] = s.config.Index
+			}
 		}
 
 		if len(s.config.Fields) > 0 {
@@ -115,7 +117,7 @@ func (s *splunkClient) send(postBody *[]byte) error {
 	return nil
 }
 
-//To dump the event on stdout instead of Splunk, in case of 'debug' mode
+// To dump the event on stdout instead of Splunk, in case of 'debug' mode
 func (s *splunkClient) dump(eventString string) error {
 	fmt.Println(string(eventString))
 

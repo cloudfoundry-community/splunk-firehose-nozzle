@@ -23,7 +23,7 @@ type SplunkFirehoseNozzle struct {
 	logger lager.Logger
 }
 
-//create new function of type *SplunkFirehoseNozzle
+// create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
 		config: config,
@@ -116,6 +116,7 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 		ExtraFields:           parsedExtraFields,
 		UUID:                  nozzleUUID,
 		Logger:                s.logger,
+		LoggingIndex:          s.config.SplunkLoggingIndex,
 		StatusMonitorInterval: s.config.StatusMonitorInterval,
 		DropWarnThreshold:     s.config.DropWarnThreshold,
 	}
