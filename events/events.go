@@ -242,10 +242,6 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 			e.Fields["info_splunk_index"] = app_env["SPLUNK_INDEX"]
 		}
 
-		if app_env["SPLUNK_LOGGING_INDEX"] != nil {
-			e.Fields["log_splunk_index"] = app_env["SPLUNK_LOGGING_INDEX"]
-		}
-
 		if cf_ignored_app != false {
 			e.Fields["cf_ignored_app"] = cf_ignored_app
 		}
