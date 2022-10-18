@@ -99,7 +99,6 @@ This is recommended for dev environments only.
 * `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
 * `SPLUNK_LOGGING_INDEX`: The Splunk index where logs from the nozzle of the sourcetype `cf:splunknozzle` will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX.
 
-
 __About app cache params:__
 
 When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.
