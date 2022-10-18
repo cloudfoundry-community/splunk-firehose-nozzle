@@ -11,6 +11,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 )
 
 type SplunkConfig struct {
@@ -22,28 +23,33 @@ type SplunkConfig struct {
 	Debug   bool
 	Version string
 
-	Logger lager.Logger
+	Logger      lager.Logger
+	MetricIndex string
 }
 
-type splunkClient struct {
-	httpClient *http.Client
-	config     *SplunkConfig
+type SplunkClient struct {
+	httpClient     *http.Client
+	config         *SplunkConfig
+	BodyBufferSize utils.Counter
+	SentEventCount utils.Counter
 }
 
-func NewSplunk(config *SplunkConfig) Writer {
+func NewSplunkEvent(config *SplunkConfig) Writer {
 	httpClient := cfhttp.NewClient()
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.SkipSSL, MinVersion: tls.VersionTLS12},
 	}
 	httpClient.Transport = tr
 
-	return &splunkClient{
-		httpClient: httpClient,
-		config:     config,
+	return &SplunkClient{
+		httpClient:     httpClient,
+		config:         config,
+		BodyBufferSize: &utils.NopCounter{},
+		SentEventCount: &utils.NopCounter{},
 	}
 }
 
-func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
+func (s *SplunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
 	count := uint64(len(events))
 	for i, event := range events {
@@ -80,11 +86,12 @@ func (s *splunkClient) Write(events []map[string]interface{}) (error, uint64) {
 		return s.dump(bodyString), count
 	} else {
 		bodyBytes := bodyBuffer.Bytes()
+		s.SentEventCount.Add(count)
 		return s.send(&bodyBytes), count
 	}
 }
 
-func (s *splunkClient) send(postBody *[]byte) error {
+func (s *SplunkClient) send(postBody *[]byte) error {
 	endpoint := fmt.Sprintf("%s/services/collector", s.config.Host)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
 	if err != nil {
@@ -113,12 +120,13 @@ func (s *splunkClient) send(postBody *[]byte) error {
 			s.config.Logger.Error("Error discarding response body", err)
 		}
 	}
+	s.BodyBufferSize.Add(uint64(len(*postBody)))
 
 	return nil
 }
 
 // To dump the event on stdout instead of Splunk, in case of 'debug' mode
-func (s *splunkClient) dump(eventString string) error {
+func (s *SplunkClient) dump(eventString string) error {
 	fmt.Println(string(eventString))
 
 	return nil

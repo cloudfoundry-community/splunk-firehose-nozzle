@@ -204,7 +204,16 @@ forms:
     label: Drop Warn Threshold
     default: 1000
     description: Log error with dropped events count at each threshold count due to slow downstream
-
+  - name: filter_metrics
+    type: string
+    label: Filter Metrics
+    default: "nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cachehit.memory,nozzle.cachemiss.memory,nozzle.cachehit.remote,nozzle.cachemiss.remote,nozzle.cachehit.boltdb,nozzle.cachemiss.boltdb"
+    description: Comma separated list of metrics that user want to visualize
+  - name: splunk_metric_index
+    type: string
+    label: Splunk Metric Index
+    description: Index where Metric Data will be indexed
+ 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
     if (properties['properties']['.properties.add_app_info']['value']==true) {

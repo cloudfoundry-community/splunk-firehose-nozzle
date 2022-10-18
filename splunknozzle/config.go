@@ -57,6 +57,9 @@ type Config struct {
 	Debug                 bool          `json:"debug"`
 	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
 	DropWarnThreshold     int           `json:"drop-warn-threshold"`
+	FilterMetrics         string        `json:"filter-metrics"`
+	SplunkMetricIndex     string        `json:"splunk-metric-index"`
+	MetricMonitorInterval time.Duration `json:"metric-monitor-interval"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -141,6 +144,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
 	kingpin.Flag("drop-warn-threshold", "Log error with dropped events count at each threshold count due to slow downstream").
 		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
+	kingpin.Flag("filter-metrics", "Comma separated list of metrics that user want to visualize").
+		OverrideDefaultFromEnvar("FILTER_METRICS").Default("nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cachehit.memory,nozzle.cachemiss.memory,nozzle.cachehit.remote,nozzle.cachemiss.remote,nozzle.cachehit.boltdb,nozzle.cachemiss.boltdb").StringVar(&c.FilterMetrics)
+	kingpin.Flag("splunk-metric-index", "Splunk metric index").
+		OverrideDefaultFromEnvar("SPLUNK_METRIC_INDEX").Required().StringVar(&c.SplunkMetricIndex)
 
 	kingpin.Parse()
 	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)

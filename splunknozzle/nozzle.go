@@ -1,6 +1,7 @@
 package splunknozzle
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -13,9 +14,13 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/google/uuid"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -82,18 +87,21 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
-		Host:    s.config.SplunkHost,
-		Token:   s.config.SplunkToken,
-		Index:   s.config.SplunkIndex,
-		SkipSSL: s.config.SkipSSLSplunk,
-		Debug:   s.config.Debug,
-		Logger:  s.logger,
-		Version: s.config.Version,
+		Host:        s.config.SplunkHost,
+		Token:       s.config.SplunkToken,
+		Index:       s.config.SplunkIndex,
+		SkipSSL:     s.config.SkipSSLSplunk,
+		Debug:       s.config.Debug,
+		Logger:      s.logger,
+		Version:     s.config.Version,
+		MetricIndex: s.config.SplunkMetricIndex,
 	}
 
 	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {
-		splunkWriter := eventwriter.NewSplunk(writerConfig)
+		splunkWriter := eventwriter.NewSplunkEvent(writerConfig).(*eventwriter.SplunkClient)
+		splunkWriter.SentEventCount = monitoring.RegisterCounter("splunk.events.sent.count", utils.UintType)
+		splunkWriter.BodyBufferSize = monitoring.RegisterCounter("splunk.events.throughput", utils.UintType)
 		writers = append(writers, splunkWriter)
 	}
 
@@ -142,6 +150,39 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 	return splunkSink, nil
 }
 
+func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
+
+	writerConfig := &eventwriter.SplunkConfig{
+		Host:        s.config.SplunkHost,
+		Token:       s.config.SplunkToken,
+		Index:       s.config.SplunkMetricIndex,
+		SkipSSL:     s.config.SkipSSLSplunk,
+		Debug:       s.config.Debug,
+		Logger:      s.logger,
+		Version:     s.config.Version,
+		MetricIndex: s.config.SplunkMetricIndex,
+	}
+	if s.config.StatusMonitorInterval > 0*time.Second {
+
+		monitoring.RegisterFunc("nozzle.usage.ram", func() interface{} {
+			v, _ := mem.VirtualMemory()
+			return (v.UsedPercent)
+		})
+
+		monitoring.RegisterFunc("nozzle.usage.cpu", func() interface{} {
+			CPU, _ := cpu.Percent(0, false)
+			return (CPU[0])
+		})
+
+		splunkWriter := eventwriter.NewSplunkMetric(writerConfig)
+		fmt.Println(s.config.StatusMonitorInterval)
+		return monitoring.InitMetrics(s.logger, s.config.StatusMonitorInterval, splunkWriter, s.config.FilterMetrics)
+	} else {
+		return monitoring.NewNoMonitor()
+	}
+
+}
+
 // EventSource creates eventsource.Source object which can read events from
 func (s *SplunkFirehoseNozzle) EventSource(pcfClient *cfclient.Client) *eventsource.Firehose {
 	config := &eventsource.FirehoseConfig{
@@ -167,6 +208,9 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 // Run creates all necessary objects, reading events from CF firehose and sending to target Splunk index
 // It runs forever until something goes wrong
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
+
+	metric := s.Metric()
+
 	pcfClient, err := s.PCFClient()
 	if err != nil {
 		s.logger.Error("Failed to get info from CF Server", nil)
@@ -211,6 +255,8 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		}
 		shutdownChan <- os.Interrupt
 	}()
+
+	go metric.Start()
 
 	<-shutdownChan
 

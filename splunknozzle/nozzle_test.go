@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
@@ -58,6 +59,9 @@ func newConfig() *Config {
 		TraceLogging:          false,
 		Debug:                 false,
 		StatusMonitorInterval: time.Second * 5,
+		FilterMetrics:         "nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,firehose.events.received.count.normalreceive,nozzle.cachehit.memory,nozzle.cachemiss.memory,nozzle.cachehit.remote,nozzle.cachemiss.remote,nozzle.cachehit.boltdb,nozzle.cachemiss.boltdb",
+		MetricMonitorInterval: time.Second * 5,
+		SplunkMetricIndex:     "metric",
 	}
 }
 
@@ -125,6 +129,27 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 		f := noz.EventSource(client)
 		Expect(f).ToNot(BeNil())
+	})
+
+	It("Montoring Enabled", func() {
+		Monitoring := noz.Metric()
+		var ok bool
+		if _, ok = Monitoring.(*monitoring.Metrics); ok {
+		}
+
+		Expect(ok).To(Equal(true))
+
+	})
+
+	It("Montoring Disabled", func() {
+		config.MetricMonitorInterval = 0 * time.Second
+		Monitoring := noz.Metric()
+		var ok bool
+		if _, ok = Monitoring.(*monitoring.Metrics); ok {
+		}
+
+		Expect(ok).To(Equal(false))
+
 	})
 
 	It("Nozzle", func() {

@@ -10,6 +10,8 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	json "github.com/mailru/easyjson"
 	bolt "go.etcd.io/bbolt"
 )
@@ -57,21 +59,35 @@ type Boltdb struct {
 	orgNameCache   map[string]Org   // caches org guid->org name mapping
 	spaceNameCache map[string]Space // caches space guid->space name mapping
 
-	closing chan struct{}
-	wg      sync.WaitGroup
-	config  *BoltdbConfig
+	closing         chan struct{}
+	wg              sync.WaitGroup
+	config          *BoltdbConfig
+	memoryCachemiss utils.Counter
+	memoryCachehit  utils.Counter
+	remoteCachemiss utils.Counter
+	remoteCachehit  utils.Counter
+	boltdbCachemiss utils.Counter
+	boltdbCachehit  utils.Counter
 }
 
 func NewBoltdb(client AppClient, config *BoltdbConfig) (*Boltdb, error) {
-	return &Boltdb{
-		appClient:      client,
-		cache:          make(map[string]*App),
-		missingApps:    make(map[string]struct{}),
-		orgNameCache:   make(map[string]Org),
-		spaceNameCache: make(map[string]Space),
-		closing:        make(chan struct{}),
-		config:         config,
-	}, nil
+	Boltdb := &Boltdb{
+		appClient:       client,
+		cache:           make(map[string]*App),
+		missingApps:     make(map[string]struct{}),
+		orgNameCache:    make(map[string]Org),
+		spaceNameCache:  make(map[string]Space),
+		closing:         make(chan struct{}),
+		config:          config,
+		memoryCachehit:  monitoring.RegisterCounter("nozzle.cachehit.memory", utils.UintType),
+		memoryCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.memory", utils.UintType),
+		remoteCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.remote", utils.UintType),
+		remoteCachehit:  monitoring.RegisterCounter("nozzle.cachehit.remote", utils.UintType),
+		boltdbCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.boltdb", utils.UintType),
+		boltdbCachehit:  monitoring.RegisterCounter("nozzle.cachehit.boltdb", utils.UintType),
+	}
+
+	return Boltdb, nil
 }
 
 func (c *Boltdb) Open() error {
@@ -136,7 +152,10 @@ func (c *Boltdb) Close() error {
 func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 	app, err := c.getAppFromCache(appGuid)
 	if err != nil {
+		c.memoryCachehit.Add(uint64(1))
 		return nil, err
+	} else {
+		c.memoryCachemiss.Add(uint64(1))
 	}
 
 	// Find in cache
@@ -149,6 +168,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 	app, err = c.getAppFromRemote(appGuid)
 
 	if app == nil {
+		c.remoteCachemiss.Add(uint64(1))
 		// Not able to find the app from remote. App may be deleted.
 		// Check if the app is available in boltdb cache
 		dbApp, _ := c.getAppFromDatabase(appGuid)
@@ -160,9 +180,12 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 			c.fillOrgAndSpace(dbApp)
 			return dbApp, nil
 		}
+	} else {
+		c.remoteCachehit.Add(uint64(1))
 	}
 
 	if err != nil {
+		c.boltdbCachemiss.Add(uint64(1))
 		// App is not available from in-memory cache, boltdb databse or remote
 		// Adding to missing app cache
 		if c.config.IgnoreMissingApps {
@@ -172,6 +195,8 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 			c.lock.Unlock()
 		}
 		return nil, err
+	} else {
+		c.boltdbCachehit.Add(uint64(1))
 	}
 
 	// Add to in-memory cache
@@ -318,7 +343,7 @@ func (c *Boltdb) createBucket() error {
 // invalidateMissingAppCache perodically cleanup inmemory house keeping for
 // not found apps. When the this cache is cleaned up, end clients have chance
 // to retry missing apps
-func (c *Boltdb) invalidateMissingAppCache() {  // nosemgrep false-positive : Execution of ticker `ticker` more times than desired will not be causing any issues for function "invalidateMissingAppCache".
+func (c *Boltdb) invalidateMissingAppCache() { // nosemgrep false-positive : Execution of ticker `ticker` more times than desired will not be causing any issues for function "invalidateMissingAppCache".
 	ticker := time.NewTicker(c.config.MissingAppCacheTTL)
 
 	c.wg.Add(1)
@@ -340,7 +365,7 @@ func (c *Boltdb) invalidateMissingAppCache() {  // nosemgrep false-positive : Ex
 
 // invalidateCache perodically fetches a full copy apps info from remote
 // and update boltdb and in-memory cache
-func (c *Boltdb) invalidateCache() {  // nosemgrep false-positive : Execution of ticker `ticker` and `orgSpaceTicker` more times than desired will not be causing any issues for function "invalidateCache".
+func (c *Boltdb) invalidateCache() { // nosemgrep false-positive : Execution of ticker `ticker` and `orgSpaceTicker` more times than desired will not be causing any issues for function "invalidateCache".
 	ticker := time.NewTicker(c.config.AppCacheTTL)
 	orgSpaceTicker := time.NewTicker(c.config.OrgSpaceCacheTTL)
 

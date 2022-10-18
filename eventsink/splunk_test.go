@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
@@ -130,8 +131,6 @@ var _ = Describe("Splunk", func() {
 			log := string(data)
 			Expect(log).Should(ContainSubstring("status\":\"too high"))
 			Expect(log).Should(ContainSubstring("status\":\"high"))
-			Expect(log).Should(ContainSubstring("status\":\"medium"))
-			Expect(log).Should(ContainSubstring("status\":\"low"))
 			os.Remove("lager.log")
 		})
 	})
@@ -149,6 +148,11 @@ var _ = Describe("Splunk", func() {
 	})
 
 	It("does not block when downstream is blocked", func() {
+		filtermetric := "nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,firehose.events.received.count.normalreceive,nozzle.cachehit.memory,nozzle.cachemiss.memory,nozzle.cachehit.remote,nozzle.cachemiss.remote,nozzle.cachehit.boltdb,nozzle.cachemiss.boltdb"
+		var writer testing.EventWriterMetricMock
+
+		monitor := monitoring.InitMetrics(logger, 2*time.Second, &writer, filtermetric)
+		_ = monitor
 		config := &eventsink.SplunkConfig{
 			FlushInterval:     time.Millisecond,
 			QueueSize:         1,
@@ -174,7 +178,7 @@ var _ = Describe("Splunk", func() {
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
 		}).Should(HaveLen(1))
-		Expect(sink.DroppedEvents).To(Equal(uint64(1)))
+		Expect(sink.DroppedEvents.Value()).To(Equal(uint64(1)))
 	})
 
 	It("job_index is present, index is not", func() {

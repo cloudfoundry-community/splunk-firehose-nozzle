@@ -34,6 +34,7 @@ var _ = Describe("Config", func() {
 			os.Setenv("SPLUNK_TOKEN", "sometoken")
 			os.Setenv("SPLUNK_HOST", "splunk.example.com")
 			os.Setenv("SPLUNK_INDEX", "splunk_index")
+			os.Setenv("SPLUNK_METRIC_INDEX", "metric")
 		})
 
 		It("parses config from environment", func() {
@@ -188,6 +189,7 @@ var _ = Describe("Config", func() {
 				"--enable-event-tracing",
 				"--debug",
 				"--drop-warn-threshold=10",
+				"--splunk-metric-index=metric",
 			}
 			os.Args = args
 		})
