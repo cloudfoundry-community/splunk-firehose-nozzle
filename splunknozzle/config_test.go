@@ -110,7 +110,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(100))
 		})
 
 		It("check defaults", func() {
@@ -142,7 +141,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
-			Expect(c.DropWarnThreshold).To(Equal(1000))
 		})
 	})
 
@@ -233,8 +231,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.TraceLogging).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(10))
-
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
 			Expect(c.Commit).To(Equal(commit))

@@ -79,12 +79,12 @@ func NewBoltdb(client AppClient, config *BoltdbConfig) (*Boltdb, error) {
 		spaceNameCache:  make(map[string]Space),
 		closing:         make(chan struct{}),
 		config:          config,
-		memoryCachehit:  monitoring.RegisterCounter("nozzle.cachehit.memory", utils.UintType),
-		memoryCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.memory", utils.UintType),
-		remoteCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.remote", utils.UintType),
-		remoteCachehit:  monitoring.RegisterCounter("nozzle.cachehit.remote", utils.UintType),
-		boltdbCachemiss: monitoring.RegisterCounter("nozzle.cachemiss.boltdb", utils.UintType),
-		boltdbCachehit:  monitoring.RegisterCounter("nozzle.cachehit.boltdb", utils.UintType),
+		memoryCachehit:  monitoring.RegisterCounter("nozzle.cache.memory.hit", utils.UintType),
+		memoryCachemiss: monitoring.RegisterCounter("nozzle.cache.memory.miss", utils.UintType),
+		remoteCachemiss: monitoring.RegisterCounter("nozzle.cache.remote.miss", utils.UintType),
+		remoteCachehit:  monitoring.RegisterCounter("nozzle.cache.remote.hit", utils.UintType),
+		boltdbCachemiss: monitoring.RegisterCounter("nozzle.cache.boltdb.miss", utils.UintType),
+		boltdbCachehit:  monitoring.RegisterCounter("nozzle.cache.boltdb.hit", utils.UintType),
 	}
 
 	return Boltdb, nil

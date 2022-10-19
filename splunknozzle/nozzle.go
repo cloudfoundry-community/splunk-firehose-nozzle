@@ -1,7 +1,6 @@
 package splunknozzle
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -99,7 +98,7 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 
 	var writers []eventwriter.Writer
 	for i := 0; i < s.config.HecWorkers+1; i++ {
-		splunkWriter := eventwriter.NewSplunkEvent(writerConfig).(*eventwriter.SplunkClient)
+		splunkWriter := eventwriter.NewSplunkEvent(writerConfig).(*eventwriter.SplunkEvent)
 		splunkWriter.SentEventCount = monitoring.RegisterCounter("splunk.events.sent.count", utils.UintType)
 		splunkWriter.BodyBufferSize = monitoring.RegisterCounter("splunk.events.throughput", utils.UintType)
 		writers = append(writers, splunkWriter)
@@ -126,7 +125,6 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 		Logger:                s.logger,
 		LoggingIndex:          s.config.SplunkLoggingIndex,
 		StatusMonitorInterval: s.config.StatusMonitorInterval,
-		DropWarnThreshold:     s.config.DropWarnThreshold,
 	}
 
 	LowerAddAppInfo := strings.ToLower(s.config.AddAppInfo)
@@ -162,7 +160,7 @@ func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
 		Version:     s.config.Version,
 		MetricIndex: s.config.SplunkMetricIndex,
 	}
-	if s.config.StatusMonitorInterval > 0*time.Second {
+	if s.config.StatusMonitorInterval > 0*time.Second && s.config.SelectedMonitoringMetrics != "" {
 
 		monitoring.RegisterFunc("nozzle.usage.ram", func() interface{} {
 			v, _ := mem.VirtualMemory()
@@ -175,8 +173,7 @@ func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
 		})
 
 		splunkWriter := eventwriter.NewSplunkMetric(writerConfig)
-		fmt.Println(s.config.StatusMonitorInterval)
-		return monitoring.InitMetrics(s.logger, s.config.StatusMonitorInterval, splunkWriter, s.config.FilterMetrics)
+		return monitoring.NewMetricsMonitor(s.logger, s.config.StatusMonitorInterval, splunkWriter, s.config.SelectedMonitoringMetrics)
 	} else {
 		return monitoring.NewNoMonitor()
 	}
@@ -261,6 +258,7 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 	<-shutdownChan
 
 	s.logger.Info("Splunk Nozzle is going to exit gracefully")
+	metric.Stop()
 	noz.Close()
 	return eventSink.Close()
 }

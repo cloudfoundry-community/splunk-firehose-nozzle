@@ -16,21 +16,15 @@ var _ = Describe("Utils counter test", func() {
 		ctr2 := new(utils.IntCounter)
 		ctr2.Add(uint64(3))
 		ctr2.Add(*ctr)
-		Expect(ctr2.Value()).To(Equal(uint64(8)))
+		ctr2.Add(float64(1))
+		ctr2.Add(1)
+		Expect(ctr2.Value()).To(Equal(uint64(10)))
 	})
 
 	It("Clone counter", func() {
 		ctr := new(utils.IntCounter)
 		ctr.Add(8)
 		ctr1 := ctr.Clone()
-		Expect(ctr1.Value()).To(Equal(uint64(8)))
-	})
-
-	It("Clone value when original pointer becomes zero", func() {
-		ctr := new(utils.IntCounter)
-		ctr.Add(8)
-		ctr1 := ctr.Clone()
-		ctr.Reset()
 		Expect(ctr1.Value()).To(Equal(uint64(8)))
 	})
 })

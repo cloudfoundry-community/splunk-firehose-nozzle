@@ -146,10 +146,8 @@ var _ = Describe("Splunk", func() {
 			expectedPayload = expectedPayload + "\n\n"
 			var capturedjsonMap map[string]interface{}
 			json.Unmarshal([]byte(expectedPayload), &expedtedjsonMap)
-			// s:=string(capturedBody)
 			json.Unmarshal(capturedBody, &capturedjsonMap)
 			Expect(capturedjsonMap["fields"]).To(Equal(expedtedjsonMap["fields"]))
-			// Expect(string(capturedBody)).To(Equal(expectedPayload))
 		})
 
 		It("Writes to correct endpoint", func() {

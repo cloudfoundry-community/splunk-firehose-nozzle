@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"encoding/json"
 	"errors"
 	"sync"
 	"time"
@@ -31,24 +30,4 @@ func (m *EventWriterMetricMock) Write(events []map[string]interface{}) (error, u
 		m.lock.Unlock()
 	}
 	return nil, uint64(len(events))
-}
-
-func (m *EventWriterMetricMock) CapturedEventsMe() []map[string]interface{} {
-	m.lock.Lock()
-	var events []map[string]interface{}
-	events = m.CapturedEvents
-	m.lock.Unlock()
-
-	return events
-}
-
-func (m *EventWriterMetricMock) CapturedEventVal() float64 {
-
-	input, _ := json.Marshal(m.CapturedEvents)
-	var ma []map[string]float64
-	err := json.Unmarshal(input, &ma)
-	_ = err
-
-	var val = ma[0]["metric_name:splunk.events.sent.count"]
-	return val
 }

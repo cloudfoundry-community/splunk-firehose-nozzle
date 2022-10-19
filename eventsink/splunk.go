@@ -33,23 +33,22 @@ type SplunkConfig struct {
 	UUID                  string
 	Logger                lager.Logger
 	StatusMonitorInterval time.Duration
-	DropWarnThreshold     int
 	LoggingIndex          string
 }
 
 type ParseConfig = fevents.Config
 
 type Splunk struct {
-	writers                []eventwriter.Writer
-	config                 *SplunkConfig
-	parseConfig            *ParseConfig
-	appCache               cache.Cache
-	events                 chan *events.Envelope
-	wg                     sync.WaitGroup
-	eventCount             uint64
-	sentCountChan          chan uint64
-	DroppedEvents          utils.Counter
-	lenSplunkDroppedEvents utils.Counter
+	writers               []eventwriter.Writer
+	config                *SplunkConfig
+	parseConfig           *ParseConfig
+	appCache              cache.Cache
+	events                chan *events.Envelope
+	wg                    sync.WaitGroup
+	eventCount            uint64
+	sentCountChan         chan uint64
+	FirehoseDroppedEvents utils.Counter
+	SplunkDroppedEvents   utils.Counter
 
 	// cached IP
 	ip string
@@ -59,19 +58,19 @@ func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig, parseConfig *
 	hostname, ip, _ := utils.GetHostIPInfo(config.Hostname)
 	config.Hostname = hostname
 	splunk := &Splunk{
-		writers:                writers,
-		config:                 config,
-		parseConfig:            parseConfig,
-		appCache:               appCache,
-		events:                 make(chan *events.Envelope, config.QueueSize),
-		ip:                     ip,
-		eventCount:             0,
-		sentCountChan:          make(chan uint64, 100),
-		DroppedEvents:          monitoring.RegisterCounter("firehose.events.dropped.count", utils.UintType),
-		lenSplunkDroppedEvents: monitoring.RegisterCounter("splunk.events.dropped.count", utils.UintType),
+		writers:               writers,
+		config:                config,
+		parseConfig:           parseConfig,
+		appCache:              appCache,
+		events:                make(chan *events.Envelope, config.QueueSize),
+		ip:                    ip,
+		eventCount:            0,
+		sentCountChan:         make(chan uint64, 100),
+		FirehoseDroppedEvents: monitoring.RegisterCounter("firehose.events.dropped.count", utils.UintType),
+		SplunkDroppedEvents:   monitoring.RegisterCounter("splunk.events.dropped.count", utils.UintType),
 	}
 	monitoring.RegisterFunc("nozzle.queue.percentage", func() interface{} {
-		return float64(float64(len(splunk.events)) / float64(splunk.config.QueueSize) * 100.0)
+		return (float64(len(splunk.events)) / float64(splunk.config.QueueSize) * 100.0)
 	})
 
 	return splunk
@@ -146,7 +145,7 @@ func (s *Splunk) Write(fields *events.Envelope) error {
 	select {
 	case s.events <- fields:
 	default:
-		s.DroppedEvents.Add(1)
+		s.FirehoseDroppedEvents.Add(1)
 	}
 	return nil
 }
@@ -206,7 +205,7 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
 		time.Sleep(getRetryInterval(i))
 	}
-	s.lenSplunkDroppedEvents.Add(len(batch))
+	s.SplunkDroppedEvents.Add(len(batch))
 	s.config.Logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
 	return nil
 }
@@ -307,7 +306,6 @@ func (s *Splunk) LogStatus() {
 			}
 			if status != "low" {
 				s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
-				s.config.Logger.Info("Event_Count", lager.Data{"event_count_sent": sent})
 			}
 			sent = 0
 			timer.Reset(s.config.StatusMonitorInterval)

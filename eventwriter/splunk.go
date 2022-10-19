@@ -27,7 +27,7 @@ type SplunkConfig struct {
 	MetricIndex string
 }
 
-type SplunkClient struct {
+type SplunkEvent struct {
 	httpClient     *http.Client
 	config         *SplunkConfig
 	BodyBufferSize utils.Counter
@@ -41,7 +41,7 @@ func NewSplunkEvent(config *SplunkConfig) Writer {
 	}
 	httpClient.Transport = tr
 
-	return &SplunkClient{
+	return &SplunkEvent{
 		httpClient:     httpClient,
 		config:         config,
 		BodyBufferSize: &utils.NopCounter{},
@@ -49,7 +49,7 @@ func NewSplunkEvent(config *SplunkConfig) Writer {
 	}
 }
 
-func (s *SplunkClient) Write(events []map[string]interface{}) (error, uint64) {
+func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
 	count := uint64(len(events))
 	for i, event := range events {
@@ -91,7 +91,7 @@ func (s *SplunkClient) Write(events []map[string]interface{}) (error, uint64) {
 	}
 }
 
-func (s *SplunkClient) send(postBody *[]byte) error {
+func (s *SplunkEvent) send(postBody *[]byte) error {
 	endpoint := fmt.Sprintf("%s/services/collector", s.config.Host)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *SplunkClient) send(postBody *[]byte) error {
 }
 
 // To dump the event on stdout instead of Splunk, in case of 'debug' mode
-func (s *SplunkClient) dump(eventString string) error {
+func (s *SplunkEvent) dump(eventString string) error {
 	fmt.Println(string(eventString))
 
 	return nil

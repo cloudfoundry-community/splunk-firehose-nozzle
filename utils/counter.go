@@ -1,7 +1,5 @@
 package utils
 
-import "fmt"
-
 const (
 	FloatType = CounterType("float64")
 	UintType  = CounterType("uint64")
@@ -11,7 +9,6 @@ type CounterType string
 
 type Counter interface {
 	Add(interface{})
-	Reset()
 	Clone() Counter
 	Value() interface{}
 }
@@ -30,7 +27,6 @@ func (ic *IntCounter) Add(num interface{}) {
 	case float64:
 		*ic = *ic + IntCounter(n)
 	default:
-		fmt.Printf("%V - %V", num, n)
 	}
 }
 
@@ -45,17 +41,9 @@ func (ic *IntCounter) Value() interface{} {
 	return uint64(*ic)
 }
 
-func (ic *IntCounter) Reset() {
-	*ic = 0
-}
-
 type NopCounter struct{}
 
 func (nc *NopCounter) Add(num interface{}) {
-
-}
-
-func (nc *NopCounter) Reset() {
 
 }
 

@@ -56,12 +56,11 @@ func newConfig() *Config {
 		Commit:  "f1c3178f4df3e51e7f08abf046ac899bca49e93b",
 		BuildOS: "MacOS",
 
-		TraceLogging:          false,
-		Debug:                 false,
-		StatusMonitorInterval: time.Second * 5,
-		FilterMetrics:         "nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,firehose.events.received.count.normalreceive,nozzle.cachehit.memory,nozzle.cachemiss.memory,nozzle.cachehit.remote,nozzle.cachemiss.remote,nozzle.cachehit.boltdb,nozzle.cachemiss.boltdb",
-		MetricMonitorInterval: time.Second * 5,
-		SplunkMetricIndex:     "metric",
+		TraceLogging:              false,
+		Debug:                     false,
+		StatusMonitorInterval:     time.Second * 5,
+		SelectedMonitoringMetrics: "splunk.events.dropped.count",
+		SplunkMetricIndex:         "metric",
 	}
 }
 
@@ -132,22 +131,17 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("Montoring Enabled", func() {
-		Monitoring := noz.Metric()
-		var ok bool
-		if _, ok = Monitoring.(*monitoring.Metrics); ok {
+		enableMonitoring := noz.Metric()
+		if _, ok := enableMonitoring.(*monitoring.Metrics); ok {
+			Expect(ok).To(Equal(true))
 		}
-
-		Expect(ok).To(Equal(true))
 
 	})
 
 	It("Montoring Disabled", func() {
-		config.MetricMonitorInterval = 0 * time.Second
-		Monitoring := noz.Metric()
-		var ok bool
-		if _, ok = Monitoring.(*monitoring.Metrics); ok {
-		}
-
+		config.StatusMonitorInterval = 0 * time.Second
+		disableMonitoring := noz.Metric()
+		_, ok := disableMonitoring.(*monitoring.Metrics)
 		Expect(ok).To(Equal(false))
 
 	})
