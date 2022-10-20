@@ -186,7 +186,6 @@ var _ = Describe("Config", func() {
 				"--hec-workers=16",
 				"--enable-event-tracing",
 				"--debug",
-				"--drop-warn-threshold=10",
 				"--splunk-metric-index=metric",
 			}
 			os.Args = args

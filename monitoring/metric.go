@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -19,7 +20,7 @@ type Metrics struct {
 	interval                  time.Duration
 	ticker                    *time.Ticker
 	writer                    eventwriter.Writer
-	selectedMonitoringMetrics string
+	selectedMonitoringMetrics *utils.Set
 }
 
 func NewMetricsMonitor(logger lager.Logger, interval time.Duration, writer eventwriter.Writer, filter string) Monitor {
@@ -33,9 +34,28 @@ func NewMetricsMonitor(logger lager.Logger, interval time.Duration, writer event
 		logger:                    logger,
 		interval:                  interval,
 		writer:                    writer,
-		selectedMonitoringMetrics: filter,
+		selectedMonitoringMetrics: setValuesForSet(filter),
 	}
 	return monitor.(*Metrics)
+}
+
+func (m *Metrics) RegisterFunc(id string, mFunc MonitorFunc) {
+
+	if m.selectedMonitoringMetrics.Contains(id) && m.interval > 0*time.Second {
+		m.CallerFuncs[id] = mFunc
+	}
+}
+
+func (m *Metrics) RegisterCounter(id string, varType utils.CounterType) utils.Counter {
+
+	if m.selectedMonitoringMetrics.Contains(id) && m.interval > 0*time.Second {
+		if varType == utils.UintType {
+			ctr := new(utils.IntCounter)
+			m.Counters[id] = append(m.Counters[id], ctr)
+			return ctr
+		}
+	}
+	return &utils.NopCounter{}
 }
 
 func (m *Metrics) extractFunc(metricEvent map[string]interface{}) {
@@ -58,20 +78,21 @@ func (m *Metrics) extractCounter(metricEvent map[string]interface{}) {
 }
 
 func (m *Metrics) Start() {
+	if len(m.selectedMonitoringMetrics.MapForSet) > 0 {
+		ticker := time.NewTicker(m.interval)
+		m.ticker = ticker
 
-	ticker := time.NewTicker(m.interval)
-	m.ticker = ticker
-
-	metricEvent := make(map[string]interface{})
-	for {
-		select {
-		case <-ticker.C:
-			m.extractFunc(metricEvent)
-			m.extractCounter(metricEvent)
-			events := []map[string]interface{}{
-				metricEvent,
+		metricEvent := make(map[string]interface{})
+		for {
+			select {
+			case <-ticker.C:
+				m.extractFunc(metricEvent)
+				m.extractCounter(metricEvent)
+				events := []map[string]interface{}{
+					metricEvent,
+				}
+				m.writer.Write(events)
 			}
-			m.writer.Write(events)
 		}
 	}
 }
@@ -83,12 +104,11 @@ func (m *Metrics) Stop() error {
 	return nil
 }
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
+func setValuesForSet(selectedMetrics string) *utils.Set {
+	s := utils.NewSet()
+	listofSelectedMetrics := strings.Split(selectedMetrics, ",")
+	for i := 0; i < len(listofSelectedMetrics); i++ {
+		s.Add(listofSelectedMetrics[i])
 	}
-
-	return false
+	return s
 }

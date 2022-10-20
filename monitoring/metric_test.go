@@ -13,55 +13,56 @@ import (
 
 var _ = Describe("Monitoring", func() {
 	var (
-		selectedMonitoringMetrics string = "nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count"
+		selectedMonitoringMetrics string = "a,b"
 		writer                    testing.EventWriterMetricMock
 		Counter                   utils.Counter
-		monitor                   = NewMetricsMonitor(lager.NewLogger("Test"), 2*time.Second, &writer, selectedMonitoringMetrics)
+		monitor                   Monitor
 	)
 
 	BeforeEach(func() {
-		monitor.RegisterFunc("nozzle.queue.percentage", func() interface{} { return 10 })
-		Counter = monitor.RegisterCounter("splunk.events.sent.count", utils.UintType)
 
+		monitor = NewMetricsMonitor(lager.NewLogger("Test"), 2*time.Second, &writer, selectedMonitoringMetrics)
+		monitor.RegisterFunc("a", func() interface{} { return 10 })
+		Counter = monitor.RegisterCounter("b", utils.UintType)
 	})
 
-	It("Test Monitor Func", func() {
-		checkLen := len(monitor.(*Metrics).CallerFuncs)
-		Expect(checkLen).To(Equal(1))
-
-	})
-
-	It("Test Register Counter", func() {
-		checkLen := len(monitor.(*Metrics).Counters)
-		Expect(checkLen).To(Equal(1))
+	It("Test Monitor Func and Register Counter", func() {
+		checkLenFuncs := len(monitor.(*Metrics).CallerFuncs)
+		checkLenCounters := len(monitor.(*Metrics).Counters)
+		Expect(checkLenFuncs).To(Equal(1))
+		Expect(checkLenCounters).To(Equal(1))
 
 	})
 
 	It("Test of Run", func() {
+
 		Counter.Add(10)
 		go monitor.Start()
 		time.Sleep(3 * time.Second)
 		monitor.Stop()
-		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:splunk.events.sent.count"]).To(Equal(uint64(10)))
+		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:b"]).To(Equal(uint64(10)))
 		Expect(len(writer.CapturedEvents)).To(Equal(1))
 	})
 
 	It("Identical Key ", func() {
 		Counter.Add(10)
-		Counter := RegisterCounter("splunk.events.sent.count", utils.UintType)
+		Counter := RegisterCounter("b", utils.UintType)
 		Counter.Add(10)
 		go monitor.Start()
 		time.Sleep(3 * time.Second)
 		monitor.Stop()
-		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:splunk.events.sent.count"]).To(Equal(uint64(40)))
+		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:b"]).To(Equal(uint64(20)))
 	})
 
 	It("Test when metric is disabled", func() {
-		monitor = NewMetricsMonitor(lager.NewLogger("Test"), 0*time.Second, &writer, selectedMonitoringMetrics)
+		disabledMonitoringMetrics := "b"
+		monitor = NewMetricsMonitor(lager.NewLogger("Test"), 2*time.Second, &writer, disabledMonitoringMetrics)
+		monitor.RegisterFunc("a", func() interface{} { return 10 })
+		Counter = monitor.RegisterCounter("b", utils.UintType)
 		checkLenCounter := len(monitor.(*Metrics).Counters)
 		checkLenFuncs := len(monitor.(*Metrics).CallerFuncs)
 		Expect(checkLenFuncs).To(Equal(0))
-		Expect(checkLenCounter).To(Equal(0))
+		Expect(checkLenCounter).To(Equal(1))
 
 	})
 
