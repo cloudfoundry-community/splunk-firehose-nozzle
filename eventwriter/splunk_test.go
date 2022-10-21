@@ -172,7 +172,32 @@ var _ = Describe("Splunk", func() {
 			Expect(string(capturedBody)).To(Equal(expectedPayload))
 		})
 
-		It("adds fields to splunk palylaod", func() {
+		It("doesn't change index as it's already set", func() {
+			config.Index = "index_cf"
+			client := NewSplunk(config)
+			event1 := map[string]interface{}{"event": map[string]interface{}{
+				"greeting": "hello world",
+			}}
+			event1["index"] = "index_logs"
+			event2 := map[string]interface{}{"event": map[string]interface{}{
+				"greeting": "hello mars",
+			}}
+
+			events := []map[string]interface{}{event1, event2}
+			err, _ := client.Write(events)
+
+			Expect(err).To(BeNil())
+			Expect(capturedRequest).NotTo(BeNil())
+
+			expectedPayload := strings.TrimSpace(`
+{"event":{"greeting":"hello world"},"index":"index_logs"}
+
+{"event":{"greeting":"hello mars"},"index":"index_cf"}
+`)
+			Expect(string(capturedBody)).To(Equal(expectedPayload))
+		})
+
+		It("adds fields to splunk payload", func() {
 			fields := map[string]string{
 				"foo":   "bar",
 				"hello": "world",

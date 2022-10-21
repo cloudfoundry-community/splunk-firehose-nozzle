@@ -43,6 +43,11 @@ forms:
     label: Index
     description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
     default: main
+  - name: splunk_logging_index
+    type: string
+    label: Logging Index
+    description: The name of the Splunk index where logging events will be sent to. WARNING:Setting an invalid index will cause events to be lost. When not provided, all logging events will be forwarded to the splunk_index.
+    default: ""
 
 - name: cf-config
   label: Cloud Foundry Settings

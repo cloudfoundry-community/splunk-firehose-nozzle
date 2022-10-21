@@ -31,9 +31,11 @@ var _ = Describe("Splunk", func() {
 		envelope      *events.Envelope
 		eventType     events.Envelope_EventType
 
-		memSink *testing.MemorySinkMock
-		sink    *eventsink.Splunk
-		config  *eventsink.SplunkConfig
+		memSink            *testing.MemorySinkMock
+		sink               *eventsink.Splunk
+		sinkLogging        *eventsink.Splunk
+		config             *eventsink.SplunkConfig
+		configLoggingIndex *eventsink.SplunkConfig
 
 		event      map[string]interface{}
 		logger     lager.Logger
@@ -83,7 +85,11 @@ var _ = Describe("Splunk", func() {
 			Logger:            logger,
 			DropWarnThreshold: 1000,
 		}
+		configLoggingIndex = &eventsink.SplunkConfig{
+			LoggingIndex: "pcf_logs",
+		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config, rconfig, cache.NewNoCache())
+		sinkLogging = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, configLoggingIndex, rconfig, cache.NewNoCache())
 	})
 	Context("When LogStatus is executed", func() {
 		BeforeEach(func() {
@@ -664,6 +670,27 @@ var _ = Describe("Splunk", func() {
 		data := event["data"].(map[string]interface{})
 		Expect(data["foo"]).To(Equal("bar"))
 		Expect(data["baz"]).To(Equal(42))
+
+	})
+
+	It("emit log event without logging index", func() {
+		message := lager.LogFormat{}
+
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		event := mockClient2.CapturedEvents()[0]
+		Expect(event["index"]).To(BeNil())
+
+	})
+
+	It("emit log event with logging index", func() {
+		message := lager.LogFormat{}
+
+		sinkLogging.Log(message)
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		event := mockClient2.CapturedEvents()[0]
+		Expect(event["index"]).To(Equal("pcf_logs"))
 
 	})
 

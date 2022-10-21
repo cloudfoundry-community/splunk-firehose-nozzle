@@ -34,6 +34,7 @@ type SplunkConfig struct {
 	Logger                lager.Logger
 	StatusMonitorInterval time.Duration
 	DropWarnThreshold     int
+	LoggingIndex          string
 }
 
 type ParseConfig = fevents.Config
@@ -85,7 +86,7 @@ func (s *Splunk) Close() error {
 	return nil
 }
 
-//parseEvent parses the event receieved from the doppler
+// parseEvent parses the event received from the doppler
 func (s *Splunk) parseEvent(msg *events.Envelope) map[string]interface{} {
 	eventType := msg.GetEventType()
 
@@ -265,6 +266,10 @@ func (s *Splunk) Log(message lager.LogFormat) {
 		"host":       s.config.Hostname,
 		"sourcetype": "cf:splunknozzle",
 		"event":      e,
+	}
+
+	if s.config.LoggingIndex != "" {
+		event["index"] = s.config.LoggingIndex
 	}
 
 	if message.Timestamp != "" {
