@@ -177,6 +177,7 @@ jobs:
       CLIENT_ID: ${{ secrets.CLIENT_ID  }}
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
       SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
       SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
       SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
       SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}

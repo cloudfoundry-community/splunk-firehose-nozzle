@@ -45,6 +45,8 @@ def pytest_addoption(parser):
                      default=_env_var.get('API_ENDPOINT'))
     parser.addoption("--splunk-index", help="splunk index on hec setting.",
                      default=_env_var.get('SPLUNK_INDEX'))
+    parser.addoption("--splunk-metric-index", help="splunk index on hec setting.",
+                     default=_env_var.get('SPLUNK_METRIC_INDEX'))
 
 
 @pytest.fixture(scope="class")
@@ -87,7 +89,9 @@ def test_env(request):
         conf["api_endpoint"] = request.config.getoption("--api-endpoint")
     if request.config.getoption("--splunk-index"):
         conf["splunk_index"] = request.config.getoption("--splunk-index")
-
+    if request.config.getoption("--splunk-metric-index"):
+        conf["splunk_metric_index"] = request.config.getoption("--splunk-metric-index")
+    
     if os.path.exists(join(config_folder, 'local.ini')):
         parser.read(join(config_folder, 'local.ini'))
         conf.update(parser.items('LOCAL'))

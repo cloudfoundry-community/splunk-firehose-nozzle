@@ -15,23 +15,26 @@ class SplunkApi():
 
     def check_events_from_splunk(self, query,
                                  start_time="-30m@h",
-                                 end_time="now"):
+                                 end_time="now",type="events"):
         '''
         send a search request to splunk and return the events from the result
         '''
-        query = self.compose_search_query(query)
+        query = self.compose_search_query(query,type)
         try:
-            events = self.collect_events(query, start_time, end_time)
+            events = self.collect_events(query, start_time, end_time,type)
             return events
         except Exception as e:
             self.logger.error(e)
             raise
 
     @staticmethod
-    def compose_search_query(query):
-        return "search {}".format(query)
+    def compose_search_query(query,type="events"):
+        if type=="events":
+            return "search {}".format(query)
+        else:
+            return query
 
-    def collect_events(self, query, start_time, end_time):
+    def collect_events(self, query, start_time, end_time,type="events"):
         '''
         Collect events by running the given search query
         @param: query (search query)
@@ -57,11 +60,11 @@ class SplunkApi():
 
         json_res = create_job.json()
         job_id = json_res['sid']
-        events = self.wait_for_job_and_get_events(job_id)
+        events = self.wait_for_job_and_get_events(job_id,type)
 
         return events
 
-    def wait_for_job_and_get_events(self, job_id):
+    def wait_for_job_and_get_events(self, job_id,type="events"):
         '''
         Wait for the search job to finish and collect the result events
         @param: job_id
@@ -83,7 +86,7 @@ class SplunkApi():
             dispatch_state = job_res['entry'][0]['content']['dispatchState']
 
             if dispatch_state == 'DONE':
-                events = self.get_events(job_id)
+                events = self.get_events(job_id,type)
                 break
             if dispatch_state == 'FAILED':
                 raise self.logger.error('Search job: {0} failed'.format(job_url))
@@ -92,14 +95,14 @@ class SplunkApi():
 
         return events
 
-    def get_events(self, job_id):
+    def get_events(self, job_id,type="events"):
         '''
         collect the result events from a search job
         @param: job_id
         returns events
         '''
-        event_url = '{0}/services/search/jobs/{1}/events?output_mode=json'.format(
-            self.env["splunk_url"], str(job_id))
+        event_url = '{0}/services/search/jobs/{1}/{2}?output_mode=json'.format(
+            self.env["splunk_url"], str(job_id),type)
         # self.logger.info('requesting: %s', event_url)
 
         event_job = self.requests_retry_session().get(
@@ -144,3 +147,4 @@ class SplunkApi():
         session.mount('https://', adapter)
 
         return session
+        

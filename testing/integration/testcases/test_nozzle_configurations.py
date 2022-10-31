@@ -1,3 +1,5 @@
+from itertools import count
+from attr import fields
 import pytest
 from lib.json_assert import *
 from lib.splunk_api import *
@@ -137,3 +139,18 @@ class TestSplunkNozzle():
             "event_type": "LogMessage"
         }
         assert_json_contains(expect_raw_data, last_event_raw, "Event raw data results mismatch")
+
+
+    @pytest.mark.Critical
+    @pytest.mark.parametrize("query_input", [
+        "| mstats count where index={} metric_name=*"
+    ])
+    def test_metric_ingested_data(self, test_env, splunk_logger, query_input):
+        self.splunk_api = SplunkApi(test_env, splunk_logger)
+
+        search_results = self.splunk_api.check_events_from_splunk(
+            query=query_input.format(test_env['splunk_metric_index']),
+            start_time="-15m@m",type="results")
+        count =   json.loads(json.dumps(search_results[0]))
+        assert  int(count['count']) >0
+        assert len(search_results) > 0
