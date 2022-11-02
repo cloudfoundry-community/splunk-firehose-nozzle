@@ -23,8 +23,7 @@ type SplunkConfig struct {
 	Debug   bool
 	Version string
 
-	Logger      lager.Logger
-	MetricIndex string
+	Logger lager.Logger
 }
 
 type SplunkEvent struct {

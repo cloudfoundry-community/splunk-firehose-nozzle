@@ -39,5 +39,4 @@ applications:
       DEBUG: false
       ENABLE_EVENT_TRACING: true
       STATUS_MONITOR_INTERVAL: 1s
-      SELECTED_MONITORING_METRICS: nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cache.memory.hit,nozzle.cache.memory.miss,nozzle.cache.remote.hit,nozzle.cache.remote.miss,nozzle.cache.boltdb.hit,nozzle.cache.boltdb.miss
-      
+      SELECTED_MONITORING_METRICS: nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cache.memory.hit,nozzle.cache.remote.hit,nozzle.cache.boltdb.hit

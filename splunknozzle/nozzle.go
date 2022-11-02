@@ -15,11 +15,11 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/google/uuid"
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type SplunkFirehoseNozzle struct {
@@ -150,27 +150,15 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
 
 	writerConfig := &eventwriter.SplunkConfig{
-		Host:        s.config.SplunkHost,
-		Token:       s.config.SplunkToken,
-		Index:       s.config.SplunkMetricIndex,
-		SkipSSL:     s.config.SkipSSLSplunk,
-		Debug:       s.config.Debug,
-		Logger:      s.logger,
-		Version:     s.config.Version,
-		MetricIndex: s.config.SplunkMetricIndex,
+		Host:    s.config.SplunkHost,
+		Token:   s.config.SplunkToken,
+		Index:   s.config.SplunkMetricIndex,
+		SkipSSL: s.config.SkipSSLSplunk,
+		Debug:   s.config.Debug,
+		Logger:  s.logger,
+		Version: s.config.Version,
 	}
 	if s.config.StatusMonitorInterval > 0*time.Second && s.config.SelectedMonitoringMetrics != "" {
-
-		monitoring.RegisterFunc("nozzle.usage.ram", func() interface{} {
-			v, _ := mem.VirtualMemory()
-			return (v.UsedPercent)
-		})
-
-		monitoring.RegisterFunc("nozzle.usage.cpu", func() interface{} {
-			CPU, _ := cpu.Percent(0, false)
-			return (CPU[0])
-		})
-
 		splunkWriter := eventwriter.NewSplunkMetric(writerConfig)
 		return monitoring.NewMetricsMonitor(s.logger, s.config.StatusMonitorInterval, splunkWriter, s.config.SelectedMonitoringMetrics)
 	} else {
@@ -206,6 +194,16 @@ func (s *SplunkFirehoseNozzle) Nozzle(eventSource eventsource.Source, eventRoute
 func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 
 	metric := s.Metric()
+
+	monitoring.RegisterFunc("nozzle.usage.ram", func() interface{} {
+		v, _ := mem.VirtualMemory()
+		return (v.UsedPercent)
+	})
+
+	monitoring.RegisterFunc("nozzle.usage.cpu", func() interface{} {
+		CPU, _ := cpu.Percent(0, false)
+		return (CPU[0])
+	})
 
 	pcfClient, err := s.PCFClient()
 	if err != nil {

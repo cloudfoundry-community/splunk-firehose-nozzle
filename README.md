@@ -96,31 +96,9 @@ This is recommended for dev environments only.
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
 * `SPLUNK_LOGGING_INDEX`: The Splunk index where logs from the nozzle of the sourcetype `cf:splunknozzle` will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX. The default value is `""`
-* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring(Metric data of insights with in the connectors). (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
+* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring(Metric data of insights with in the connectors). Default is 0s (Disabled).
 * `SPLUNK_METRIC_INDEX`: Index in which metric data will be ingested when monitoring module is enabled
 * `SELECTED_MONITORING_METRICS`: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
-
-
-
-__Monitoring(Metric data Ingestion):__
-
-| Metric Name |  Description
-|---|---
-|  `nozzle.queue.percentage` | Shows how much internal queue is filled
-|  `splunk.events.dropped.count` | Number of events dropped from splunk side
-|  `splunk.events.sent.count` | Number of events sent to splunk
-|  `firehose.events.dropped.count` | Number of events dropped from firehose side
-|  `firehose.events.received.count` | Number of events recieved from firehose(websocket)
-|  `splunk.events.throughput` | Average Payload size
-|  `nozzle.usage.ram` | RAM Usage 
-|  `nozzle.usage.cpu` | CPU Usage
-|  `nozzle.cache.memory.hit` | How many times we have successfully retrieved the data from memory
-|  `nozzle.cache.memory.miss` | How many times we have unsuccessfully retrieved the data from memory
-|  `nozzle.cache.remote.hit` | How many times we have successfully retrieved the data from remote
-|  `nozzle.cache.remote.miss` | How many times we have unsuccessfully retrieved the data from remote
-|  `nozzle.cache.boltdb.hit` | How many times we have successfully retrieved the data from BoltDB
-|  `nozzle.cache.boltdb.miss` | How many times we have unsuccessfully retrieved the data from BoltDB
-
 
 
 
@@ -286,6 +264,26 @@ REGEX = (sourcetype::cf:splunknozzle)
 FORMAT = new_index
 ```
 <p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5,timestamp will use nanosecond precision instead of milliseconds.</p>
+
+
+__Monitoring(Metric data Ingestion):__
+
+| Metric Name |  Description
+|---|---
+|  `nozzle.queue.percentage` | Shows how much internal queue is filled
+|  `splunk.events.dropped.count` | Number of events dropped from splunk HEC
+|  `splunk.events.sent.count` | Number of events sent to splunk
+|  `firehose.events.dropped.count` | Number of events dropped from nozzle
+|  `firehose.events.received.count` | Number of events recieved from firehose(websocket)
+|  `splunk.events.throughput` | Average Payload size
+|  `nozzle.usage.ram` | RAM Usage 
+|  `nozzle.usage.cpu` | CPU Usage
+|  `nozzle.cache.memory.hit` | How many times it has successfully retrieved the data from memory
+|  `nozzle.cache.memory.miss` | How many times it has unsuccessfully tried to retrieved the data from memory
+|  `nozzle.cache.remote.hit` | How many times it has successfully retrieved the data from remote
+|  `nozzle.cache.remote.miss` | How many times it has unsuccessfully tried to retrieved the data from remote
+|  `nozzle.cache.boltdb.hit` | How many times it has successfully retrieved the data from BoltDB
+|  `nozzle.cache.boltdb.miss` | How many times it has unsuccessfully tried to retrieved the data from BoltDB
 
 
 ## <a id='walkthrough'></a> Troubleshooting

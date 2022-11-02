@@ -141,13 +141,14 @@ var _ = Describe("Splunk", func() {
 			Expect(sentCount).To(Equal(uint64(1)))
 
 			expectedPayload := strings.TrimSpace(`
-			{"event":"metric","fields":{"instance_index": "2","metric_name:firehose.events.dropped.count":0,"metric_name:firehose.events.received.count":1108,"metric_name:nozzle.queue.percentage":0,"metric_name:splunk.events.dropped.count":0,"metric_name:splunk.events.sent.count":44,"metric_name:splunk.events.throughput":788110},"index":"metric","time":"1664279537.396609918"}`)
+			{"event":"metric","fields":{"index": "metric","metric_name:firehose.events.dropped.count":0,"metric_name:firehose.events.received.count":1108,"metric_name:nozzle.queue.percentage":0,"metric_name:splunk.events.dropped.count":0,"metric_name:splunk.events.sent.count":44,"metric_name:splunk.events.throughput":788110
+			},"index":"metric","time":"1664279537.396609918"}`)
 			var expedtedjsonMap map[string]interface{}
 			expectedPayload = expectedPayload + "\n\n"
 			var capturedjsonMap map[string]interface{}
 			json.Unmarshal([]byte(expectedPayload), &expedtedjsonMap)
 			json.Unmarshal(capturedBody, &capturedjsonMap)
-			Expect(capturedjsonMap["fields"]).To(Equal(expedtedjsonMap["fields"]))
+			Expect(capturedjsonMap).To(Equal(expedtedjsonMap["fields"]))
 		})
 
 		It("Writes to correct endpoint", func() {
@@ -159,14 +160,6 @@ var _ = Describe("Splunk", func() {
 			Expect(capturedRequest.URL.Path).To(Equal("/services/collector"))
 		})
 
-		It("Writes to stdout in debug without error", func() {
-			config.Debug = true
-			client := NewSplunkMetric(config)
-			events := []map[string]interface{}{}
-			err, _ := client.Write(events)
-
-			Expect(err).To(BeNil())
-		})
 	})
 
 	It("returns error on bad splunk host", func() {

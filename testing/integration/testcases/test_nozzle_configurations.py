@@ -143,14 +143,14 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "| mstats count where index={} metric_name=*"
+        "| mcatalog values(metric_name) WHERE index={}"
     ])
-    def test_metric_ingested_data(self, test_env, splunk_logger, query_input):
+    def test_types_metric(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
 
         search_results = self.splunk_api.check_events_from_splunk(
             query=query_input.format(test_env['splunk_metric_index']),
             start_time="-15m@m",type="results")
-        count =   json.loads(json.dumps(search_results[0]))
-        assert  int(count['count']) >0
         assert len(search_results) > 0
+        listofMetrics =  search_results[0]['values(metric_name)']
+        assert  set(listofMetrics) == set(['firehose.events.dropped.count', 'firehose.events.received.count', 'nozzle.cache.boltdb.hit',  'nozzle.cache.memory.hit', 'nozzle.cache.remote.hit', 'nozzle.queue.percentage', 'splunk.events.dropped.count', 'splunk.events.sent.count', 'splunk.events.throughput'])

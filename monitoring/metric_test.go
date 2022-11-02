@@ -40,7 +40,8 @@ var _ = Describe("Monitoring", func() {
 		go monitor.Start()
 		time.Sleep(3 * time.Second)
 		monitor.Stop()
-		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:b"]).To(Equal(uint64(10)))
+		value := writer.CapturedEvents[len(writer.CapturedEvents)-1]["fields"].(map[string]interface{})["metric_name:b"]
+		Expect(value).To(Equal(uint64(10)))
 		Expect(len(writer.CapturedEvents)).To(Equal(1))
 	})
 
@@ -51,7 +52,8 @@ var _ = Describe("Monitoring", func() {
 		go monitor.Start()
 		time.Sleep(3 * time.Second)
 		monitor.Stop()
-		Expect(writer.CapturedEvents[len(writer.CapturedEvents)-1]["metric_name:b"]).To(Equal(uint64(20)))
+		value := writer.CapturedEvents[len(writer.CapturedEvents)-1]["fields"].(map[string]interface{})["metric_name:b"]
+		Expect(value).To(Equal(uint64(20)))
 	})
 
 	It("Test when metric is disabled", func() {

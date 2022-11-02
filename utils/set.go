@@ -1,26 +1,26 @@
 package utils
 
-var metricExists = struct{}{}
-
 type Set struct {
-	MapForSet map[string]struct{}
+	mapForSet map[string]struct{}
 }
+
+func (s *Set) LenofSet() int { return len(s.mapForSet) }
 
 func NewSet() *Set {
 	s := &Set{}
-	s.MapForSet = make(map[string]struct{})
+	s.mapForSet = make(map[string]struct{})
 	return s
 }
 
 func (s *Set) Add(value string) {
-	s.MapForSet[value] = metricExists
+	s.mapForSet[value] = struct{}{}
 }
 
 func (s *Set) Remove(value string) {
-	delete(s.MapForSet, value)
+	delete(s.mapForSet, value)
 }
 
 func (s *Set) Contains(value string) bool {
-	_, c := s.MapForSet[value]
+	_, c := s.mapForSet[value]
 	return c
 }

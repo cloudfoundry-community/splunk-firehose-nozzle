@@ -9,6 +9,7 @@ func NewNoMonitor() Monitor {
 	if monitor != nil {
 		monitor.Stop()
 	}
+	monitor = &NoMonitor{}
 	return &NoMonitor{}
 }
 

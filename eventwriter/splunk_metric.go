@@ -9,12 +9,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 )
 
 type splunkMetric struct {
@@ -36,17 +33,12 @@ func NewSplunkMetric(config *SplunkConfig) Writer {
 }
 
 func (s *splunkMetric) Write(events []map[string]interface{}) (error, uint64) {
-	finalevent := make(map[string]interface{})
+
 	bodyBuffer := new(bytes.Buffer)
 	count := uint64(len(events))
-
 	for _, event := range events {
-		event["instance_index"] = os.Getenv("INSTANCE_INDEX")
-		finalevent["fields"] = event
-		finalevent["event"] = "metric"
-		finalevent["index"] = s.config.MetricIndex
-		finalevent["time"] = utils.NanoSecondsToSeconds(time.Now().UnixNano())
-		eventJson, err := json.Marshal(finalevent)
+		event["index"] = s.config.Index
+		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
 			bodyBuffer.Write([]byte("\n\n"))
@@ -92,13 +84,6 @@ func (s *splunkMetric) send(postBody *[]byte) error {
 			s.config.Logger.Error("Error discarding response body", err)
 		}
 	}
-
-	return nil
-}
-
-//To dump the event on stdout instead of Splunk, in case of 'debug' mode
-func (s *splunkMetric) dump(eventString string) error {
-	fmt.Println(string(eventString))
 
 	return nil
 }

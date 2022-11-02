@@ -16,7 +16,7 @@ type Counter interface {
 type IntCounter uint64
 
 func (ic *IntCounter) Add(num interface{}) {
-	// fmt.Println("insideeeee utilsssss int")
+
 	switch n := num.(type) {
 	case uint64:
 		*ic = *ic + IntCounter(n)

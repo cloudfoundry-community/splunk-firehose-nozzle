@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"os"
 	"strings"
 	"time"
 
@@ -78,7 +79,7 @@ func (m *Metrics) extractCounter(metricEvent map[string]interface{}) {
 }
 
 func (m *Metrics) Start() {
-	if len(m.selectedMonitoringMetrics.MapForSet) > 0 {
+	if m.selectedMonitoringMetrics.LenofSet() > 0 {
 		ticker := time.NewTicker(m.interval)
 		m.ticker = ticker
 
@@ -88,8 +89,9 @@ func (m *Metrics) Start() {
 			case <-ticker.C:
 				m.extractFunc(metricEvent)
 				m.extractCounter(metricEvent)
+				finalMetricEvent := prepareBatch(metricEvent)
 				events := []map[string]interface{}{
-					metricEvent,
+					finalMetricEvent,
 				}
 				m.writer.Write(events)
 			}
@@ -102,6 +104,18 @@ func (m *Metrics) Stop() error {
 		m.ticker.Stop()
 	}
 	return nil
+}
+
+func prepareBatch(event map[string]interface{}) map[string]interface{} {
+	finalevent := make(map[string]interface{})
+	event["instance_index"] = os.Getenv("INSTANCE_INDEX")
+	finalevent["fields"] = event
+	finalevent["event"] = "metric"
+	finalevent["sourcetype"] = "cf:nozzlemetrics"
+	finalevent["time"] = utils.NanoSecondsToSeconds(time.Now().UnixNano())
+
+	return finalevent
+
 }
 
 func setValuesForSet(selectedMetrics string) *utils.Set {
