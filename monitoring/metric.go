@@ -79,7 +79,7 @@ func (m *Metrics) extractCounter(metricEvent map[string]interface{}) {
 }
 
 func (m *Metrics) Start() {
-	if m.selectedMonitoringMetrics.LenofSet() > 0 {
+	if m.selectedMonitoringMetrics.Len() > 0 {
 		ticker := time.NewTicker(m.interval)
 		m.ticker = ticker
 

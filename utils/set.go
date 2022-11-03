@@ -4,7 +4,7 @@ type Set struct {
 	mapForSet map[string]struct{}
 }
 
-func (s *Set) LenofSet() int { return len(s.mapForSet) }
+func (s *Set) Len() int { return len(s.mapForSet) }
 
 func NewSet() *Set {
 	s := &Set{}
