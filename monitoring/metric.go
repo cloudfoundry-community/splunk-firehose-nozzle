@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"time"
@@ -120,9 +121,18 @@ func prepareBatch(event map[string]interface{}) map[string]interface{} {
 
 func setValuesForSet(selectedMetrics string) *utils.Set {
 	s := utils.NewSet()
-	listofSelectedMetrics := strings.Split(selectedMetrics, ",")
+	listofSelectedMetrics := ParseSelectedMetrics(selectedMetrics)
 	for i := 0; i < len(listofSelectedMetrics); i++ {
 		s.Add(listofSelectedMetrics[i])
 	}
 	return s
+}
+
+func ParseSelectedMetrics(wantedMetrics string) []string {
+	wantedMetrics = strings.TrimSpace(wantedMetrics)
+	var events []string
+	if err := json.Unmarshal([]byte(wantedMetrics), &events); err != nil {
+		events = strings.Split(wantedMetrics, ",")
+	}
+	return events
 }

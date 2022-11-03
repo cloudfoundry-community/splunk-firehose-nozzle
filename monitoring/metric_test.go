@@ -1,6 +1,7 @@
 package monitoring_test
 
 import (
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -65,6 +66,20 @@ var _ = Describe("Monitoring", func() {
 		checkLenFuncs := len(monitor.(*Metrics).CallerFuncs)
 		Expect(checkLenFuncs).To(Equal(0))
 		Expect(checkLenCounter).To(Equal(1))
+
+	})
+
+})
+
+var _ = Describe("Parsing of Selected Metrics", func() {
+	var (
+		selectedMonitoringMetrics string = `["a", "b", "c", "d", "e", "f"]`
+	)
+
+	It("Test Parsing of Selected Metrics", func() {
+		event := ParseSelectedMetrics(selectedMonitoringMetrics)
+		Expect(len(event)).To(Equal(6))
+		Expect(strings.Join(event, "")).To(Equal("abcdef"))
 
 	})
 

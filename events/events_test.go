@@ -253,6 +253,18 @@ var _ = Describe("Events", func() {
 		})
 	})
 
+	Context("ParseSelectedEvents, valid event names in string of list", func() {
+		It("should return a hash of events", func() {
+			expected := map[string]bool{
+				"HttpStartStop": true,
+				"CounterEvent":  true,
+			}
+			results, err := fevents.ParseSelectedEvents(`["HttpStartStop","CounterEvent"]`)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(results).To(Equal(expected))
+		})
+	})
+
 	Context("AuthorizedEvents", func() {
 		It("should return right list of authorized events", func() {
 			Expect(fevents.AuthorizedEvents()).To(Equal("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric"))
