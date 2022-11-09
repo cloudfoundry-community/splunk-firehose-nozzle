@@ -285,10 +285,9 @@ __Monitoring(Metric data Ingestion):__
 |  `nozzle.cache.boltdb.hit` | How many times it has successfully retrieved the data from BoltDB
 |  `nozzle.cache.boltdb.miss` | How many times it has unsuccessfully tried to retrieved the data from BoltDB
 
-![event_count](https://user-images.githubusercontent.com/89519924/199451753-0a78e7f3-8769-42aa-a6c3-70ad2d8584b4.png)
+![event_count](https://user-images.githubusercontent.com/89519924/200804220-1adff84c-e6f1-4438-8d30-6e2cce4984f5.png)
 
-
-![nozzle_logs](https://user-images.githubusercontent.com/89519924/199451802-5d104a2c-a913-4f66-ba7c-312dbd3abda1.png)
+![nozzle_logs](https://user-images.githubusercontent.com/89519924/200804285-22ad7863-1db3-493a-8196-cc589837db76.png)
 
 <p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
 
