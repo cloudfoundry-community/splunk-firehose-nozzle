@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
@@ -75,15 +76,14 @@ var _ = Describe("Splunk", func() {
 
 		logger = lager.NewLogger("test")
 		config = &eventsink.SplunkConfig{
-			FlushInterval:     time.Millisecond,
-			QueueSize:         1000,
-			BatchSize:         1,
-			Retries:           1,
-			Hostname:          "localhost",
-			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
-			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:            logger,
-			DropWarnThreshold: 1000,
+			FlushInterval: time.Millisecond,
+			QueueSize:     1000,
+			BatchSize:     1,
+			Retries:       1,
+			Hostname:      "localhost",
+			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
+			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:        logger,
 		}
 		configLoggingIndex = &eventsink.SplunkConfig{
 			LoggingIndex: "pcf_logs",
@@ -130,8 +130,6 @@ var _ = Describe("Splunk", func() {
 			log := string(data)
 			Expect(log).Should(ContainSubstring("status\":\"too high"))
 			Expect(log).Should(ContainSubstring("status\":\"high"))
-			Expect(log).Should(ContainSubstring("status\":\"medium"))
-			Expect(log).Should(ContainSubstring("status\":\"low"))
 			os.Remove("lager.log")
 		})
 	})
@@ -149,18 +147,19 @@ var _ = Describe("Splunk", func() {
 	})
 
 	It("does not block when downstream is blocked", func() {
+
 		config := &eventsink.SplunkConfig{
-			FlushInterval:     time.Millisecond,
-			QueueSize:         1,
-			BatchSize:         1,
-			Retries:           1,
-			Hostname:          "localhost",
-			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
-			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:            logger,
-			DropWarnThreshold: 10,
+			FlushInterval: time.Millisecond,
+			QueueSize:     1,
+			BatchSize:     1,
+			Retries:       1,
+			Hostname:      "localhost",
+			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
+			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:        logger,
 		}
 		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config, rconfig, cache.NewNoCache())
+		sink.FirehoseDroppedEvents = new(utils.IntCounter)
 		eventType = events.Envelope_Error
 		eventRouter.Route(envelope)
 		eventRouter.Route(envelope)
@@ -174,7 +173,7 @@ var _ = Describe("Splunk", func() {
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
 		}).Should(HaveLen(1))
-		Expect(sink.DroppedEvents).To(Equal(uint64(1)))
+		Expect(sink.FirehoseDroppedEvents.Value()).To(Equal(uint64(1)))
 	})
 
 	It("job_index is present, index is not", func() {

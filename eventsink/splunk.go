@@ -1,7 +1,6 @@
 package eventsink
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -33,22 +33,22 @@ type SplunkConfig struct {
 	UUID                  string
 	Logger                lager.Logger
 	StatusMonitorInterval time.Duration
-	DropWarnThreshold     int
 	LoggingIndex          string
 }
 
 type ParseConfig = fevents.Config
 
 type Splunk struct {
-	writers       []eventwriter.Writer
-	config        *SplunkConfig
-	parseConfig   *ParseConfig
-	appCache      cache.Cache
-	events        chan *events.Envelope
-	wg            sync.WaitGroup
-	eventCount    uint64
-	sentCountChan chan uint64
-	DroppedEvents uint64
+	writers               []eventwriter.Writer
+	config                *SplunkConfig
+	parseConfig           *ParseConfig
+	appCache              cache.Cache
+	events                chan *events.Envelope
+	wg                    sync.WaitGroup
+	eventCount            uint64
+	sentCountChan         chan uint64
+	FirehoseDroppedEvents utils.Counter
+	SplunkDroppedEvents   utils.Counter
 
 	// cached IP
 	ip string
@@ -57,18 +57,23 @@ type Splunk struct {
 func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig, parseConfig *ParseConfig, appCache cache.Cache) *Splunk {
 	hostname, ip, _ := utils.GetHostIPInfo(config.Hostname)
 	config.Hostname = hostname
-
-	return &Splunk{
-		writers:       writers,
-		config:        config,
-		parseConfig:   parseConfig,
-		appCache:      appCache,
-		events:        make(chan *events.Envelope, config.QueueSize),
-		ip:            ip,
-		eventCount:    0,
-		sentCountChan: make(chan uint64, 100),
-		DroppedEvents: 0,
+	splunk := &Splunk{
+		writers:               writers,
+		config:                config,
+		parseConfig:           parseConfig,
+		appCache:              appCache,
+		events:                make(chan *events.Envelope, config.QueueSize),
+		ip:                    ip,
+		eventCount:            0,
+		sentCountChan:         make(chan uint64, 100),
+		FirehoseDroppedEvents: monitoring.RegisterCounter("firehose.events.dropped.count", utils.UintType),
+		SplunkDroppedEvents:   monitoring.RegisterCounter("splunk.events.dropped.count", utils.UintType),
 	}
+	monitoring.RegisterFunc("nozzle.queue.percentage", func() interface{} {
+		return (float64(len(splunk.events)) / float64(splunk.config.QueueSize) * 100.0)
+	})
+
+	return splunk
 }
 
 func (s *Splunk) Open() error {
@@ -140,11 +145,7 @@ func (s *Splunk) Write(fields *events.Envelope) error {
 	select {
 	case s.events <- fields:
 	default:
-		s.DroppedEvents += 1
-		if int(s.DroppedEvents)%s.config.DropWarnThreshold == 0 {
-			s.config.Logger.Error("Downstream is slow, dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events",
-				errors.New("dropped more "+strconv.FormatUint(uint64(s.config.DropWarnThreshold), 10)+" events, Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" dropped events"))
-		}
+		s.FirehoseDroppedEvents.Add(1)
 	}
 	return nil
 }
@@ -204,6 +205,7 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
 		time.Sleep(getRetryInterval(i))
 	}
+	s.SplunkDroppedEvents.Add(len(batch))
 	s.config.Logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
 	return nil
 }
@@ -301,11 +303,10 @@ func (s *Splunk) LogStatus() {
 				status = "too high"
 			case percent > 90:
 				status = "high"
-			case percent > 50:
-				status = "medium"
 			}
-			s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
-			s.config.Logger.Info("Event_Count", lager.Data{"event_count_sent": sent})
+			if status != "low" {
+				s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
+			}
 			sent = 0
 			timer.Reset(s.config.StatusMonitorInterval)
 		default:
