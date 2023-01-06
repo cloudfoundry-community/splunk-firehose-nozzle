@@ -174,7 +174,7 @@ var _ = Describe("Splunk", func() {
 
 		It("doesn't change index as it's already set", func() {
 			config.Index = "index_cf"
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
