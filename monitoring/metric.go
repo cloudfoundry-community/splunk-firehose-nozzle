@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -23,6 +24,7 @@ type Metrics struct {
 	ticker                    *time.Ticker
 	writer                    eventwriter.Writer
 	selectedMonitoringMetrics *utils.Set
+	tickerMutex               sync.Mutex
 }
 
 func NewMetricsMonitor(logger lager.Logger, interval time.Duration, writer eventwriter.Writer, filter string) Monitor {
@@ -82,7 +84,9 @@ func (m *Metrics) extractCounter(metricEvent map[string]interface{}) {
 func (m *Metrics) Start() {
 	if m.selectedMonitoringMetrics.Len() > 0 {
 		ticker := time.NewTicker(m.interval)
+		m.tickerMutex.Lock()
 		m.ticker = ticker
+		m.tickerMutex.Unlock()
 
 		metricEvent := make(map[string]interface{})
 		for {
@@ -101,9 +105,11 @@ func (m *Metrics) Start() {
 }
 
 func (m *Metrics) Stop() error {
+	m.tickerMutex.Lock()
 	if m.ticker != nil {
 		m.ticker.Stop()
 	}
+	m.tickerMutex.Unlock()
 	return nil
 }
 
