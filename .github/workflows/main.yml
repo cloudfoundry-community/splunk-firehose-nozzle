@@ -106,6 +106,7 @@ jobs:
       SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
       SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
       SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
 
     needs: build
     runs-on: ubuntu-latest
@@ -150,6 +151,7 @@ jobs:
       SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
       SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
       SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
 
 
     needs: deploy_nozzle
