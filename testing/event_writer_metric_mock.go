@@ -7,7 +7,7 @@ import (
 )
 
 type EventWriterMetricMock struct {
-	lock           sync.Mutex
+	lock           sync.RWMutex
 	Block          bool
 	CapturedEvents []map[string]interface{}
 	PostBatchFn    func(events []map[string]interface{}) error
@@ -30,4 +30,10 @@ func (m *EventWriterMetricMock) Write(events []map[string]interface{}) (error, u
 		m.lock.Unlock()
 	}
 	return nil, uint64(len(events))
+}
+
+func (m *EventWriterMetricMock) Read() []map[string]interface{} {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.CapturedEvents
 }

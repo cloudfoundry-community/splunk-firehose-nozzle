@@ -153,4 +153,4 @@ class TestSplunkNozzle():
             start_time="-15m@m",type="results")
         assert len(search_results) > 0
         listofMetrics =  search_results[0]['values(metric_name)']
-        assert  set(listofMetrics) == set(['firehose.events.dropped.count', 'firehose.events.received.count', 'nozzle.cache.boltdb.hit',  'nozzle.cache.memory.hit', 'nozzle.cache.remote.hit', 'nozzle.queue.percentage', 'splunk.events.dropped.count', 'splunk.events.sent.count', 'splunk.events.throughput'])
+        assert  set(listofMetrics) == set(['firehose.events.dropped.count', 'firehose.events.received.count', 'nozzle.cache.boltdb.hit', 'nozzle.cache.memory.hit', 'nozzle.cache.remote.hit', 'nozzle.queue.percentage', 'nozzle.usage.cpu', 'nozzle.usage.ram', 'splunk.events.dropped.count', 'splunk.events.sent.count', 'splunk.events.throughput'])
