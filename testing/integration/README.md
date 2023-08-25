@@ -38,7 +38,7 @@
     ```
 #### Install python 3
 
-    sudo apt-get install python3.7
+    sudo apt-get install python3.11
     sudo apt-get install python3-pip
     
 #### Install python virtualenv

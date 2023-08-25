@@ -139,7 +139,7 @@ class SplunkApi():
         retry = Retry(
             total=int(self.env['max_retries']),
             backoff_factor=backoff_factor,
-            method_whitelist=frozenset(['GET', 'POST']),
+            # method_whitelist=frozenset(['GET', 'POST']),
             status_forcelist=status_forcelist,
         )
         adapter = HTTPAdapter(max_retries=retry)
