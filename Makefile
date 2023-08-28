@@ -57,10 +57,10 @@ PKGS=$(shell go list ./... | grep -v vendor | grep -v tools | grep -v testing | 
 deploy: deploy-nozzle deploy-data-gen
 
 deploy-nozzle:
-	@cf push -f .github/workflows/ci_nozzle_manifest.yml -u process --random-route
+	@cf push -f .github/workflows/config/ci_nozzle_manifest.yml -u process --random-route
 
 deploy-data-gen:
-	@cf push -f .github/workflows/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+	@cf push -f .github/workflows/config/data_gen_manifest.yml -u process -p tools/data_gen --random-route
 
 integration-test: deploy-nozzle deploy-data-generation-app test
 
