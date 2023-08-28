@@ -73,7 +73,7 @@ def update_nozzle_manifest(nozzle_name=None, instances=None, input_dict=None):
 
 
 def update_data_gen_manifest(input_dict=None):
-    file_name = os.path.join(_path, ".github/workflows/data_gen_manifest.yml")
+    file_name = os.path.join(_path, ".github/workflows/config/data_gen_manifest.yml")
     stream = open(file_name, 'r')
     config = yaml.load(stream)
 
