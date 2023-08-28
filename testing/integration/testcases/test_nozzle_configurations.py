@@ -1,5 +1,4 @@
 from itertools import count
-from attr import fields
 import pytest
 from lib.json_assert import *
 from lib.splunk_api import *

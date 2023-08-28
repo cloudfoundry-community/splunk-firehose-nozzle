@@ -4,6 +4,7 @@ from lib.splunk_api import *
 import string
 import random
 import subprocess
+
 _tag = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
