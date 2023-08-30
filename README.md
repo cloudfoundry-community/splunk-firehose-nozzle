@@ -112,8 +112,6 @@ This is recommended for dev environments only.
 * `SPLUNK_METRIC_INDEX`: Index in which metric data will be ingested when monitoring module is enabled
 * `SELECTED_MONITORING_METRICS`: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
 
-
-
 __About app cache params:__
 
 When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.
@@ -142,31 +140,31 @@ on user authentication.
     cd splunk-firehose-nozzle
     ```
 
-1. Authenticate to Cloud Foundry
+2. Authenticate to Cloud Foundry
 
     ```shell
     cf login -a https://api.[your cf system domain] -u [your id]
     ```
 
-1. Copy the manifest template and fill in needed values (using the credentials created during setup)
+3. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
     vim scripts/ci_nozzle_manifest.yml
     ```
 
-1. Push the nozzle
+4. Push the nozzle
 
     ```shell
     make deploy-nozzle
     ```
 
 #### Dump application info to boltdb ####
-If in production there are lots of CF applications(say tens of thousands) and if the user would like to enrich
-application logs by including application meta data,querying all application metadata information from CF may take some time.
-For example if we include, add app name, space ID, space name, org ID and org name to the events.
+If in production where there are lots of CF applications (say tens of thousands) and if the user would like to enrich
+application logs by including application metadata, querying all application metadata information from CF may take some time - 
+for example if we include: add app name, space ID, space name, org ID and org name to the events.
 If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
-cache the meta data information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
-Users can run this tool to generate a copy of all application meta data and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
+cache the metadata information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
+Users can run this tool to generate a copy of all application metadata and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
 Example of how to run the dump application info tool:
 
@@ -275,7 +273,7 @@ DEST_KEY =_MetaData:Index
 REGEX = (sourcetype::cf:splunknozzle)
 FORMAT = new_index
 ```
-<p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5,timestamp will use nanosecond precision instead of milliseconds.</p>
+<p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
 
 
 __Monitoring(Metric data Ingestion):__
@@ -503,7 +501,7 @@ For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `tools/nozzle.sh.template` to `tools/nozzle.sh` and supply missing values:
 
 ```
-$ cp script/dev.sh.template tools/nozzle.sh
+$ cp tools/nozzle.sh.template tools/nozzle.sh
 $ chmod +x tools/nozzle.sh
 ```
 
