@@ -508,7 +508,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.2.4
+$ make VERSION=1.3.0
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
