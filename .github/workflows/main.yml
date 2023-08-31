@@ -185,77 +185,77 @@ jobs:
           cf logs splunk-firehose-nozzle &
 
   # Skip test for now!
-  # execute_tests:
+  execute_tests:
 
-  #   needs: tile-builder
-  #   runs-on: ubuntu-latest
-  #   env: 
-  #     API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
-  #     API_PASSWORD: ${{ secrets.API_PASSWORD  }}
-  #     API_USER: ${{ secrets.API_USER  }}
-  #     CLIENT_ID: ${{ secrets.CLIENT_ID  }}
-  #     CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
-  #     SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
-  #     SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
-  #     SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
-  #     SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
-  #     SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
-  #     SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
-  #     SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+    needs: tile-builder
+    runs-on: ubuntu-latest
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
+      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
+      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
 
-  #   steps:
+    steps:
 
-  #     - name:  Checkout
-  #       uses: actions/checkout@v3
-  #       with:
-  #         ref: ${{github.event.pull_request.head.sha}}
-  #         repository: ${{github.event.pull_request.head.repo.full_name}}
-  #     - uses: actions/setup-go@v3
-  #       with:
-  #         go-version: '1.17.0'
-  #     - run: go version
-
-
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         name: splunk-firehose-nozzle
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
 
 
-  #     # Install dependencies
-  #     - name: Install dependencies
-  #       run: |
-  #         go mod vendor
-  #         chmod +x splunk-firehose-nozzle
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          go mod vendor
+          chmod +x splunk-firehose-nozzle
           
-  #     # Deploy data-gen
-  #     - name: Deploy data-gen
-  #       run: |
-  #         .github/pre-req.sh
-  #         cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
-  #         sleep 10
-          
-
-  #     # Nozzle Log
-  #     - name: Nozzle Log
-  #       run: |
-  #           cf logs splunk-firehose-nozzle &
-
-  #     # Prepare test environment
-  #     - name: Prepare test environment
-  #       run: |
-  #         .github/pre-functional-test.sh
+      # Deploy data-gen
+      - name: Deploy data-gen
+        run: |
+          .github/pre-req.sh
+          cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+          sleep 10
           
 
-  #     # Executing tests
-  #     - name: Executing tests
-  #       run: |          
-  #           .github/functional-test.sh
+      # Nozzle Log
+      - name: Nozzle Log
+        run: |
+            cf logs splunk-firehose-nozzle &
+
+      # Prepare test environment
+      - name: Prepare test environment
+        run: |
+          .github/pre-functional-test.sh
+          
+
+      # Executing tests
+      - name: Executing tests
+        run: |          
+            .github/functional-test.sh
             
-  #     # Teardown
-  #     - name: Teardown
-  #       if: always()
-  #       run: |
-  #           echo "Teardown deployment env"
-  #           cf delete splunk-firehose-nozzle -f
-  #           cf delete data_gen -f
-  #           cf delete-org splunk-ci-org -f
+      # Teardown
+      - name: Teardown
+        if: always()
+        run: |
+            echo "Teardown deployment env"
+            cf delete splunk-firehose-nozzle -f
+            cf delete data_gen -f
+            cf delete-org splunk-ci-org -f
