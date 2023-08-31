@@ -8,9 +8,9 @@ apply_open_security_group: true       # Apply open security group, default: fals
 allow_paid_service_plans: true        # Allow paid service plans, default: false
 
 stemcell_criteria:
-  os: ubuntu-xenial
+  os: ubuntu-jammy
   requires_cpi: false
-  version: '621'
+  version: '1.8'
 
 properties:
 - name: author
