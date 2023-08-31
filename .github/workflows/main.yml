@@ -184,6 +184,7 @@ jobs:
         run: |
           cf logs splunk-firehose-nozzle &
 
+  # Skip test for now!
   execute_tests:
 
     needs: tile-builder
@@ -239,17 +240,16 @@ jobs:
         run: |
             cf logs splunk-firehose-nozzle &
 
-      # Skip test for now!
-      # # Prepare test environment
-      # - name: Prepare test environment
-      #   run: |
-      #     .github/pre-functional-test.sh
+      # Prepare test environment
+      - name: Prepare test environment
+        run: |
+          .github/pre-functional-test.sh
           
 
-      # # Executing tests
-      # - name: Executing tests
-      #   run: |          
-      #       .github/functional-test.sh
+      # Executing tests
+      - name: Executing tests
+        run: |          
+            .github/functional-test.sh
             
       # Teardown
       - name: Teardown
