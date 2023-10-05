@@ -1,7 +1,7 @@
 from itertools import count
 import pytest
-from lib.json_assert import *
-from lib.splunk_api import *
+from lib.json_assert import assert_json_contains
+from lib.splunk_api import SplunkApi
 import json
 
 
