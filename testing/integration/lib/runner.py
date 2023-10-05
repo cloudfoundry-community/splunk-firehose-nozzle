@@ -1,4 +1,4 @@
-from .helper import *
+from .helper import get_integration_folder, get_project_folder
 import subprocess
 import time
 import logging
