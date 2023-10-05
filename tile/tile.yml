@@ -238,7 +238,7 @@ forms:
     label: Splunk Metric Index
     description: Index where Metric Data will be indexed
     optional: true
- 
+
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
     if (properties['properties']['.properties.add_app_info']['value']==true) {
