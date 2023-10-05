@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 )
+
+var keepAliveTimer = time.Now()
 
 type SplunkConfig struct {
 	Host    string
@@ -113,10 +116,13 @@ func (s *SplunkEvent) send(postBody *[]byte) error {
 		responseBody, _ := io.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	} else {
-		//Draining the response buffer, so that the same connection can be reused the next time
-		_, err := io.Copy(io.Discard, resp.Body)
-		if err != nil {
-			s.config.Logger.Error("Error discarding response body", err)
+		if time.Now().After(keepAliveTimer) {
+			keepAliveTimer = time.Now().Add(5 * time.Second)
+		} else {
+			//Draining the response buffer, so that the same connection can be reused the next time
+			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+				s.config.Logger.Error("Error discarding response body", err)
+			}
 		}
 	}
 	s.BodyBufferSize.Add(uint64(len(*postBody)))
