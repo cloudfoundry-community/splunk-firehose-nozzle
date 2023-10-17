@@ -2,6 +2,7 @@ from .helper import get_integration_folder, get_project_folder
 import subprocess
 import time
 import logging
+import os
 
 _env_var = os.environ
 _env_path = get_project_folder()
