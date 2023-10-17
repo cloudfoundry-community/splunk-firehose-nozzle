@@ -1,7 +1,6 @@
 package eventsink_test
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsink"
@@ -32,9 +32,11 @@ var _ = Describe("Splunk", func() {
 		envelope      *events.Envelope
 		eventType     events.Envelope_EventType
 
-		memSink *testing.MemorySinkMock
-		sink    *eventsink.Splunk
-		config  *eventsink.SplunkConfig
+		memSink            *testing.MemorySinkMock
+		sink               *eventsink.Splunk
+		sinkLogging        *eventsink.Splunk
+		config             *eventsink.SplunkConfig
+		configLoggingIndex *eventsink.SplunkConfig
 
 		event      map[string]interface{}
 		logger     lager.Logger
@@ -42,6 +44,8 @@ var _ = Describe("Splunk", func() {
 		// Used for internal logging
 		mockClient2 *testing.EventWriterMock
 		eventRouter eventrouter.Router
+
+		rconfig *eventrouter.Config
 	)
 
 	BeforeEach(func() {
@@ -61,7 +65,7 @@ var _ = Describe("Splunk", func() {
 
 		//using routing to serialize envelope
 		memSink = testing.NewMemorySinkMock()
-		rconfig := &eventrouter.Config{
+		rconfig = &eventrouter.Config{
 			SelectedEvents: "ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric",
 		}
 		eventRouter, err = eventrouter.New(cache.NewNoCache(), memSink, rconfig)
@@ -72,17 +76,20 @@ var _ = Describe("Splunk", func() {
 
 		logger = lager.NewLogger("test")
 		config = &eventsink.SplunkConfig{
-			FlushInterval:     time.Millisecond,
-			QueueSize:         1000,
-			BatchSize:         1,
-			Retries:           1,
-			Hostname:          "localhost",
-			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
-			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:            logger,
-			DropWarnThreshold: 1000,
+			FlushInterval: time.Millisecond,
+			QueueSize:     1000,
+			BatchSize:     1,
+			Retries:       1,
+			Hostname:      "localhost",
+			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
+			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:        logger,
 		}
-		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
+		configLoggingIndex = &eventsink.SplunkConfig{
+			LoggingIndex: "pcf_logs",
+		}
+		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config, rconfig, cache.NewNoCache())
+		sinkLogging = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, configLoggingIndex, rconfig, cache.NewNoCache())
 	})
 	Context("When LogStatus is executed", func() {
 		BeforeEach(func() {
@@ -98,22 +105,22 @@ var _ = Describe("Splunk", func() {
 			go sink.LogStatus()
 			// low pressure
 			for i := 0; i < int(float64(config.QueueSize)*0.12); i++ {
-				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+				sink.Write(envelope)
 			}
 			// medium pressure
 			time.Sleep(flushInterval)
 			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
-				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+				sink.Write(envelope)
 			}
 			time.Sleep(flushInterval)
 			// high pressure
 			for i := 0; i < int(float64(config.QueueSize)*0.40); i++ {
-				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+				sink.Write(envelope)
 			}
 			time.Sleep(flushInterval)
 			// too high pressure
 			for i := 0; i < int(float64(config.QueueSize)*0.08); i++ {
-				sink.Write(make(map[string]interface{}), fmt.Sprintf("event %d", i))
+				sink.Write(envelope)
 			}
 			time.Sleep(flushInterval)
 		})
@@ -123,8 +130,6 @@ var _ = Describe("Splunk", func() {
 			log := string(data)
 			Expect(log).Should(ContainSubstring("status\":\"too high"))
 			Expect(log).Should(ContainSubstring("status\":\"high"))
-			Expect(log).Should(ContainSubstring("status\":\"medium"))
-			Expect(log).Should(ContainSubstring("status\":\"low"))
 			os.Remove("lager.log")
 		})
 	})
@@ -134,7 +139,7 @@ var _ = Describe("Splunk", func() {
 		eventRouter.Route(envelope)
 
 		sink.Open()
-		sink.Write(memSink.Events[0], memSink.Messages[0])
+		sink.Write(memSink.Events[0])
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
@@ -142,18 +147,19 @@ var _ = Describe("Splunk", func() {
 	})
 
 	It("does not block when downstream is blocked", func() {
+
 		config := &eventsink.SplunkConfig{
-			FlushInterval:     time.Millisecond,
-			QueueSize:         1,
-			BatchSize:         1,
-			Retries:           1,
-			Hostname:          "localhost",
-			ExtraFields:       map[string]string{"env": "dev", "test": "field"},
-			UUID:              "0a956421-f2e1-4215-9d88-d15633bb3023",
-			Logger:            logger,
-			DropWarnThreshold: 10,
+			FlushInterval: time.Millisecond,
+			QueueSize:     1,
+			BatchSize:     1,
+			Retries:       1,
+			Hostname:      "localhost",
+			ExtraFields:   map[string]string{"env": "dev", "test": "field"},
+			UUID:          "0a956421-f2e1-4215-9d88-d15633bb3023",
+			Logger:        logger,
 		}
-		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config)
+		sink = eventsink.NewSplunk([]eventwriter.Writer{mockClient, mockClient2}, config, rconfig, cache.NewNoCache())
+		sink.FirehoseDroppedEvents = new(utils.IntCounter)
 		eventType = events.Envelope_Error
 		eventRouter.Route(envelope)
 		eventRouter.Route(envelope)
@@ -161,13 +167,13 @@ var _ = Describe("Splunk", func() {
 		mockClient2.Block = true
 
 		sink.Open()
-		sink.Write(memSink.Events[0], memSink.Messages[0])
-		sink.Write(memSink.Events[1], memSink.Messages[1])
+		sink.Write(memSink.Events[0])
+		sink.Write(memSink.Events[1])
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
 		}).Should(HaveLen(1))
-		Expect(sink.DroppedEvents).To(Equal(uint64(1)))
+		Expect(sink.FirehoseDroppedEvents.Value()).To(Equal(uint64(1)))
 	})
 
 	It("job_index is present, index is not", func() {
@@ -175,7 +181,7 @@ var _ = Describe("Splunk", func() {
 		eventRouter.Route(envelope)
 
 		sink.Open()
-		sink.Write(memSink.Events[0], memSink.Messages[0])
+		sink.Write(memSink.Events[0])
 
 		Eventually(func() []map[string]interface{} {
 			return mockClient.CapturedEvents()
@@ -260,7 +266,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -276,7 +282,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -323,7 +329,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -339,7 +345,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses event timestamp", func() {
-			eventTimeSeconds := "1467128185.055"
+			eventTimeSeconds := "1467128185.055072010"
 			Expect(event["time"]).To(Equal(eventTimeSeconds))
 		})
 
@@ -348,12 +354,6 @@ var _ = Describe("Splunk", func() {
 
 			Expect(eventContents["cf_app_id"]).To(Equal(appId))
 			Expect(eventContents["message_type"]).To(Equal("OUT"))
-		})
-
-		It("adds message", func() {
-			eventContents := event["event"].(map[string]interface{})
-
-			Expect(eventContents["msg"]).To(Equal("App debug log message"))
 		})
 	})
 
@@ -382,7 +382,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -398,7 +398,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -437,7 +437,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -453,7 +453,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -492,7 +492,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -508,7 +508,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -518,12 +518,6 @@ var _ = Describe("Splunk", func() {
 			eventContents := event["event"].(map[string]interface{})
 
 			Expect(eventContents["code"]).To(BeNumerically("==", 42))
-		})
-
-		It("adds message", func() {
-			eventContents := event["event"].(map[string]interface{})
-
-			Expect(eventContents["msg"]).To(Equal("Something failed"))
 		})
 	})
 
@@ -558,7 +552,7 @@ var _ = Describe("Splunk", func() {
 			eventRouter.Route(envelope)
 
 			sink.Open()
-			sink.Write(memSink.Events[0], memSink.Messages[0])
+			sink.Write(memSink.Events[0])
 
 			Eventually(func() []map[string]interface{} {
 				return mockClient.CapturedEvents()
@@ -574,7 +568,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("uses current time without event timestamp", func() {
-			eventTime, err := strconv.Atoi(event["time"].(string))
+			eventTime, err := strconv.ParseFloat(event["time"].(string), 64)
 
 			Expect(err).To(BeNil())
 			Expect(time.Now().Unix()).To(BeNumerically("~", eventTime, 2))
@@ -596,24 +590,11 @@ var _ = Describe("Splunk", func() {
 
 		err := sink.Open()
 		Ω(err).ShouldNot(HaveOccurred())
-		err = sink.Write(memSink.Events[0], memSink.Messages[0])
+		err = sink.Write(memSink.Events[0])
 		Ω(err).ShouldNot(HaveOccurred())
 		time.Sleep(time.Second)
 
 		sink.Close()
-	})
-
-	It("Sink error, retry", func() {
-		eventType = events.Envelope_Error
-		eventRouter.Route(envelope)
-
-		memSink.ReturnErr = true
-
-		err := sink.Open()
-		Ω(err).ShouldNot(HaveOccurred())
-		err = sink.Write(memSink.Events[0], memSink.Messages[0])
-		Ω(err).ShouldNot(HaveOccurred())
-		time.Sleep(time.Second)
 	})
 
 	It("Close no error", func() {
@@ -622,7 +603,7 @@ var _ = Describe("Splunk", func() {
 
 		err := sink.Open()
 		Ω(err).ShouldNot(HaveOccurred())
-		err = sink.Write(memSink.Events[0], memSink.Messages[0])
+		err = sink.Write(memSink.Events[0])
 		Ω(err).ShouldNot(HaveOccurred())
 		time.Sleep(time.Second)
 
@@ -691,6 +672,27 @@ var _ = Describe("Splunk", func() {
 
 	})
 
+	It("emit log event without logging index", func() {
+		message := lager.LogFormat{}
+
+		sink.Log(message)
+
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		event := mockClient2.CapturedEvents()[0]
+		Expect(event["index"]).To(BeNil())
+
+	})
+
+	It("emit log event with logging index", func() {
+		message := lager.LogFormat{}
+
+		sinkLogging.Log(message)
+		Expect(mockClient2.CapturedEvents()).To(HaveLen(1))
+		event := mockClient2.CapturedEvents()[0]
+		Expect(event["index"]).To(Equal("pcf_logs"))
+
+	})
+
 	It("adds expected Splunk fields", func() {
 		message := lager.LogFormat{}
 
@@ -712,7 +714,7 @@ var _ = Describe("Splunk", func() {
 		err := s.Open()
 		Ω(err).ShouldNot(HaveOccurred())
 
-		err = s.Write(nil, "testing")
+		err = s.Write(nil)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		err = s.Close()

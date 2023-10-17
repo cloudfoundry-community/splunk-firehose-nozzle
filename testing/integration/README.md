@@ -6,7 +6,7 @@
     Deploy nozzle to Cloud Foundry env via `cf push`
     ```
     cf login --skip-ssl-validation -a https://api.<your cf sys domain> -u <your cf user name> -p <your cf password>
-    
+
     make deploy-nozzle
     ```
  - Run nozzle binary locally
@@ -14,15 +14,20 @@
     Create a `env.sh` file to export all configuration env variables locally.
     ``````
     #!/usr/bin/env bash
-     
+
     export SKIP_SSL_VALIDATION_CF=true
     export SKIP_SSL_VALIDATION_SPLUNK=true
     export ADD_APP_INFO=<String item list of metadata fields: AppName,OrgName,OrgGuid,SpaceName,SpaceGuid>
     export API_ENDPOINT=<CF-ENDPOINT>
+    export API_PASSWORD=<CF-PASSWORD>
+    export API_USER=<CF-USER>
     export EVENTS=ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
     export SPLUNK_TOKEN=<HEC-TOKEN>
-    export SPLUNK_HOST=<HEC-ENDPOINT>
-    export SPLUNK_INDEX=<TARGET-SPLUNK-INDEX>
+    export SPLUNK_URL=<HEC-ENDPOINT>
+    export SPLUNK_USER=<SPLUNK-USERNAME>
+    export SPLUNK_PASSWORD=<SPLUNK-PASSWORD>
+    export SPLUNK_INDEX=main
+    export SPLUNK_METRIC_INDEX=<SPLUNK-METRIC-INDEX>
     export FIREHOSE_SUBSCRIPTION_ID=splunk-nozzle
     export FIREHOSE_KEEP_ALIVE=25s
     export CLIENT_ID=<CF CLIENT ID>
@@ -31,14 +36,14 @@
     Start nozzle binary
     ```
     cf login --skip-ssl-validation -a https://api.<your cf sys domain> -u <your cf user name> -p <your cf password>
-    
+
     source env.sh
-    
+
     ./splunk-firehose-nozzle
     ```
 #### Install python 3
 
-    sudo apt-get install python3.7
+    sudo apt-get install python3.11
     sudo apt-get install python3-pip
     
 #### Install python virtualenv

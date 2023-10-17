@@ -1,12 +1,13 @@
 package nozzle
 
 import (
-	"code.cloudfoundry.org/lager"
-	"sync/atomic"
 	"time"
 
+	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventrouter"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventsource"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/gorilla/websocket"
 )
 
@@ -44,58 +45,27 @@ func (f *Nozzle) Start() error {
 
 	defer close(f.closed)
 
+	receivedCount := monitoring.RegisterCounter("firehose.events.received.count", utils.UintType)
+
 	var lastErr error
 	events, errs := f.eventSource.Read()
-	if f.config.StatusMonitorInterval > time.Second*0 {
-		var receivedCount uint64 = 0
-		timer := time.NewTimer(f.config.StatusMonitorInterval)
-
-		for {
-			select {
-			case <-timer.C:
-				f.config.Logger.Info("Event_Count", lager.Data{"event_count_received": receivedCount})
-				timer.Reset(f.config.StatusMonitorInterval)
-				receivedCount = 0
-			default:
-			}
-
-			select {
-			case event, ok := <-events:
-				if !ok {
-					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
-					return lastErr
-				}
-				atomic.AddUint64(&receivedCount, uint64(1))
-				if err := f.eventRouter.Route(event); err != nil {
-					f.config.Logger.Error("Failed to route event", err)
-				}
-
-			case lastErr = <-errs:
-				f.handleError(lastErr)
-
-			case <-f.closing:
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
 				return lastErr
 			}
-		}
-	} else {
-		for {
-			select {
-			case event, ok := <-events:
-				if !ok {
-					f.config.Logger.Info("Give up after retries. Firehose consumer is going to exit")
-					return lastErr
-				}
-
-				if err := f.eventRouter.Route(event); err != nil {
-					f.config.Logger.Error("Failed to route event", err)
-				}
-
-			case lastErr = <-errs:
-				f.handleError(lastErr)
-
-			case <-f.closing:
-				return lastErr
+			receivedCount.Add(uint64(1))
+			if err := f.eventRouter.Route(event); err != nil {
+				f.config.Logger.Error("Failed to route event", err)
 			}
+
+		case lastErr = <-errs:
+			f.handleError(lastErr)
+
+		case <-f.closing:
+			return lastErr
 		}
 	}
 }

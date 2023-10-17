@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	cfclient "github.com/cloudfoundry-community/go-cfclient"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	. "github.com/cloudfoundry-community/splunk-firehose-nozzle/splunknozzle"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 
@@ -26,9 +27,7 @@ func newConfig() *Config {
 		SplunkHost:  "localhost:8088",
 		SplunkIndex: "main",
 
-		JobName:  "testing",
-		JobIndex: "-1",
-		JobHost:  "localhost",
+		JobHost: "localhost",
 
 		SkipSSLCF:      true,
 		SkipSSLSplunk:  true,
@@ -57,9 +56,11 @@ func newConfig() *Config {
 		Commit:  "f1c3178f4df3e51e7f08abf046ac899bca49e93b",
 		BuildOS: "MacOS",
 
-		TraceLogging:          false,
-		Debug:                 false,
-		StatusMonitorInterval: time.Second * 5,
+		TraceLogging:              false,
+		Debug:                     false,
+		StatusMonitorInterval:     time.Second * 5,
+		SelectedMonitoringMetrics: "splunk.events.dropped.count",
+		SplunkMetricIndex:         "metric",
 	}
 }
 
@@ -77,11 +78,12 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 	})
 
 	It("EventSink", func() {
-		_, err := noz.EventSink()
+		c := testing.NewMemoryCacheMock()
+		_, err := noz.EventSink(c)
 		Ω(err).ShouldNot(HaveOccurred())
 
 		config.Debug = true
-		_, err = noz.EventSink()
+		_, err = noz.EventSink(c)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -126,6 +128,22 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 
 		f := noz.EventSource(client)
 		Expect(f).ToNot(BeNil())
+	})
+
+	It("Montoring Enabled", func() {
+		enableMonitoring := noz.Metric()
+		if _, ok := enableMonitoring.(*monitoring.Metrics); ok {
+			Expect(ok).To(Equal(true))
+		}
+
+	})
+
+	It("Montoring Disabled", func() {
+		config.StatusMonitorInterval = 0 * time.Second
+		disableMonitoring := noz.Metric()
+		_, ok := disableMonitoring.(*monitoring.Metrics)
+		Expect(ok).To(Equal(false))
+
 	})
 
 	It("Nozzle", func() {

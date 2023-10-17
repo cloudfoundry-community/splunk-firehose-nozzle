@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/cloudfoundry/sonde-go/events"
@@ -60,8 +60,15 @@ func GetHostIPInfo(host string) (string, string, error) {
 }
 
 func NanoSecondsToSeconds(nanoseconds int64) string {
-	seconds := float64(nanoseconds) * math.Pow(1000, -3)
-	return fmt.Sprintf("%.3f", seconds)
+	nanoStr := strconv.FormatInt(nanoseconds, 10)
+
+	//if received < 1 seconds
+	if len(nanoStr) < 10 {
+		return "0.0"
+	}
+
+	decimalIndex := len(nanoStr) - 9
+	return fmt.Sprintf("%s.%s", nanoStr[:decimalIndex], nanoStr[decimalIndex:])
 }
 
 // ToJSON tries to detect the JSON pattern for msg first, if msg contains JSON pattern either

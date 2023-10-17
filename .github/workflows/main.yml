@@ -1,0 +1,261 @@
+name: PCF
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request_target:
+    branches: [ "develop" ]
+ 
+  workflow_dispatch:
+
+jobs:
+  workflow_approval:
+    name: Approve workflow
+    runs-on: ubuntu-latest
+    environment: workflow-approval
+    steps:
+      - name: Approve workflow
+        run: echo For security reasons, all pull requests need to be approved first before running any automated CI.
+
+  fossa-scan:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    needs:
+      - workflow_approval
+    steps:
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: run fossa anlyze and create report
+        run: |
+          curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash
+          fossa analyze  --include-unused-deps --debug
+          fossa report attribution --format text > /tmp/THIRDPARTY
+        env:
+          FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+      - name: upload THIRDPARTY file
+        uses: actions/upload-artifact@v2
+        with:
+          name: THIRDPARTY
+          path: /tmp/THIRDPARTY
+      - name: run fossa test
+        run: |
+          fossa test --debug
+        env:
+          FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+          
+  semgrep:
+    runs-on: ubuntu-latest
+    needs:
+      - workflow_approval
+    name: security-sast-semgrep
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Semgrep
+        id: semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - workflow_approval
+    steps:
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+      # Install Dependencies
+      - name: check-files
+        run: ls -la
+      - name: Install Dependencies
+        run: |
+            go mod vendor
+
+      # Builder
+      - name: Builder
+        run: make build
+
+      # Run tests
+      - name: Run tests
+        run: |
+          make testall
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+          path: splunk-firehose-nozzle
+
+  deploy_nozzle:
+    
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+            go mod vendor
+
+      # Deploy nozzle
+      - name: Deploy nozzle
+        run: |
+            .github/update_manifest.sh
+            .github/pre-req.sh
+            cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
+
+
+  tile-builder:
+
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+
+
+    needs: deploy_nozzle
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+  
+      # Tile builder
+      - name: Tile builder
+        run: |
+            .github/tile-builder.sh
+            
+      # Nozzle Log
+      - name: Nozzle Log
+        run: |
+          cf logs splunk-firehose-nozzle &
+
+  # Skip test for now!
+  execute_tests:
+
+    needs: tile-builder
+    runs-on: ubuntu-latest
+    env: 
+      API_ENDPOINT: ${{ secrets.API_ENDPOINT  }}
+      API_PASSWORD: ${{ secrets.API_PASSWORD  }}
+      API_USER: ${{ secrets.API_USER  }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
+      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
+      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
+      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+
+    steps:
+
+      - name:  Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.sha}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - run: go version
+
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: splunk-firehose-nozzle
+
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          go mod vendor
+          chmod +x splunk-firehose-nozzle
+          
+      # Deploy data-gen
+      - name: Deploy data-gen
+        run: |
+          .github/pre-req.sh
+          cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+          sleep 10
+          
+
+      # Nozzle Log
+      - name: Nozzle Log
+        run: |
+            cf logs splunk-firehose-nozzle &
+
+      # Prepare test environment
+      - name: Prepare test environment
+        run: |
+          .github/pre-functional-test.sh
+          
+
+      # Executing tests
+      - name: Executing tests
+        run: |          
+            .github/functional-test.sh
+            
+      # Teardown
+      - name: Teardown
+        if: always()
+        run: |
+            echo "Teardown deployment env"
+            cf delete splunk-firehose-nozzle -f
+            cf delete data_gen -f
+            cf delete-org splunk-ci-org -f

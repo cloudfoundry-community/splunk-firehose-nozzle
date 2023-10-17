@@ -18,13 +18,12 @@ type Config struct {
 	ClientID     string `json:"-"`
 	ClientSecret string `json:"-"`
 
-	SplunkToken string `json:"-"`
-	SplunkHost  string `json:"splunk-host"`
-	SplunkIndex string `json:"splunk-index"`
+	SplunkToken        string `json:"-"`
+	SplunkHost         string `json:"splunk-host"`
+	SplunkIndex        string `json:"splunk-index"`
+	SplunkLoggingIndex string `json:"splunk-logging-index"`
 
-	JobName  string `json:"job-name"`
-	JobIndex string `json:"job-index"`
-	JobHost  string `json:"job-host"`
+	JobHost string `json:"job-host"`
 
 	SkipSSLCF      bool          `json:"skip-ssl-cf"`
 	SkipSSLSplunk  bool          `json:"skip-ssl-splunk"`
@@ -54,10 +53,11 @@ type Config struct {
 	Commit  string `json:"commit"`
 	BuildOS string `json:"buildos"`
 
-	TraceLogging          bool          `json:"trace-logging"`
-	Debug                 bool          `json:"debug"`
-	StatusMonitorInterval time.Duration `json:"mem-queue-monitor-interval"`
-	DropWarnThreshold     int           `json:"drop-warn-threshold"`
+	TraceLogging              bool          `json:"trace-logging"`
+	Debug                     bool          `json:"debug"`
+	StatusMonitorInterval     time.Duration `json:"mem-queue-monitor-interval"`
+	SelectedMonitoringMetrics string        `json:"selected-monitoring-metrics"`
+	SplunkMetricIndex         string        `json:"splunk-metric-index"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -86,11 +86,9 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("SPLUNK_TOKEN").Required().StringVar(&c.SplunkToken)
 	kingpin.Flag("splunk-index", "Splunk index").
 		OverrideDefaultFromEnvar("SPLUNK_INDEX").Required().StringVar(&c.SplunkIndex)
+	kingpin.Flag("splunk-logging-index", "Splunk logging index").
+		OverrideDefaultFromEnvar("SPLUNK_LOGGING_INDEX").StringVar(&c.SplunkLoggingIndex)
 
-	kingpin.Flag("job-name", "Job name to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_NAME").Default("splunk-nozzle").StringVar(&c.JobName)
-	kingpin.Flag("job-index", "Job index to tag nozzle's own log events").
-		OverrideDefaultFromEnvar("JOB_INDEX").Default("-1").StringVar(&c.JobIndex)
 	kingpin.Flag("job-host", "Job host to tag nozzle's own log events").
 		OverrideDefaultFromEnvar("JOB_HOST").Default("").StringVar(&c.JobHost)
 
@@ -142,8 +140,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)
 	kingpin.Flag("status-monitor-interval", "Print information for monitoring at every interval").
 		OverrideDefaultFromEnvar("STATUS_MONITOR_INTERVAL").Default("0s").DurationVar(&c.StatusMonitorInterval)
-	kingpin.Flag("drop-warn-threshold", "Log error with dropped events count at each threshold count due to slow downstream").
-		OverrideDefaultFromEnvar("DROP_WARN_THRESHOLD").Default("1000").IntVar(&c.DropWarnThreshold)
+	kingpin.Flag("selected-monitoring-metrics", "Comma separated list of metrics that user want to visualize").
+		OverrideDefaultFromEnvar("SELECTED_MONITORING_METRICS").Default("nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cache.memory.hit,nozzle.cache.memory.miss,nozzle.cache.remote.hit,nozzle.cache.remote.miss,nozzle.cache.boltdb.hit,nozzle.cache.boltdb.miss").StringVar(&c.SelectedMonitoringMetrics)
+	kingpin.Flag("splunk-metric-index", "Splunk metric index").
+		OverrideDefaultFromEnvar("SPLUNK_METRIC_INDEX").StringVar(&c.SplunkMetricIndex)
 
 	kingpin.Parse()
 	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)

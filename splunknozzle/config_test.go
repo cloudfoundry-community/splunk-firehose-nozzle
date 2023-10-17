@@ -34,11 +34,10 @@ var _ = Describe("Config", func() {
 			os.Setenv("SPLUNK_TOKEN", "sometoken")
 			os.Setenv("SPLUNK_HOST", "splunk.example.com")
 			os.Setenv("SPLUNK_INDEX", "splunk_index")
+			os.Setenv("SPLUNK_METRIC_INDEX", "metric")
 		})
 
 		It("parses config from environment", func() {
-			os.Setenv("JOB_NAME", "my-job")
-			os.Setenv("JOB_INDEX", "2")
 			os.Setenv("JOB_HOST", "nozzle.example.com")
 
 			os.Setenv("SKIP_SSL_VALIDATION_CF", "true")
@@ -79,8 +78,6 @@ var _ = Describe("Config", func() {
 			Expect(c.SplunkToken).To(Equal("sometoken"))
 			Expect(c.SplunkIndex).To(Equal("splunk_index"))
 
-			Expect(c.JobName).To(Equal("my-job"))
-			Expect(c.JobIndex).To(Equal("2"))
 			Expect(c.JobHost).To(Equal("nozzle.example.com"))
 
 			Expect(c.SkipSSLCF).To(BeTrue())
@@ -113,14 +110,11 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(100))
 		})
 
 		It("check defaults", func() {
 			c := NewConfigFromCmdFlags(version, branch, commit, buildos)
 
-			Expect(c.JobName).To(Equal("splunk-nozzle"))
-			Expect(c.JobIndex).To(Equal("-1"))
 			Expect(c.JobHost).To(Equal(""))
 
 			Expect(c.SkipSSLCF).To(BeFalse())
@@ -147,7 +141,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
-			Expect(c.DropWarnThreshold).To(Equal(1000))
 		})
 	})
 
@@ -172,8 +165,6 @@ var _ = Describe("Config", func() {
 				"--splunk-host=splunk.example.comc",
 				"--splunk-token=sometokenc",
 				"--splunk-index=splunk_indexc",
-				"--job-name=my-jobc",
-				"--job-index=3",
 				"--job-host=nozzle.example.comc",
 				"--skip-ssl-validation-cf",
 				"--skip-ssl-validation-splunk",
@@ -195,7 +186,7 @@ var _ = Describe("Config", func() {
 				"--hec-workers=16",
 				"--enable-event-tracing",
 				"--debug",
-				"--drop-warn-threshold=10",
+				"--splunk-metric-index=metric",
 			}
 			os.Args = args
 		})
@@ -213,8 +204,6 @@ var _ = Describe("Config", func() {
 			Expect(c.SplunkToken).To(Equal("sometokenc"))
 			Expect(c.SplunkIndex).To(Equal("splunk_indexc"))
 
-			Expect(c.JobName).To(Equal("my-jobc"))
-			Expect(c.JobIndex).To(Equal("3"))
 			Expect(c.JobHost).To(Equal("nozzle.example.comc"))
 
 			Expect(c.SkipSSLCF).To(BeTrue())
@@ -241,8 +230,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.TraceLogging).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(10))
-
 			Expect(c.Version).To(Equal(version))
 			Expect(c.Branch).To(Equal(branch))
 			Expect(c.Commit).To(Equal(commit))

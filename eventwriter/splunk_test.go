@@ -2,7 +2,7 @@ package eventwriter_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -43,7 +43,7 @@ var _ = Describe("Splunk", func() {
 			splunkResponse = []byte("{}")
 			testServer = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				capturedRequest = request
-				body, err := ioutil.ReadAll(request.Body)
+				body, err := io.ReadAll(request.Body)
 				if err != nil {
 					panic(err)
 				}
@@ -63,7 +63,7 @@ var _ = Describe("Splunk", func() {
 			tokenValue := "abc-some-random-token"
 			config.Token = tokenValue
 
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -77,7 +77,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets content type to json", func() {
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -91,7 +91,7 @@ var _ = Describe("Splunk", func() {
 		It("sets app name to appName", func() {
 			appName := "Splunk Firehose Nozzle"
 
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -104,9 +104,10 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("sets app appVersion", func() {
-			appVersion := "1.2.4"
+			appVersion := "1.2.5"
+			config.Version = "1.2.5"
 
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -119,7 +120,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("Writes batch event json", func() {
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -149,7 +150,7 @@ var _ = Describe("Splunk", func() {
 
 		It("sets index in splunk payload", func() {
 			config.Index = "index_cf"
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -171,14 +172,39 @@ var _ = Describe("Splunk", func() {
 			Expect(string(capturedBody)).To(Equal(expectedPayload))
 		})
 
-		It("adds fields to splunk palylaod", func() {
+		It("doesn't change index as it's already set", func() {
+			config.Index = "index_cf"
+			client := NewSplunkEvent(config)
+			event1 := map[string]interface{}{"event": map[string]interface{}{
+				"greeting": "hello world",
+			}}
+			event1["index"] = "index_logs"
+			event2 := map[string]interface{}{"event": map[string]interface{}{
+				"greeting": "hello mars",
+			}}
+
+			events := []map[string]interface{}{event1, event2}
+			err, _ := client.Write(events)
+
+			Expect(err).To(BeNil())
+			Expect(capturedRequest).NotTo(BeNil())
+
+			expectedPayload := strings.TrimSpace(`
+{"event":{"greeting":"hello world"},"index":"index_logs"}
+
+{"event":{"greeting":"hello mars"},"index":"index_cf"}
+`)
+			Expect(string(capturedBody)).To(Equal(expectedPayload))
+		})
+
+		It("adds fields to splunk payload", func() {
 			fields := map[string]string{
 				"foo":   "bar",
 				"hello": "world",
 			}
 			config.Fields = fields
 
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			event1 := map[string]interface{}{"event": map[string]interface{}{
 				"greeting": "hello world",
 			}}
@@ -202,7 +228,7 @@ var _ = Describe("Splunk", func() {
 		})
 
 		It("Writes to correct endpoint", func() {
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -212,7 +238,7 @@ var _ = Describe("Splunk", func() {
 
 		It("Writes to stdout in debug without error", func() {
 			config.Debug = true
-			client := NewSplunk(config)
+			client := NewSplunkEvent(config)
 			events := []map[string]interface{}{}
 			err, _ := client.Write(events)
 
@@ -222,7 +248,7 @@ var _ = Describe("Splunk", func() {
 
 	It("returns error on bad splunk host", func() {
 		config.Host = ":"
-		client := NewSplunk(config)
+		client := NewSplunkEvent(config)
 		events := []map[string]interface{}{}
 		err, _ := client.Write(events)
 
@@ -237,7 +263,7 @@ var _ = Describe("Splunk", func() {
 		}))
 
 		config.Host = testServer.URL
-		client := NewSplunk(config)
+		client := NewSplunkEvent(config)
 		events := []map[string]interface{}{}
 		err, _ := client.Write(events)
 
@@ -247,7 +273,7 @@ var _ = Describe("Splunk", func() {
 
 	It("Returns error from http client", func() {
 		config.Host = "foo://example.com"
-		client := NewSplunk(config)
+		client := NewSplunkEvent(config)
 		events := []map[string]interface{}{}
 		err, _ := client.Write(events)
 

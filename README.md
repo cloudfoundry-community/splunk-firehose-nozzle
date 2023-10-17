@@ -1,7 +1,18 @@
-[![CircleCI](https://circleci.com/gh/git-lfs/git-lfs.svg?style=shield&circle-token=856152c2b02bfd236f54d21e1f581f3e4ebf47ad)](https://circleci.com/gh/cloudfoundry-community/splunk-firehose-nozzle)
 ## Splunk Nozzle
 
 Cloud Foundry Firehose-to-Splunk Nozzle
+
+- - - -
+
+### VMware Tanzu Application Service version
+Splunk Firehose Nozzle has been tested on v3.0.0 and v4.0.0 of Tanzu Application Service
+
+- - - -
+
+### VMware Ops Manager version
+Splunk Firehose Nozzle has been tested on v3.0.9 LTS of VMware Ops Manager
+
+- - - -
 
 ### Usage
 Splunk nozzle is used to stream Cloud Foundry Firehose events to Splunk HTTP Event Collector. Using pre-defined Splunk sourcetypes, the nozzle automatically parses the events and enriches them with additional metadata before forwarding to Splunk. For detailed descriptions of each Firehose event type and their fields, refer to underlying [dropsonde protocol](https://github.com/cloudfoundry/dropsonde-protocol). Below is a mapping of each Firehose event type to its corresponding Splunk sourcetype. Refer to [Searching Events](#searching-events) for example Splunk searches.
@@ -83,8 +94,8 @@ This is recommended for dev environments only.
 * `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
     (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
-* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
-* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s)
+* `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
+* `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
 * `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
 * `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
 * `BOLTDB_PATH`: Bolt database path. (Default: cache.db)
@@ -96,9 +107,25 @@ This is recommended for dev environments only.
 * `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss. (Default: 5)
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
-* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
-* `DROP_WARN_THRESHOLD`: Threshold for the count of dropped events in case the downstream is slow. Based on the threshold, the errors will be logged.
-    
+* `SPLUNK_LOGGING_INDEX`: The Splunk index where logs from the nozzle of the sourcetype `cf:splunknozzle` will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX. The default value is `""`
+* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring (Metric data of insights with in the connectors). Default is 0s (Disabled).
+* `SPLUNK_METRIC_INDEX`: Index in which metric data will be ingested when monitoring module is enabled
+* `SELECTED_MONITORING_METRICS`: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
+
+__About app cache params:__
+
+When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.
+
+Now, when there is a change in this app data in remote, the nozzle has to update this local cache. For this, the config has APP_CACHE_INVALIDATE_TTL parameter. At every APP_CACHE_INVALIDATE_TTL interval, the nozzle will update the local cache by querying the remote (CF APIs).
+
+If APP_CACHE_INVALIDATE_TTL is set to 10s, the nozzle will refresh the local cache at every 10s. So, AppCacheTTL should be set based on how frequently the app data is expected to change.
+
+When the nozzle receives events from the doppler, it will check the local cache for the given app-id. But on cache-miss, it will query remote for that specific app. If it doesn’t find the app data from remote too, then the nozzle will add that app to MissingAppCache (if IGNORE_MISSING_APP config is **enabled**. so that the nozzle does not waste time in querying the remote for an app which is likely not to be found). So, from the next time onwards, the nozzle will first check in the MissingAppCache, if found then it will ignore the app and move on to the next event with a warning.
+
+MISSING_APP_CACHE_INVALIDATE_TTL is used to clear the MissingAppCache so nozzle can retry querying from remote.
+
+For example, given MISSING_APP_CACHE_INVALIDATE_TTL is set to 60s, when nozzle receives event from app that is not available in local cache and remote, it’ll add it to MissingAppCache. Until next MISSING_APP_CACHE_INVALIDATE_TTL, nozzle will not query from remote for the missing app.
+
 - - - -
 
 ### Push as an App to Cloud Foundry
@@ -113,31 +140,31 @@ on user authentication.
     cd splunk-firehose-nozzle
     ```
 
-1. Authenticate to Cloud Foundry
+2. Authenticate to Cloud Foundry
 
     ```shell
     cf login -a https://api.[your cf system domain] -u [your id]
     ```
 
-1. Copy the manifest template and fill in needed values (using the credentials created during setup)
+3. Copy the manifest template and fill in needed values (using the credentials created during setup)
 
     ```shell
-    vim .circleci/ci_nozzle_manifest.yml
+    vim scripts/ci_nozzle_manifest.yml
     ```
 
-1. Push the nozzle
+4. Push the nozzle
 
     ```shell
     make deploy-nozzle
     ```
 
 #### Dump application info to boltdb ####
-If in production there are lots of CF applications(say tens of thousands) and if the user would like to enrich
-application logs by including application meta data,querying all application metadata information from CF may take some time.
-For example if we include, add app name, space ID, space name, org ID and org name to the events.
+If in production where there are lots of CF applications (say tens of thousands) and if the user would like to enrich
+application logs by including application metadata, querying all application metadata information from CF may take some time - 
+for example if we include: add app name, space ID, space name, org ID and org name to the events.
 If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
-cache the meta data information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
-Users can run this tool to generate a copy of all application meta data and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
+cache the metadata information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
+Users can run this tool to generate a copy of all application metadata and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.
 
 Example of how to run the dump application info tool:
 
@@ -246,6 +273,33 @@ DEST_KEY =_MetaData:Index
 REGEX = (sourcetype::cf:splunknozzle)
 FORMAT = new_index
 ```
+<p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
+
+
+__Monitoring(Metric data Ingestion):__
+
+| Metric Name |  Description
+|---|---
+|  `nozzle.queue.percentage` | Shows how much internal queue is filled
+|  `splunk.events.dropped.count` | Number of events dropped from splunk HEC
+|  `splunk.events.sent.count` | Number of events sent to splunk
+|  `firehose.events.dropped.count` | Number of events dropped from nozzle
+|  `firehose.events.received.count` | Number of events received from firehose(websocket)
+|  `splunk.events.throughput` | Average Payload size
+|  `nozzle.usage.ram` | RAM Usage 
+|  `nozzle.usage.cpu` | CPU Usage
+|  `nozzle.cache.memory.hit` | How many times it has successfully retrieved the data from memory
+|  `nozzle.cache.memory.miss` | How many times it has unsuccessfully tried to retreive the data from memory
+|  `nozzle.cache.remote.hit` | How many times it has successfully retrieved the data from remote
+|  `nozzle.cache.remote.miss` | How many times it has unsuccessfully tried to retrieve the data from remote
+|  `nozzle.cache.boltdb.hit` | How many times it has successfully retrieved the data from BoltDB
+|  `nozzle.cache.boltdb.miss` | How many times it has unsuccessfully tried to retrieve the data from BoltDB
+
+![event_count](https://user-images.githubusercontent.com/89519924/200804220-1adff84c-e6f1-4438-8d30-6e2cce4984f5.png)
+
+![nozzle_logs](https://user-images.githubusercontent.com/89519924/200804285-22ad7863-1db3-493a-8196-cc589837db76.png)
+
+<p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
 
 ## <a id='walkthrough'></a> Troubleshooting
 This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.
@@ -416,6 +470,14 @@ sourcetype="cf:counterevent"
     | eval job_and_name=source+"-"+name
     | stats values(job_and_name)
 ```
+
+### 7. Nozzle is not collecting any data with 'websocket' (bad handshake) error
+
+If the nozzle reports below error, then check if the configured "subscription-id" has '#' as a prefix. Please remove the prefix or prepend any other character than '#' to fix this issue.
+```
+Error dialing trafficcontroller server: websocket: bad handshake.\nPlease ask your Cloud Foundry Operator to check the platform configuration (trafficcontroller is wss://****:443).
+```
+
 ### Development
 
 #### Software Requirements
@@ -439,14 +501,14 @@ For development against [bosh-lite](https://github.com/cloudfoundry/bosh-lite),
 copy `tools/nozzle.sh.template` to `tools/nozzle.sh` and supply missing values:
 
 ```
-$ cp script/dev.sh.template tools/nozzle.sh
+$ cp tools/nozzle.sh.template tools/nozzle.sh
 $ chmod +x tools/nozzle.sh
 ```
 
 Build project:
 
 ```
-$ make VERSION=1.2.4
+$ make VERSION=1.3.0
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)

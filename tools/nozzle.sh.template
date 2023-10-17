@@ -14,4 +14,7 @@ export SPLUNK_TOKEN=<token>
 export SPLUNK_HOST=<hec host, something like https://example.cloud.splunk.com:8088>
 export SPLUNK_INDEX=<index>
 
+export CLIENT_ID=<client_id>
+export CLIENT_SECRET=<client_secret>
+
 go run main.go

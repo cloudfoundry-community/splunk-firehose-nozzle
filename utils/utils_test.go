@@ -94,6 +94,6 @@ var _ = Describe("Testing Utils packages", func() {
 
 	It("NanoSecondsToSeconds", func() {
 		nano := NanoSecondsToSeconds(1501981978112315664)
-		Expect(nano).To(Equal("1501981978.112"))
+		Expect(nano).To(Equal("1501981978.112315664"))
 	})
 })

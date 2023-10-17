@@ -1,7 +1,6 @@
 package eventsink
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -12,8 +11,12 @@ import (
 	"sync/atomic"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
+	fevents "github.com/cloudfoundry-community/splunk-firehose-nozzle/events"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/eventwriter"
+	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
+	"github.com/cloudfoundry/sonde-go/events"
 )
 
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
@@ -30,35 +33,47 @@ type SplunkConfig struct {
 	UUID                  string
 	Logger                lager.Logger
 	StatusMonitorInterval time.Duration
-	DropWarnThreshold     int
+	LoggingIndex          string
 }
 
+type ParseConfig = fevents.Config
+
 type Splunk struct {
-	writers       []eventwriter.Writer
-	config        *SplunkConfig
-	events        chan map[string]interface{}
-	wg            sync.WaitGroup
-	eventCount    uint64
-	sentCountChan chan uint64
-	DroppedEvents uint64
+	writers               []eventwriter.Writer
+	config                *SplunkConfig
+	parseConfig           *ParseConfig
+	appCache              cache.Cache
+	events                chan *events.Envelope
+	wg                    sync.WaitGroup
+	eventCount            uint64
+	sentCountChan         chan uint64
+	FirehoseDroppedEvents utils.Counter
+	SplunkDroppedEvents   utils.Counter
 
 	// cached IP
 	ip string
 }
 
-func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig) *Splunk {
+func NewSplunk(writers []eventwriter.Writer, config *SplunkConfig, parseConfig *ParseConfig, appCache cache.Cache) *Splunk {
 	hostname, ip, _ := utils.GetHostIPInfo(config.Hostname)
 	config.Hostname = hostname
-
-	return &Splunk{
-		writers:       writers,
-		config:        config,
-		events:        make(chan map[string]interface{}, config.QueueSize),
-		ip:            ip,
-		eventCount:    0,
-		sentCountChan: make(chan uint64, 100),
-		DroppedEvents: 0,
+	splunk := &Splunk{
+		writers:               writers,
+		config:                config,
+		parseConfig:           parseConfig,
+		appCache:              appCache,
+		events:                make(chan *events.Envelope, config.QueueSize),
+		ip:                    ip,
+		eventCount:            0,
+		sentCountChan:         make(chan uint64, 100),
+		FirehoseDroppedEvents: monitoring.RegisterCounter("firehose.events.dropped.count", utils.UintType),
+		SplunkDroppedEvents:   monitoring.RegisterCounter("splunk.events.dropped.count", utils.UintType),
 	}
+	monitoring.RegisterFunc("nozzle.queue.percentage", func() interface{} {
+		return (float64(len(splunk.events)) / float64(splunk.config.QueueSize) * 100.0)
+	})
+
+	return splunk
 }
 
 func (s *Splunk) Open() error {
@@ -76,19 +91,61 @@ func (s *Splunk) Close() error {
 	return nil
 }
 
-func (s *Splunk) Write(fields map[string]interface{}, msg string) error {
-	if len(msg) > 0 {
-		fields["msg"] = msg
+// parseEvent parses the event received from the doppler
+func (s *Splunk) parseEvent(msg *events.Envelope) map[string]interface{} {
+	eventType := msg.GetEventType()
+
+	var event *fevents.Event
+	switch eventType {
+	case events.Envelope_HttpStartStop:
+		event = fevents.HttpStartStop(msg)
+	case events.Envelope_LogMessage:
+		event = fevents.LogMessage(msg)
+	case events.Envelope_ValueMetric:
+		event = fevents.ValueMetric(msg)
+	case events.Envelope_CounterEvent:
+		event = fevents.CounterEvent(msg)
+	case events.Envelope_Error:
+		event = fevents.ErrorEvent(msg)
+	case events.Envelope_ContainerMetric:
+		event = fevents.ContainerMetric(msg)
+	case events.Envelope_HttpStart:
+		event = fevents.HttpStart(msg)
+	case events.Envelope_HttpStop:
+		event = fevents.HttpStop(msg)
+
+	default:
+		return nil
 	}
 
+	event.AnnotateWithEnvelopeData(msg, s.parseConfig)
+	event.AnnotateWithCFMetaData()
+
+	if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
+		event.AnnotateWithAppData(s.appCache, s.parseConfig)
+	}
+
+	if ignored, ok := event.Fields["cf_ignored_app"]; ok {
+		if ignoreApp, ok := ignored.(bool); ok && ignoreApp {
+			// Ignore events from this app since end user tag to ignore this app
+			return nil
+		}
+	}
+
+	parsedEvent := event.Fields
+
+	if len(event.Msg) > 0 {
+		parsedEvent["msg"] = event.Msg
+	}
+
+	return parsedEvent
+}
+
+func (s *Splunk) Write(fields *events.Envelope) error {
 	select {
 	case s.events <- fields:
 	default:
-		s.DroppedEvents += 1
-		if int(s.DroppedEvents)%s.config.DropWarnThreshold == 0 {
-			s.config.Logger.Error("Downstream is slow, dropped Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" events",
-				errors.New("dropped more "+strconv.FormatUint(uint64(s.config.DropWarnThreshold), 10)+" events, Total of "+strconv.FormatUint(s.DroppedEvents, 10)+" dropped events"))
-		}
+		s.FirehoseDroppedEvents.Add(1)
 	}
 	return nil
 }
@@ -109,11 +166,14 @@ LOOP:
 				break LOOP
 			}
 
-			event = s.buildEvent(event)
-			batch = append(batch, event)
-			if len(batch) >= s.config.BatchSize {
-				batch = s.indexEvents(writer, batch)
-				timer.Reset(s.config.FlushInterval) // reset channel timer
+			parsedEvent := s.parseEvent(event)
+			if parsedEvent != nil {
+				finalEvent := s.buildEvent(parsedEvent)
+				batch = append(batch, finalEvent)
+				if len(batch) >= s.config.BatchSize {
+					batch = s.indexEvents(writer, batch)
+					timer.Reset(s.config.FlushInterval) // reset channel timer
+				}
 			}
 
 		case <-timer.C:
@@ -145,6 +205,7 @@ func (s *Splunk) indexEvents(writer eventwriter.Writer, batch []map[string]inter
 		s.config.Logger.Error("Unable to talk to Splunk", err, lager.Data{"Retry attempt": i + 1})
 		time.Sleep(getRetryInterval(i))
 	}
+	s.SplunkDroppedEvents.Add(len(batch))
 	s.config.Logger.Error("Finish retrying and dropping events", err, lager.Data{"events": len(batch)})
 	return nil
 }
@@ -167,7 +228,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 
 	// Timestamp
 	if timestamp == "" {
-		timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+		timestamp = utils.NanoSecondsToSeconds(time.Now().UnixNano())
 	}
 	event["time"] = timestamp
 
@@ -209,6 +270,10 @@ func (s *Splunk) Log(message lager.LogFormat) {
 		"event":      e,
 	}
 
+	if s.config.LoggingIndex != "" {
+		event["index"] = s.config.LoggingIndex
+	}
+
 	if message.Timestamp != "" {
 		event["time"] = message.Timestamp
 	}
@@ -238,11 +303,10 @@ func (s *Splunk) LogStatus() {
 				status = "too high"
 			case percent > 90:
 				status = "high"
-			case percent > 50:
-				status = "medium"
 			}
-			s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
-			s.config.Logger.Info("Event_Count", lager.Data{"event_count_sent": sent})
+			if status != "low" {
+				s.config.Logger.Info("Memory_Queue_Pressure", lager.Data{"events_in_consumer_queue": len(s.events), "percentage": int(percent), "status": status})
+			}
 			sent = 0
 			timer.Reset(s.config.StatusMonitorInterval)
 		default:
