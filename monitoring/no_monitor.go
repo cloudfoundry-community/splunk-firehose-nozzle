@@ -21,6 +21,7 @@ func (nm *NoMonitor) RegisterCounter(id string, varType utils.CounterType) utils
 	return &utils.NopCounter{}
 }
 func (nm *NoMonitor) Start() {
+	// NoMonitor start - empty
 }
 
 func (nm *NoMonitor) Stop() error {
