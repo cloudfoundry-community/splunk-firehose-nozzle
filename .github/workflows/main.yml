@@ -183,6 +183,17 @@ jobs:
       - name: Nozzle Log
         run: |
           cf logs splunk-firehose-nozzle &
+      
+      - name: Get tile name
+        run: |
+          echo "tile_name=$(ls tile/product | grep ".pivotal")" >> "$GITHUB_ENV"
+
+      - name: Upload tile
+        uses: actions/upload-artifact@v2
+        with:
+            name: ${{ env.tile_name }}
+            path: ${{ env.tile_name }}
+
 
   # Skip test for now!
   execute_tests:
