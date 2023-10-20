@@ -48,6 +48,7 @@ func NewSplunkEvent(config *SplunkConfig) Writer {
 	}
 }
 
+// TODO
 func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
 	count := uint64(len(events))
