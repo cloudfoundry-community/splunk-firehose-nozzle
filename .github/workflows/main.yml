@@ -191,8 +191,8 @@ jobs:
       - name: Upload tile
         uses: actions/upload-artifact@v2
         with:
-            name: tile/product/${{ env.tile_name }}
-            path: ${{ env.tile_name }}
+            name: ${{ env.tile_name }}
+            path: tile/product/${{ env.tile_name }}
 
 
   # Skip test for now!
