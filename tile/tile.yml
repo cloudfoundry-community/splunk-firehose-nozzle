@@ -4,8 +4,8 @@ label: Splunk Firehose Nozzle for Vmware Tanzu
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
-apply_open_security_group: true # Apply open security group, default: false
-allow_paid_service_plans: true # Allow paid service plans, default: false
+apply_open_security_group: true  # Apply open security group, default: false
+allow_paid_service_plans: true   # Allow paid service plans, default: false
 
 stemcell_criteria:
   os: ubuntu-jammy
