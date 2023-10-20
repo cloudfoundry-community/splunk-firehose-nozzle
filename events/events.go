@@ -198,54 +198,55 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	cfAppId := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cfAppId)
 
-	if cfAppId != nil && appGuid != "<nil>" && cfAppId != "" {
-		appInfo, err := appCache.GetApp(appGuid)
-		if err != nil {
-			if err == cache.ErrMissingAndIgnored {
-				logrus.Info(err.Error(), cfAppId)
-			} else {
-				logrus.Error("Failed to fetch application metadata from remote: ", err)
-			}
-			return
-		} else if appInfo == nil {
-			return
-		}
-		cfAppName := appInfo.Name
-		cfSpaceId := appInfo.SpaceGuid
-		cfSpaceName := appInfo.SpaceName
-		cfOrgId := appInfo.OrgGuid
-		cfOrgName := appInfo.OrgName
-		cfIgnoredApp := appInfo.IgnoredApp
-		appEnv := appInfo.CfAppEnv
+	if cfAppId == nil || cfAppId == "" || appGuid == "<nil>" {
+		return
+	}
 
-		if cfAppName != "" && config.AddAppName {
-			e.Fields["cf_app_name"] = cfAppName
+	appInfo, err := appCache.GetApp(appGuid)
+	if err != nil {
+		if err == cache.ErrMissingAndIgnored {
+			logrus.Info(err.Error(), cfAppId)
+		} else {
+			logrus.Error("Failed to fetch application metadata from remote: ", err)
 		}
+		return
+	} else if appInfo == nil {
+		return
+	}
+	cfAppName := appInfo.Name
+	cfSpaceId := appInfo.SpaceGuid
+	cfSpaceName := appInfo.SpaceName
+	cfOrgId := appInfo.OrgGuid
+	cfOrgName := appInfo.OrgName
+	cfIgnoredApp := appInfo.IgnoredApp
+	appEnv := appInfo.CfAppEnv
 
-		if cfSpaceId != "" && config.AddSpaceGuid {
-			e.Fields["cf_space_id"] = cfSpaceId
-		}
+	if cfAppName != "" && config.AddAppName {
+		e.Fields["cf_app_name"] = cfAppName
+	}
 
-		if cfSpaceName != "" && config.AddSpaceName {
-			e.Fields["cf_space_name"] = cfSpaceName
-		}
+	if cfSpaceId != "" && config.AddSpaceGuid {
+		e.Fields["cf_space_id"] = cfSpaceId
+	}
 
-		if cfOrgId != "" && config.AddOrgGuid {
-			e.Fields["cf_org_id"] = cfOrgId
-		}
+	if cfSpaceName != "" && config.AddSpaceName {
+		e.Fields["cf_space_name"] = cfSpaceName
+	}
 
-		if cfOrgName != "" && config.AddOrgName {
-			e.Fields["cf_org_name"] = cfOrgName
-		}
+	if cfOrgId != "" && config.AddOrgGuid {
+		e.Fields["cf_org_id"] = cfOrgId
+	}
 
-		if appEnv["SPLUNK_INDEX"] != nil {
-			e.Fields["info_splunk_index"] = appEnv["SPLUNK_INDEX"]
-		}
+	if cfOrgName != "" && config.AddOrgName {
+		e.Fields["cf_org_name"] = cfOrgName
+	}
 
-		if cfIgnoredApp != false {
-			e.Fields["cf_ignored_app"] = cfIgnoredApp
-		}
+	if appEnv["SPLUNK_INDEX"] != nil {
+		e.Fields["info_splunk_index"] = appEnv["SPLUNK_INDEX"]
+	}
 
+	if cfIgnoredApp {
+		e.Fields["cf_ignored_app"] = cfIgnoredApp
 	}
 }
 
