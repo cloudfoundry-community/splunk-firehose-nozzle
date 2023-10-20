@@ -54,18 +54,6 @@ func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 	for i, event := range events {
 		s.parseEvent(event)
 
-		// if _, ok := event["index"]; !ok {
-		// 	if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
-		// 		event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
-		// 	} else if s.config.Index != "" {
-		// 		event["index"] = s.config.Index
-		// 	}
-		// }
-
-		// if len(s.config.Fields) > 0 {
-		// 	event["fields"] = s.config.Fields
-		// }
-
 		eventJson, err := json.Marshal(event)
 		if err == nil {
 			bodyBuffer.Write(eventJson)
@@ -92,17 +80,17 @@ func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 }
 
 func (s *SplunkEvent) parseEvent(event map[string]interface{}) error {
-	if _, ok := event["index"]; !ok {
-		if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
-			event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
-		} else if s.config.Index != "" {
-			event["index"] = s.config.Index
-		}
-	}
+	// if _, ok := event["index"]; !ok {
+	// 	if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
+	// 		event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
+	// 	} else if s.config.Index != "" {
+	// 		event["index"] = s.config.Index
+	// 	}
+	// }
 
-	if len(s.config.Fields) > 0 {
-		event["fields"] = s.config.Fields
-	}
+	// if len(s.config.Fields) > 0 {
+	// 	event["fields"] = s.config.Fields
+	// }
 
 	return nil
 }
