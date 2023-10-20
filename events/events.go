@@ -213,6 +213,11 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	} else if appInfo == nil {
 		return
 	}
+
+	e.parseAndAnnotateWithAppInfo(appInfo, config)
+}
+
+func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) {
 	cfAppName := appInfo.Name
 	cfSpaceId := appInfo.SpaceGuid
 	cfSpaceName := appInfo.SpaceName
