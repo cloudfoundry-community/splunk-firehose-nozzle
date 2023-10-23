@@ -4,240 +4,264 @@ label: Splunk Firehose Nozzle for Vmware Tanzu
 description: Forward firehose logs & metrics to Splunk
 icon_file: icon.png
 
-apply_open_security_group: true       # Apply open security group, default: false
-allow_paid_service_plans: true        # Allow paid service plans, default: false
+apply_open_security_group: true  # Apply open security group, default: false
+allow_paid_service_plans: true   # Allow paid service plans, default: false
 
 stemcell_criteria:
   os: ubuntu-jammy
   requires_cpi: false
-  version: '1.8'
+  version: "1.8"
 
 properties:
-- name: author
-  type: string
-  label: Author
-  value: Shubham Jain
+  - name: author
+    type: string
+    label: Author
+    value: Shubham Jain
 
 forms:
-- name: splunk-config
-  label: Splunk Settings
-  description: Splunk HTTP Event Collector Settings
-  markdown: |
-    Configure your Splunk HTTP Event Collector. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
-  properties:
-  - name: splunk_host
-    type: string
-    label: HTTP Event Collector Endpoint URL
-    description: HTTP Event Collector endpoint URL.
-  - name: splunk_token
-    type: secret
-    label: HTTP Event Collector Token
-    description: Splunk HTTP Event Collector token.
-  - name: skip_ssl_validation_splunk
-    type: boolean
-    label: Skip SSL Validation
-    default: false
-    description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
-  - name: splunk_index
-    type: string
-    label: Index
-    description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
-    default: main
-  - name: splunk_logging_index
-    type: string
-    label: Logging Index
-    description: The name of the Splunk index where logging events will be sent to. WARNING:Setting an invalid index will cause events to be lost. When not provided, all logging events will be forwarded to the splunk_index.
-    default: ""
+  - name: splunk-config
+    label: Splunk Settings
+    description: Splunk HTTP Event Collector Settings
+    markdown: |
+      Configure your Splunk HTTP Event Collector. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
+    properties:
+      - name: splunk_host
+        type: string
+        label: HTTP Event Collector Endpoint URL
+        description: HTTP Event Collector endpoint URL.
+      - name: splunk_token
+        type: secret
+        label: HTTP Event Collector Token
+        description: Splunk HTTP Event Collector token.
+      - name: skip_ssl_validation_splunk
+        type: boolean
+        label: Skip SSL Validation
+        default: false
+        description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
+      - name: splunk_index
+        type: string
+        label: Index
+        description: The name of the Splunk index that events will be sent to. WARNING:Setting an invalid index will cause events to be lost.
+        default: main
+      - name: splunk_logging_index
+        type: string
+        label: Logging Index
+        description: The name of the Splunk index where logging events will be sent to. WARNING:Setting an invalid index will cause events to be lost. When not provided, all logging events will be forwarded to the splunk_index.
+        default: ""
 
-- name: cf-config
-  label: Cloud Foundry Settings
-  description: Cloud Foundry Connection Settings
-  properties:
-  - name: api_endpoint
-    type: string
-    label: API Endpoint
-    description: Cloud Foundry API endpoint.
-  - name: client_id
-    type: string
-    label: Client ID
-    description: CF UAA client ID
-  - name: client_secret
-    type: secret
-    label: Client Secret
-    description: CF UAA client secret
-  - name: skip_ssl_validation_cf
-    type: boolean
-    label: Skip SSL Validation
-    default: false
-    description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
-  - name: events
-    type: multi_select_options
-    label: Event Types
-    default: ['HttpStartStop', 'LogMessage', 'ValueMetric', 'CounterEvent', 'Error', 'ContainerMetric']
-    options:
-      - name: HttpStartStop
-        label: HttpStartStop
-      - name: LogMessage
-        label: LogMessage
-      - name: ValueMetric
-        label: ValueMetric
-      - name: CounterEvent
-        label: CounterEvent
-      - name: Error
-        label: Error
-      - name: ContainerMetric
-        label: ContainerMetric
-    description: Event types to forward to Splunk.
+  - name: cf-config
+    label: Cloud Foundry Settings
+    description: Cloud Foundry Connection Settings
+    properties:
+      - name: api_endpoint
+        type: string
+        label: API Endpoint
+        description: Cloud Foundry API endpoint.
+      - name: client_id
+        type: string
+        label: Client ID
+        description: CF UAA client ID
+      - name: client_secret
+        type: secret
+        label: Client Secret
+        description: CF UAA client secret
+      - name: skip_ssl_validation_cf
+        type: boolean
+        label: Skip SSL Validation
+        default: false
+        description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
+      - name: events
+        type: multi_select_options
+        label: Event Types
+        default:
+          [
+            "HttpStartStop",
+            "LogMessage",
+            "ValueMetric",
+            "CounterEvent",
+            "Error",
+            "ContainerMetric",
+          ]
+        options:
+          - name: HttpStartStop
+            label: HttpStartStop
+          - name: LogMessage
+            label: LogMessage
+          - name: ValueMetric
+            label: ValueMetric
+          - name: CounterEvent
+            label: CounterEvent
+          - name: Error
+            label: Error
+          - name: ContainerMetric
+            label: ContainerMetric
+        description: Event types to forward to Splunk.
 
-- name: advanced
-  label: Advanced
-  description: Additional Nozzle Configuration
-  properties:
-  - name: scale_out_nozzle
-    type: integer
-    label: Scale Out Nozzle
-    description: Scale out Splunk nozzle. Recommendation:Run 2 or more nozzles for high availability.
-    default: 2
-  - name: firehose_subscription_id
-    type: string
-    label: Firehose Subscription ID
-    description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
-    optional: true
-  - name: add_app_info
-    type: multi_select_options
-    label: Add App Information
-    optional: true
-    options:
-      - name: AppName
-        label: AppName
-      - name: OrgName
-        label: OrgName
-      - name: OrgGuid
-        label: OrgGuid
-      - name: SpaceName
-        label: SpaceName
-      - name: SpaceGuid
-        label: SpaceGuid
-    description: Enriches event raw data with application metadata
-  - name: add_tags
-    type: boolean
-    label: Add Tags
-    default: false
-    description: Add additional tags from envelope to Splunk Event.
-  - name: extra_fields
-    type: string
-    label: Additional Fields
-    description: A set of user defined key:value pairs that are added to all Splunk events that do not occur in the event payload. Expected format - key1:value1, key2:value2, key3:value3
-    optional: true
-  - name: hec_retries
-    type: integer
-    label: HEC Retries
-    default: 3
-    description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
-  - name: hec_batch_size
-    type: integer
-    label: HEC Batch Size
-    default: 100
-    description: The number of events per batch sent to Splunk HTTP Event Collector.
-  - name: hec_workers
-    type: integer
-    label: HEC Workers
-    default: 8
-    description: The number of concurrent workers sending data to Splunk HTTP Event Collector. Scale this number to your Splunk platform data collection capacity accordingly.
-  - name: consumer_queue_size
-    type: integer
-    label: Consumer Queue Size
-    default: 10000
-    description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
-  - name: status_monitor_interval
-    type: string
-    label: Monitor Queue Pressure
-    default: 0s
-    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
-  - name: flush_interval
-    type: string
-    label: Flush Interval
-    default: 5s
-    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
-  - name: missing_app_cache_invalidate_ttl
-    type: string
-    label: Missing App Cache Invalidate TTL
-    default: 0s
-    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the missing app info cache. Set to 0s to maintain cache until nozzle restart.
-  - name: app_cache_invalidate_ttl
-    type: string
-    label: App Cache Invalidate TTL
-    default: 0s
-    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the app info local cache. Set to 0s to only populate the cache during startup or restart of the nozzle.
-  - name: org_space_cache_invalidate_ttl
-    type: string
-    label: Org Space Cache Invalidate TTL
-    default: 72h
-    description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the org and space cache. Defaults to 72h.
-  - name: app_limits
-    type: integer
-    label: App Limits
-    default: 0
-    description: The number of apps for which metadata is gathered when refreshing the app metadata cache (order based on app creation date). Set to 0 to remove limit.
-  - name: nozzle_memory
-    type: string
-    label: Nozzle Memory
-    description: Nozzle memory in MB.
-    default: 256M
-  - name: firehose_keep_alive
-    type: string
-    label: Firehose Keep Alive
-    description: Keep alive duration (in sec) for the firehose consumer.
-    default: 25s
-  - name: enable_event_tracing
-    type: boolean
-    label: Enable Event Tracing
-    default: false
-    description: Enables data loss tracing.
-  - name: ignore_missing_app
-    type: boolean
-    label: Ignore Missing App
-    default: true
-    description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
-  - name: selected_monitoring_metrics
-    type: multi_select_options
-    label: Metric types
-    default: ['nozzle.queue.percentage', 'splunk.events.dropped.count', 'splunk.events.sent.count', 'firehose.events.dropped.count', 'firehose.events.received.count', 'splunk.events.throughput', 'nozzle.usage.ram', 'nozzle.usage.cpu', 'nozzle.cache.memory.hit', 'nozzle.cache.memory.miss', 'nozzle.cache.remote.hit', 'nozzle.cache.remote.miss', 'nozzle.cache.boltdb.hit', 'nozzle.cache.boltdb.miss']
-    options:
-      - name: nozzle.queue.percentage
-        label: nozzle.queue.percentage
-      - name: splunk.events.dropped.count
-        label: splunk.events.dropped.count
-      - name: splunk.events.sent.count
-        label: splunk.events.sent.count
-      - name: firehose.events.dropped.count
-        label: firehose.events.dropped.count
-      - name: firehose.events.received.count
-        label: firehose.events.received.count
-      - name: splunk.events.throughput
-        label: splunk.events.throughput
-      - name: nozzle.usage.ram
-        label: nozzle.usage.ram
-      - name: nozzle.usage.cpu
-        label: nozzle.usage.cpu
-      - name: nozzle.cache.memory.hit
-        label: nozzle.cache.memory.hit
-      - name: nozzle.cache.memory.miss
-        label: nozzle.cache.memory.miss
-      - name: nozzle.cache.remote.hit
-        label: nozzle.cache.remote.hit
-      - name: nozzle.cache.remote.miss
-        label: nozzle.cache.remote.miss
-      - name: nozzle.cache.boltdb.hit
-        label: nozzle.cache.boltdb.hit
-      - name: nozzle.cache.boltdb.miss
-        label: nozzle.cache.boltdb.miss
-    description: Comma separated list of metrics that user want to visualize
-  - name: splunk_metric_index
-    type: string
-    label: Splunk Metric Index
-    description: Index where Metric Data will be indexed
-    optional: true
+  - name: advanced
+    label: Advanced
+    description: Additional Nozzle Configuration
+    properties:
+      - name: scale_out_nozzle
+        type: integer
+        label: Scale Out Nozzle
+        description: Scale out Splunk nozzle. Recommendation:Run 2 or more nozzles for high availability.
+        default: 2
+      - name: firehose_subscription_id
+        type: string
+        label: Firehose Subscription ID
+        description: Unique subscription ID to nozzle. Firehose balances across socket connections with the same ID.
+        optional: true
+      - name: add_app_info
+        type: multi_select_options
+        label: Add App Information
+        optional: true
+        options:
+          - name: AppName
+            label: AppName
+          - name: OrgName
+            label: OrgName
+          - name: OrgGuid
+            label: OrgGuid
+          - name: SpaceName
+            label: SpaceName
+          - name: SpaceGuid
+            label: SpaceGuid
+        description: Enriches event raw data with application metadata
+      - name: add_tags
+        type: boolean
+        label: Add Tags
+        default: false
+        description: Add additional tags from envelope to Splunk Event.
+      - name: extra_fields
+        type: string
+        label: Additional Fields
+        description: A set of user defined key:value pairs that are added to all Splunk events that do not occur in the event payload. Expected format - key1:value1, key2:value2, key3:value3
+        optional: true
+      - name: hec_retries
+        type: integer
+        label: HEC Retries
+        default: 3
+        description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
+      - name: hec_batch_size
+        type: integer
+        label: HEC Batch Size
+        default: 100
+        description: The number of events per batch sent to Splunk HTTP Event Collector.
+      - name: hec_workers
+        type: integer
+        label: HEC Workers
+        default: 8
+        description: The number of concurrent workers sending data to Splunk HTTP Event Collector. Scale this number to your Splunk platform data collection capacity accordingly.
+      - name: consumer_queue_size
+        type: integer
+        label: Consumer Queue Size
+        default: 10000
+        description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
+      - name: status_monitor_interval
+        type: string
+        label: Monitor Queue Pressure
+        default: 0s
+        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for monitoring memory queue pressure. Use to help with back-pressure insights. (Increases CPU load. Use for insights purposes only) Default is 0s (Disabled).
+      - name: flush_interval
+        type: string
+        label: Flush Interval
+        default: 5s
+        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+      - name: missing_app_cache_invalidate_ttl
+        type: string
+        label: Missing App Cache Invalidate TTL
+        default: 0s
+        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the missing app info cache. Set to 0s to maintain cache until nozzle restart.
+      - name: app_cache_invalidate_ttl
+        type: string
+        label: App Cache Invalidate TTL
+        default: 0s
+        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the app info local cache. Set to 0s to only populate the cache during startup or restart of the nozzle.
+      - name: org_space_cache_invalidate_ttl
+        type: string
+        label: Org Space Cache Invalidate TTL
+        default: 72h
+        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the org and space cache. Defaults to 72h.
+      - name: app_limits
+        type: integer
+        label: App Limits
+        default: 0
+        description: The number of apps for which metadata is gathered when refreshing the app metadata cache (order based on app creation date). Set to 0 to remove limit.
+      - name: nozzle_memory
+        type: string
+        label: Nozzle Memory
+        description: Nozzle memory in MB.
+        default: 256M
+      - name: firehose_keep_alive
+        type: string
+        label: Firehose Keep Alive
+        description: Keep alive duration (in sec) for the firehose consumer.
+        default: 25s
+      - name: enable_event_tracing
+        type: boolean
+        label: Enable Event Tracing
+        default: false
+        description: Enables data loss tracing.
+      - name: ignore_missing_app
+        type: boolean
+        label: Ignore Missing App
+        default: true
+        description: Do not trigger an app metadata refresh when encountering data from an app without info in the app metadata cache.
+      - name: selected_monitoring_metrics
+        type: multi_select_options
+        label: Metric types
+        default:
+          [
+            "nozzle.queue.percentage",
+            "splunk.events.dropped.count",
+            "splunk.events.sent.count",
+            "firehose.events.dropped.count",
+            "firehose.events.received.count",
+            "splunk.events.throughput",
+            "nozzle.usage.ram",
+            "nozzle.usage.cpu",
+            "nozzle.cache.memory.hit",
+            "nozzle.cache.memory.miss",
+            "nozzle.cache.remote.hit",
+            "nozzle.cache.remote.miss",
+            "nozzle.cache.boltdb.hit",
+            "nozzle.cache.boltdb.miss",
+          ]
+        options:
+          - name: nozzle.queue.percentage
+            label: nozzle.queue.percentage
+          - name: splunk.events.dropped.count
+            label: splunk.events.dropped.count
+          - name: splunk.events.sent.count
+            label: splunk.events.sent.count
+          - name: firehose.events.dropped.count
+            label: firehose.events.dropped.count
+          - name: firehose.events.received.count
+            label: firehose.events.received.count
+          - name: splunk.events.throughput
+            label: splunk.events.throughput
+          - name: nozzle.usage.ram
+            label: nozzle.usage.ram
+          - name: nozzle.usage.cpu
+            label: nozzle.usage.cpu
+          - name: nozzle.cache.memory.hit
+            label: nozzle.cache.memory.hit
+          - name: nozzle.cache.memory.miss
+            label: nozzle.cache.memory.miss
+          - name: nozzle.cache.remote.hit
+            label: nozzle.cache.remote.hit
+          - name: nozzle.cache.remote.miss
+            label: nozzle.cache.remote.miss
+          - name: nozzle.cache.boltdb.hit
+            label: nozzle.cache.boltdb.hit
+          - name: nozzle.cache.boltdb.miss
+            label: nozzle.cache.boltdb.miss
+        description: Comma separated list of metrics that user want to visualize
+      - name: splunk_metric_index
+        type: string
+        label: Splunk Metric Index
+        description: Index where Metric Data will be indexed
+        optional: true
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
@@ -249,16 +273,16 @@ migration: |
   }
 
 packages:
-- name: splunk_firehose_nozzle
-  type: app
-  label: Splunk-Firehose-Nozzle
-  manifest:
-    memory: (( .properties.nozzle_memory.value ))
-    instances: (( .properties.scale_out_nozzle.value ))
-    buildpack: binary_buildpack
-    health-check-type: process
-    no-route: true
-    path: ../splunk-firehose-nozzle
-    command: ./splunk-firehose-nozzle
-    env:
-      GOPACKAGENAME: main
+  - name: splunk_firehose_nozzle
+    type: app
+    label: Splunk-Firehose-Nozzle
+    manifest:
+      memory: (( .properties.nozzle_memory.value ))
+      instances: (( .properties.scale_out_nozzle.value ))
+      buildpack: binary_buildpack
+      health-check-type: process
+      no-route: true
+      path: ../splunk-firehose-nozzle
+      command: ./splunk-firehose-nozzle
+      env:
+        GOPACKAGENAME: main
