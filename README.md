@@ -301,6 +301,15 @@ __Monitoring(Metric data Ingestion):__
 
 <p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
 
+### Routing data through edge processor via HEC
+Logs can be routed to Splunk via Edge Processor. Assuming that you have a working Edge Processor instance, you can use it with minimal 
+changes to nozzle configuration.
+
+Configuratino fields that you should change are:
+* `SPLUNK_HOST`: Use the host of your Edge Processor instance instead of Splunk. Example: https://x.x.x.x:8088. 
+* `SPLUNK_TOKEN`: It is a required parameter. A token used to authorize your request, can be found in Edge Processor settings. If your 
+EP token authentication is turned off, you can enter a placeholder values instead (e.x. "-").
+
 ## <a id='walkthrough'></a> Troubleshooting
 This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.
 
