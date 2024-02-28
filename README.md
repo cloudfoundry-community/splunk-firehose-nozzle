@@ -276,7 +276,7 @@ FORMAT = new_index
 <p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
 
 
-__Monitoring(Metric data Ingestion):__
+## __Monitoring(Metric data Ingestion):__
 
 | Metric Name |  Description
 |---|---
