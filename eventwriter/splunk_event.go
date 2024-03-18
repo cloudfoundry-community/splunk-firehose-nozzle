@@ -136,7 +136,6 @@ func (s *SplunkEvent) send(postBody *[]byte) error {
 	}
 	s.BodyBufferSize.Add(uint64(len(*postBody)))
 
-	fmt.Println("Test end")
 	return nil
 }
 

@@ -38,7 +38,6 @@ func (r *router) Route(msg *events.Envelope) error {
 		// Ignore this event since we are not interested
 		return nil
 	}
-
 	_ = r.sink.Write(msg)
 
 	return nil
