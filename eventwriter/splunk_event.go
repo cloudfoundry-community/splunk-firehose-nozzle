@@ -18,13 +18,15 @@ import (
 var keepAliveTimer = time.Now()
 
 type SplunkConfig struct {
-	Host    string
-	Token   string
-	Index   string
-	Fields  map[string]string
-	SkipSSL bool
-	Debug   bool
-	Version string
+	Host                    string
+	Token                   string
+	Index                   string
+	Fields                  map[string]string
+	SkipSSL                 bool
+	Debug                   bool
+	Version                 string
+	RefreshSplunkConnection bool
+	KeepAliveTimer          time.Duration
 
 	Logger lager.Logger
 }
@@ -121,8 +123,10 @@ func (s *SplunkEvent) send(postBody *[]byte) error {
 		responseBody, _ := io.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	} else {
-		if time.Now().After(keepAliveTimer) {
-			keepAliveTimer = time.Now().Add(5 * time.Second)
+		if s.config.RefreshSplunkConnection && time.Now().After(keepAliveTimer) {
+			if s.config.KeepAliveTimer > 0 {
+				keepAliveTimer = time.Now().Add(s.config.KeepAliveTimer)
+			}
 		} else {
 			//Draining the response buffer, so that the same connection can be reused the next time
 			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
