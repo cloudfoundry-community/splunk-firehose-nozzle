@@ -22,18 +22,20 @@ import (
 const SPLUNK_HEC_FIELDS_SUPPORT_VERSION = "6.4"
 
 type SplunkConfig struct {
-	FlushInterval         time.Duration
-	QueueSize             int // consumer queue buffer size
-	BatchSize             int
-	Retries               int // No of retries to post events to HEC before dropping events
-	Hostname              string
-	SubscriptionID        string
-	ExtraFields           map[string]string
-	TraceLogging          bool
-	UUID                  string
-	Logger                lager.Logger
-	StatusMonitorInterval time.Duration
-	LoggingIndex          string
+	FlushInterval           time.Duration
+	QueueSize               int // consumer queue buffer size
+	BatchSize               int
+	Retries                 int // No of retries to post events to HEC before dropping events
+	Hostname                string
+	SubscriptionID          string
+	ExtraFields             map[string]string
+	TraceLogging            bool
+	UUID                    string
+	Logger                  lager.Logger
+	StatusMonitorInterval   time.Duration
+	LoggingIndex            string
+	RefreshSplunkConnection bool
+	KeepAliveTimer          time.Duration
 }
 
 type ParseConfig = fevents.Config

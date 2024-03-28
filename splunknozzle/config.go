@@ -42,11 +42,13 @@ type Config struct {
 	WantedEvents string `json:"wanted-events"`
 	ExtraFields  string `json:"extra-fields"`
 
-	FlushInterval time.Duration `json:"flush-interval"`
-	QueueSize     int           `json:"queue-size"`
-	BatchSize     int           `json:"batch-size"`
-	Retries       int           `json:"retries"`
-	HecWorkers    int           `json:"hec-workers"`
+	FlushInterval           time.Duration `json:"flush-interval"`
+	QueueSize               int           `json:"queue-size"`
+	BatchSize               int           `json:"batch-size"`
+	Retries                 int           `json:"retries"`
+	HecWorkers              int           `json:"hec-workers"`
+	RefreshSplunkConnection bool          `json:"refresh-splunk-connection"`
+	KeepAliveTimer          time.Duration `json:"keep-alive-timer"`
 
 	Version string `json:"version"`
 	Branch  string `json:"branch"`
@@ -133,6 +135,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("HEC_RETRIES").Default("5").IntVar(&c.Retries)
 	kingpin.Flag("hec-workers", "How many workers (concurrency) when post data to HEC").
 		OverrideDefaultFromEnvar("HEC_WORKERS").Default("8").IntVar(&c.HecWorkers)
+	kingpin.Flag("refresh-splunk-connection", "Periodically refresh connection to Splunk").
+		OverrideDefaultFromEnvar("REFRESH_SPLUNK_CONNECTION").Default("false").BoolVar(&c.RefreshSplunkConnection)
+	kingpin.Flag("keep-alive-timer", "Interval used to close and refresh connection to Splunk").
+		OverrideDefaultFromEnvar("KEEP_ALIVE_TIMER").Default("30s").DurationVar(&c.KeepAliveTimer)
 
 	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)

@@ -1,6 +1,7 @@
 import pytest
 from lib.update_env import *
 from lib.splunk_api import *
+from lib.helper import get_project_folder, get_integration_folder
 import string
 import random
 import subprocess
