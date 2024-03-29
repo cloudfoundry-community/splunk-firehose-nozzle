@@ -44,7 +44,7 @@ func (ic *IntCounter) Value() interface{} {
 type NopCounter struct{}
 
 func (nc *NopCounter) Add(num interface{}) {
-
+	// Do nothing for NopCounter
 }
 
 func (nc *NopCounter) Clone() Counter {

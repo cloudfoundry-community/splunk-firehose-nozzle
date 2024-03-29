@@ -8,20 +8,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 )
 
+var keepAliveTimer = time.Now()
+
 type SplunkConfig struct {
-	Host    string
-	Token   string
-	Index   string
-	Fields  map[string]string
-	SkipSSL bool
-	Debug   bool
-	Version string
+	Host                    string
+	Token                   string
+	Index                   string
+	Fields                  map[string]string
+	SkipSSL                 bool
+	Debug                   bool
+	Version                 string
+	RefreshSplunkConnection bool
+	KeepAliveTimer          time.Duration
 
 	Logger lager.Logger
 }
@@ -52,18 +57,7 @@ func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 	bodyBuffer := new(bytes.Buffer)
 	count := uint64(len(events))
 	for i, event := range events {
-
-		if _, ok := event["index"]; !ok {
-			if event["event"].(map[string]interface{})["info_splunk_index"] != nil {
-				event["index"] = event["event"].(map[string]interface{})["info_splunk_index"]
-			} else if s.config.Index != "" {
-				event["index"] = s.config.Index
-			}
-		}
-
-		if len(s.config.Fields) > 0 {
-			event["fields"] = s.config.Fields
-		}
+		s.parseEvent(&event)
 
 		eventJson, err := json.Marshal(event)
 		if err == nil {
@@ -90,6 +84,22 @@ func (s *SplunkEvent) Write(events []map[string]interface{}) (error, uint64) {
 	}
 }
 
+func (s *SplunkEvent) parseEvent(event *map[string]interface{}) error {
+	if _, ok := (*event)["index"]; !ok {
+		if (*event)["event"].(map[string]interface{})["info_splunk_index"] != nil {
+			(*event)["index"] = (*event)["event"].(map[string]interface{})["info_splunk_index"]
+		} else if s.config.Index != "" {
+			(*event)["index"] = s.config.Index
+		}
+	}
+
+	if len(s.config.Fields) > 0 {
+		(*event)["fields"] = s.config.Fields
+	}
+
+	return nil
+}
+
 func (s *SplunkEvent) send(postBody *[]byte) error {
 	endpoint := fmt.Sprintf("%s/services/collector", s.config.Host)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(*postBody))
@@ -113,10 +123,15 @@ func (s *SplunkEvent) send(postBody *[]byte) error {
 		responseBody, _ := io.ReadAll(resp.Body)
 		return errors.New(fmt.Sprintf("Non-ok response code [%d] from splunk: %s", resp.StatusCode, responseBody))
 	} else {
-		//Draining the response buffer, so that the same connection can be reused the next time
-		_, err := io.Copy(io.Discard, resp.Body)
-		if err != nil {
-			s.config.Logger.Error("Error discarding response body", err)
+		if s.config.RefreshSplunkConnection && time.Now().After(keepAliveTimer) {
+			if s.config.KeepAliveTimer > 0 {
+				keepAliveTimer = time.Now().Add(s.config.KeepAliveTimer)
+			}
+		} else {
+			//Draining the response buffer, so that the same connection can be reused the next time
+			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+				s.config.Logger.Error("Error discarding response body", err)
+			}
 		}
 	}
 	s.BodyBufferSize.Add(uint64(len(*postBody)))

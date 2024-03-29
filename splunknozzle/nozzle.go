@@ -86,13 +86,15 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 
 	// EventWriter for writing events
 	writerConfig := &eventwriter.SplunkConfig{
-		Host:    s.config.SplunkHost,
-		Token:   s.config.SplunkToken,
-		Index:   s.config.SplunkIndex,
-		SkipSSL: s.config.SkipSSLSplunk,
-		Debug:   s.config.Debug,
-		Logger:  s.logger,
-		Version: s.config.Version,
+		Host:                    s.config.SplunkHost,
+		Token:                   s.config.SplunkToken,
+		Index:                   s.config.SplunkIndex,
+		SkipSSL:                 s.config.SkipSSLSplunk,
+		Debug:                   s.config.Debug,
+		Logger:                  s.logger,
+		Version:                 s.config.Version,
+		RefreshSplunkConnection: s.config.RefreshSplunkConnection,
+		KeepAliveTimer:          s.config.KeepAliveTimer,
 	}
 
 	var writers []eventwriter.Writer
@@ -112,18 +114,20 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 	nozzleUUID := uuid.New().String()
 
 	sinkConfig := &eventsink.SplunkConfig{
-		FlushInterval:         s.config.FlushInterval,
-		QueueSize:             s.config.QueueSize,
-		BatchSize:             s.config.BatchSize,
-		Retries:               s.config.Retries,
-		Hostname:              s.config.JobHost,
-		SubscriptionID:        s.config.SubscriptionID,
-		TraceLogging:          s.config.TraceLogging,
-		ExtraFields:           parsedExtraFields,
-		UUID:                  nozzleUUID,
-		Logger:                s.logger,
-		LoggingIndex:          s.config.SplunkLoggingIndex,
-		StatusMonitorInterval: s.config.StatusMonitorInterval,
+		FlushInterval:           s.config.FlushInterval,
+		QueueSize:               s.config.QueueSize,
+		BatchSize:               s.config.BatchSize,
+		Retries:                 s.config.Retries,
+		Hostname:                s.config.JobHost,
+		SubscriptionID:          s.config.SubscriptionID,
+		TraceLogging:            s.config.TraceLogging,
+		ExtraFields:             parsedExtraFields,
+		UUID:                    nozzleUUID,
+		Logger:                  s.logger,
+		LoggingIndex:            s.config.SplunkLoggingIndex,
+		StatusMonitorInterval:   s.config.StatusMonitorInterval,
+		RefreshSplunkConnection: s.config.RefreshSplunkConnection,
+		KeepAliveTimer:          s.config.KeepAliveTimer,
 	}
 
 	LowerAddAppInfo := strings.ToLower(s.config.AddAppInfo)

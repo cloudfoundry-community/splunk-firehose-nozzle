@@ -23,7 +23,7 @@
     export API_USER=<CF-USER>
     export EVENTS=ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
     export SPLUNK_TOKEN=<HEC-TOKEN>
-    export SPLUNK_URL=<HEC-ENDPOINT>
+    export SPLUNK_URL=<SPLUNK-URL>:8089
     export SPLUNK_USER=<SPLUNK-USERNAME>
     export SPLUNK_PASSWORD=<SPLUNK-PASSWORD>
     export SPLUNK_INDEX=main

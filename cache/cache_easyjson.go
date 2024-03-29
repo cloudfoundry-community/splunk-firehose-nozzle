@@ -4,6 +4,7 @@ package cache
 
 import (
 	json "encoding/json"
+
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
 )
@@ -43,25 +44,7 @@ func easyjsonA591d1bcDecodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 		case "OrgGuid":
 			out.OrgGuid = string(in.String())
 		case "CfAppEnv":
-			if in.IsNull() {
-				in.Skip()
-			} else {
-				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.CfAppEnv = make(map[string]interface{})
-				} else {
-					out.CfAppEnv = nil
-				}
-				for !in.IsDelim('}') {
-					key := string(in.String())
-					in.WantColon()
-					var v1 interface{}
-					v1 = in.Interface()
-					(out.CfAppEnv)[key] = v1
-					in.WantComma()
-				}
-				in.Delim('}')
-			}
+			parseCfAppEnv(in, out)
 		case "IgnoredApp":
 			out.IgnoredApp = bool(in.Bool())
 		default:
@@ -71,6 +54,28 @@ func easyjsonA591d1bcDecodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCac
 	}
 	in.Delim('}')
 }
+
+func parseCfAppEnv(in *jlexer.Lexer, out *App) {
+	if in.IsNull() {
+		in.Skip()
+	} else {
+		in.Delim('{')
+		if !in.IsDelim('}') {
+			out.CfAppEnv = make(map[string]interface{})
+		} else {
+			out.CfAppEnv = nil
+		}
+		for !in.IsDelim('}') {
+			key := string(in.String())
+			in.WantColon()
+			v1 := in.Interface()
+			(out.CfAppEnv)[key] = v1
+			in.WantComma()
+		}
+		in.Delim('}')
+	}
+}
+
 func easyjsonA591d1bcEncodeGithubComCloudfoundryCommunitySplunkFirehoseNozzleCache(out *jwriter.Writer, in App) {
 	out.RawByte('{')
 	first := true

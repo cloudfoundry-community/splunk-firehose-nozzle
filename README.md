@@ -111,6 +111,8 @@ This is recommended for dev environments only.
 * `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring (Metric data of insights with in the connectors). Default is 0s (Disabled).
 * `SPLUNK_METRIC_INDEX`: Index in which metric data will be ingested when monitoring module is enabled
 * `SELECTED_MONITORING_METRICS`: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
+* `REFRESH_SPLUNK_CONNECTION`: If set to true, PCF will periodically refresh connection to Splunk (how often depends on KEEP_ALIVE_TIMER value). If set to false connection will be kept alive and reused. (Default: false)
+* `KEEP_ALIVE_TIMER`: Time after which connection to Splunk will be refreshed, if REFRESH_SPLUNK_CONNECTION is set to true (in s/m/h. For example, 3600s or 60m or 1h). (Default: 30s)
 
 __About app cache params:__
 
@@ -276,7 +278,7 @@ FORMAT = new_index
 <p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
 
 
-__Monitoring(Metric data Ingestion):__
+## __Monitoring(Metric data Ingestion):__
 
 | Metric Name |  Description
 |---|---
@@ -300,6 +302,15 @@ __Monitoring(Metric data Ingestion):__
 ![nozzle_logs](https://user-images.githubusercontent.com/89519924/200804285-22ad7863-1db3-493a-8196-cc589837db76.png)
 
 <p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
+
+### Routing data through edge processor via HEC
+Logs can be routed to Splunk via Edge Processor. Assuming that you have a working Edge Processor instance, you can use it with minimal 
+changes to nozzle configuration.
+
+Configuratino fields that you should change are:
+* `SPLUNK_HOST`: Use the host of your Edge Processor instance instead of Splunk. Example: https://x.x.x.x:8088. 
+* `SPLUNK_TOKEN`: It is a required parameter. A token used to authorize your request, can be found in Edge Processor settings. If your 
+EP token authentication is turned off, you can enter a placeholder values instead (e.x. "-").
 
 ## <a id='walkthrough'></a> Troubleshooting
 This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.
@@ -508,7 +519,7 @@ $ chmod +x tools/nozzle.sh
 Build project:
 
 ```
-$ make VERSION=1.3.0
+$ make VERSION=1.3.1
 ```
 
 Run tests with [Ginkgo](http://onsi.github.io/ginkgo/)
