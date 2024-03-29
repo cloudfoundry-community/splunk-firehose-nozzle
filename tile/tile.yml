@@ -262,6 +262,16 @@ forms:
         label: Splunk Metric Index
         description: Index where Metric Data will be indexed
         optional: true
+      - name: refresh_splunk_connection
+        type: boolean
+        label: Refresh Splunk connection
+        description: Periodically refresh connection to Splunk
+        optional: true
+      - name: keep_alive_timer
+        type: string
+        label: Keep alive timer
+        description: Interval used to close and refresh connection to Splunk
+        optional: true
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
