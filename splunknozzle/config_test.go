@@ -111,7 +111,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeTrue())
 			Expect(c.Debug).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(100))
 			Expect(c.MemoryBallastSize).To(Equal(512))
 		})
 
@@ -144,7 +143,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.TraceLogging).To(BeFalse())
 			Expect(c.Debug).To(BeFalse())
-			Expect(c.DropWarnThreshold).To(Equal(1000))
 			Expect(c.MemoryBallastSize).To(Equal(0))
 		})
 	})
@@ -236,7 +234,6 @@ var _ = Describe("Config", func() {
 
 			Expect(c.Debug).To(BeTrue())
 			Expect(c.TraceLogging).To(BeTrue())
-			Expect(c.DropWarnThreshold).To(Equal(10))
 			Expect(c.MemoryBallastSize).To(Equal(512))
 
 			Expect(c.Version).To(Equal(version))
