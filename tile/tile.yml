@@ -272,6 +272,11 @@ forms:
         label: Keep alive timer
         description: Interval used to close and refresh connection to Splunk
         optional: true
+      - name: memory_ballast_size
+        type: integer
+        label: Memory Ballast Size
+        default: 0
+        description: Size of memory allocated to reduce GC cycles. Default is 0, Size should be less than the total memory.
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
