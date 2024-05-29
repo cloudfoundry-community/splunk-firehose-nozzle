@@ -85,7 +85,7 @@ jobs:
   create-env:
     runs-on: ubuntu-latest
     needs:
-      - tests-check
+      - test-check
     if: "contains(needs.tests-check.outputs.commit_message, '[run-tests]')"
     timeout-minutes: 60
     outputs:
