@@ -10,7 +10,11 @@ sudo apt-get update
 sudo apt-get install apt-transport-https ca-certificates
 sudo apt-get install cf-cli
 #CF Login
-cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD -o system -s system
+cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
+#cf create-org system
+#cf target -o system
+#cf create-space system
+#cf target -s system -o system
 #Create splunk-ci org and space
 if [  "`cf o | grep "splunk-ci-org"`" == "splunk-ci-org" ]; then
    echo "splunk-ci-org org already exists"
