@@ -59,30 +59,9 @@ jobs:
         with:
           publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
 
-  test-check:
-    name: Check if run tests
-    runs-on: ubuntu-latest
+  create-env:
     needs:
       - workflow_approval
-    steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Get commit message
-        id: get_commit_message
-        run: |
-          if [[ '${{ github.event_name }}' == 'push' ]]; then
-            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD)
-          elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD^2)
-          fi
-    outputs:
-      commit_message:
-        echo "${{ steps.get_commit_message.outputs.commit_message }}"
-
-  create-env:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
