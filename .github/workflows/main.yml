@@ -45,48 +45,48 @@ jobs:
         env:
           FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
           
-  semgrep:
-    runs-on: ubuntu-latest
-    needs:
-      - workflow_approval
-    name: security-sast-semgrep
-    if: github.actor != 'dependabot[bot]'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Semgrep
-        id: semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
-
-#  test-check:
-#    name: Check if run tests
+#  semgrep:
 #    runs-on: ubuntu-latest
 #    needs:
 #      - workflow_approval
+#    name: security-sast-semgrep
+#    if: github.actor != 'dependabot[bot]'
 #    steps:
-#      - name: Checkout Project
-#        uses: actions/checkout@v4
+#      - uses: actions/checkout@v3
+#      - name: Semgrep
+#        id: semgrep
+#        uses: returntocorp/semgrep-action@v1
 #        with:
-#          fetch-depth: 2
-#
-#      - name: Get commit message
-#        id: get_commit_message
-#        run: |
-#          if [[ '${{ github.event_name }}' == 'push' ]]; then
-#            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD)
-#          elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-#            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD^2)
-#          fi
-#    outputs:
-#      commit_message:
-#        echo "${{ steps.get_commit_message.outputs.commit_message }}"
+#          publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
+
+  test-check:
+    name: Check if run tests
+    runs-on: ubuntu-latest
+    needs:
+      - workflow_approval
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get commit message
+        id: get_commit_message
+        run: |
+          if [[ '${{ github.event_name }}' == 'push' ]]; then
+            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD)
+          elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD^2)
+          fi
+    outputs:
+      commit_message:
+        echo "${{ steps.get_commit_message.outputs.commit_message }}"
 
   create-env:
     runs-on: ubuntu-latest
-#    needs:
-#      - test-check
-#    if: "contains(needs.tests-check.outputs.commit_message, '[run-tests]')"
+    needs:
+      - test-check
+    if: "contains(needs.tests-check.outputs.commit_message, '[run-tests]')"
     timeout-minutes: 60
     outputs:
       API_ENDPOINT: ${{ steps.get-credentials.outputs.API_ENDPOINT }}
@@ -139,7 +139,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs:
-      - workflow_approval
+      - create-env
     steps:
       - name:  Checkout
         uses: actions/checkout@v3
@@ -362,6 +362,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - create-env
+      - execute_tests
+    if: ${{ always() }}
     env:
       ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
     steps:
