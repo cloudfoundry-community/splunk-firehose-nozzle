@@ -79,9 +79,9 @@ jobs:
 
       - name: Get authorization token
         run: |
-          echo "$(./selfservice auth $SLACK_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
         env:
-          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
 
       - name: Claim environment and wait
         run: |
@@ -198,17 +198,18 @@ jobs:
 
   tile-builder:
 
-    env:
-      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
-      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
-      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
-      API_USER: ${{ secrets.API_USER  }}
-      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
-      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
-      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
-      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
-      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
-      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+#    not used anywhere
+#    env:
+#      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
+#      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
+#      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
+#      API_USER: ${{ secrets.API_USER  }}
+#      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+#      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+#      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+#      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+#      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+#      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
 
 
     needs:
@@ -350,9 +351,9 @@ jobs:
           ls -latr
       - name: auth
         run: |
-          echo "$(./selfservice auth $SLACK_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
         env:
-          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
       - name: release environment
         run: |
           ./selfservice release $ENV_ID
