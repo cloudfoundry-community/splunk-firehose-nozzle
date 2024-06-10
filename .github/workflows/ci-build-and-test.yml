@@ -124,7 +124,7 @@ jobs:
 #### CREATE SPLUNK!
       - name: Prepare splunk
         run: |
-          { echo "SPLUNK_TOKEN=$(.github/automatic_setup.sh)" } >> "$GITHUB_ENV"
+          echo "SPLUNK_TOKEN=$(.github/automatic_setup.sh)" 
           echo "$GITHUB_ENV"
 # Deploy nozzle
       - name: Deploy nozzle
