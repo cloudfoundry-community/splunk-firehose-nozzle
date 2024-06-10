@@ -60,7 +60,7 @@ echo $(green "Preparing Splunk instance")
 
 change_min_free_space
 create_splunk_indexes
-create_splunk_hec
+#create_splunk_hec
 
 echo "$(cat hec_token)"
 
