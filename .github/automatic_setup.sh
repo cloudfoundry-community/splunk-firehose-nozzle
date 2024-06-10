@@ -62,5 +62,5 @@ change_min_free_space
 create_splunk_indexes
 #create_splunk_hec
 
-echo "$(cat hec_token)"
+#echo "$(cat hec_token)"
 
