@@ -56,8 +56,6 @@ sudo docker run -d -p 8000:8000 -p 8088:8088 -p 8089:8089 -e SPLUNK_START_ARGS='
 
 wait_for_splunk
 
-chmod u+x prepare_splunk.sh
-
 echo $(green "Preparing Splunk instance")
 
 change_min_free_space
