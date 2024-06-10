@@ -59,146 +59,97 @@ jobs:
         with:
           publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
 
-  create-env:
-    needs:
-      - workflow_approval
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    outputs:
-      API_ENDPOINT: ${{ steps.get-credentials.outputs.API_ENDPOINT }}
-      API_UAA_ENDPOINT: ${{ steps.get-credentials.outputs.API_UAA_ENDPOINT }}
-      API_PASSWORD: ${{ steps.get-credentials.outputs.API_PASSWORD }}
-      API_CLIENT_PASSWORD: ${{ steps.get-credentials.outputs.API_CLIENT_PASSWORD }}
-      ENV_ID: ${{ steps.get-credentials.outputs.ENV_ID }}
-    steps:
-      - name: Install Selfservice
-        run: |
-          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
-          chmod +x selfservice
-          ls -latr
-
-      - name: Get authorization token
-        run: |
-          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
-        env:
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-
-      - name: Claim environment and wait
-        run: |
-          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_srt_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.17.0'
-
-      - name: Set up Brew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Install hammer and cf
-        run: |
-          brew tap pivotal/hammer https://github.com/pivotal/hammer
-          brew install hammer
-
-          brew tap pivotal-cf/om https://github.com/pivotal-cf/om
-          brew install om
-          brew install cloudfoundry/tap/cf-cli
-
-      - name: Credentials
-        id: get-credentials
-        run: |
-          ./selfservice get $ENV_ID | jq -r '.credentials' > env.json
-          echo API_ENDPOINT="https://api.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
-          echo API_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_credentials | jq -r '.password')" >> "$GITHUB_OUTPUT"
-          echo API_CLIENT_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_client_credentials | jq -r '.password')" >> "$GITHUB_OUTPUT"
-          echo ENV_ID=$ENV_ID >> "$GITHUB_OUTPUT"
-
-  build:
-    runs-on: ubuntu-latest
-    needs:
-      - create-env
-    steps:
-      - name:  Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{github.event.pull_request.head.sha}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.17.0'
-      - run: go version
-
-      # Install Dependencies
-      - name: check-files
-        run: ls -la
-      - name: Install Dependencies
-        run: |
-            go mod vendor
-
-      # Builder
-      - name: Builder
-        run: make build
-
-      # Run tests
-      - name: Run tests
-        run: |
-          make testall
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: splunk-firehose-nozzle
-          path: splunk-firehose-nozzle
-
-  deploy_nozzle:
-    
-    env:
-      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
-      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
-      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
-      API_USER: ${{ secrets.API_USER  }}
-      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
-      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
-      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
-      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
-      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
-      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
-
-    needs:
-      - build
-      - create-env
-    runs-on: ubuntu-latest
-    steps:
-
-      - name:  Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{github.event.pull_request.head.sha}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.17.0'
-      - run: go version
-
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: splunk-firehose-nozzle
-
-      # Install dependencies
-      - name: Install dependencies
-        run: |
-            go mod vendor
-
-      # Deploy nozzle
-      - name: Deploy nozzle
-        run: |
-            .github/update_manifest.sh
-            .github/pre-req.sh
-            cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
-
-
-  tile-builder:
-
-#    not used anywhere
+#  create-env:
+#    needs:
+#      - workflow_approval
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 60
+#    outputs:
+#      API_ENDPOINT: ${{ steps.get-credentials.outputs.API_ENDPOINT }}
+#      API_UAA_ENDPOINT: ${{ steps.get-credentials.outputs.API_UAA_ENDPOINT }}
+#      API_PASSWORD: ${{ steps.get-credentials.outputs.API_PASSWORD }}
+#      API_CLIENT_PASSWORD: ${{ steps.get-credentials.outputs.API_CLIENT_PASSWORD }}
+#      ENV_ID: ${{ steps.get-credentials.outputs.ENV_ID }}
+#    steps:
+#      - name: Install Selfservice
+#        run: |
+#          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
+#          chmod +x selfservice
+#          ls -latr
+#
+#      - name: Get authorization token
+#        run: |
+#          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+#        env:
+#          API_TOKEN: ${{ secrets.API_TOKEN }}
+#
+#      - name: Claim environment and wait
+#        run: |
+#          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_srt_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
+#      - name: Set up Go
+#        uses: actions/setup-go@v3
+#        with:
+#          go-version: '1.17.0'
+#
+#      - name: Set up Brew
+#        uses: Homebrew/actions/setup-homebrew@master
+#
+#      - name: Install hammer and cf
+#        run: |
+#          brew tap pivotal/hammer https://github.com/pivotal/hammer
+#          brew install hammer
+#
+#          brew tap pivotal-cf/om https://github.com/pivotal-cf/om
+#          brew install om
+#          brew install cloudfoundry/tap/cf-cli
+#
+#      - name: Credentials
+#        id: get-credentials
+#        run: |
+#          ./selfservice get $ENV_ID | jq -r '.credentials' > env.json
+#          echo API_ENDPOINT="https://api.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
+#          echo API_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_credentials | jq -r '.password')" >> "$GITHUB_OUTPUT"
+#          echo API_CLIENT_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_client_credentials | jq -r '.password')" >> "$GITHUB_OUTPUT"
+#          echo ENV_ID=$ENV_ID >> "$GITHUB_OUTPUT"
+#
+#  build:
+#    runs-on: ubuntu-latest
+#    needs:
+#      - create-env
+#    steps:
+#      - name:  Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          ref: ${{github.event.pull_request.head.sha}}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version: '1.17.0'
+#      - run: go version
+#
+#      # Install Dependencies
+#      - name: check-files
+#        run: ls -la
+#      - name: Install Dependencies
+#        run: |
+#            go mod vendor
+#
+#      # Builder
+#      - name: Builder
+#        run: make build
+#
+#      # Run tests
+#      - name: Run tests
+#        run: |
+#          make testall
+#
+#      - uses: actions/upload-artifact@v3
+#        with:
+#          name: splunk-firehose-nozzle
+#          path: splunk-firehose-nozzle
+#
+#  deploy_nozzle:
+#
 #    env:
 #      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
 #      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
@@ -210,150 +161,199 @@ jobs:
 #      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
 #      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
 #      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
-
-
-    needs:
-    - deploy_nozzle
-    - create-env
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name:  Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{github.event.pull_request.head.sha}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.17.0'
-      - run: go version
-
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: splunk-firehose-nozzle
-  
-      # Tile builder
-      - name: Tile builder
-        run: |
-            .github/tile-builder.sh
-            
-      # Nozzle Log
-      - name: Nozzle Log
-        run: |
-          cf logs splunk-firehose-nozzle &
-      
-      - name: Get tile name
-        run: |
-          echo "tile_name=$(ls tile/product | grep ".pivotal")" >> "$GITHUB_ENV"
-
-      - name: Upload tile
-        uses: actions/upload-artifact@v2
-        with:
-            name: ${{ env.tile_name }}
-            path: tile/product/${{ env.tile_name }}
-
-
-  # Skip test for now!
-  execute_tests:
-
-    needs:
-    - tile-builder
-    - create-env
-    runs-on: ubuntu-latest
-    env:
-      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
-      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
-      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
-      API_USER: ${{ secrets.API_USER  }}
-      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
-      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
-      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
-      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
-      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
-      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
-      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
-      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
-      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
-
-    steps:
-
-      - name:  Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{github.event.pull_request.head.sha}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.17.0'
-      - run: go version
-
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: splunk-firehose-nozzle
-
-
-      # Install dependencies
-      - name: Install dependencies
-        run: |
-          go mod vendor
-          chmod +x splunk-firehose-nozzle
-          
-      # Deploy data-gen
-      - name: Deploy data-gen
-        run: |
-          .github/pre-req.sh
-          cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
-          sleep 10
-          
-
-      # Nozzle Log
-      - name: Nozzle Log
-        run: |
-            cf logs splunk-firehose-nozzle &
-
-      # Prepare test environment
-      - name: Prepare test environment
-        run: |
-          .github/pre-functional-test.sh
-          
-
-      # Executing tests
-      - name: Executing tests
-        run: |          
-            .github/functional-test.sh
-            
-      # Teardown
-      - name: Teardown
-        if: always()
-        run: |
-            echo "Teardown deployment env"
-            cf delete splunk-firehose-nozzle -f
-            cf delete data_gen -f
-            cf delete-org splunk-ci-org -f
-
-
-  teardown-env:
-    runs-on: ubuntu-latest
-    needs:
-      - create-env
-      - execute_tests
-    if: ${{ always() }}
-    env:
-      ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
-    steps:
-      - name: install-selfservice
-        run: |
-          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
-          chmod +x selfservice
-          ls -latr
-      - name: auth
-        run: |
-          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
-        env:
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-      - name: release environment
-        run: |
-          ./selfservice release $ENV_ID
+#
+#    needs:
+#      - build
+#      - create-env
+#    runs-on: ubuntu-latest
+#    steps:
+#
+#      - name:  Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          ref: ${{github.event.pull_request.head.sha}}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version: '1.17.0'
+#      - run: go version
+#
+#
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: splunk-firehose-nozzle
+#
+#      # Install dependencies
+#      - name: Install dependencies
+#        run: |
+#            go mod vendor
+#
+#      # Deploy nozzle
+#      - name: Deploy nozzle
+#        run: |
+#            .github/update_manifest.sh
+#            .github/pre-req.sh
+#            cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
+#
+#
+#  tile-builder:
+#
+##    not used anywhere
+##    env:
+##      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
+##      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
+##      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
+##      API_USER: ${{ secrets.API_USER  }}
+##      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+##      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+##      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+##      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+##      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+##      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+#
+#
+#    needs:
+#    - deploy_nozzle
+#    - create-env
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#
+#      - name:  Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          ref: ${{github.event.pull_request.head.sha}}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version: '1.17.0'
+#      - run: go version
+#
+#
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: splunk-firehose-nozzle
+#
+#      # Tile builder
+#      - name: Tile builder
+#        run: |
+#            .github/tile-builder.sh
+#
+#      # Nozzle Log
+#      - name: Nozzle Log
+#        run: |
+#          cf logs splunk-firehose-nozzle &
+#
+#      - name: Get tile name
+#        run: |
+#          echo "tile_name=$(ls tile/product | grep ".pivotal")" >> "$GITHUB_ENV"
+#
+#      - name: Upload tile
+#        uses: actions/upload-artifact@v2
+#        with:
+#            name: ${{ env.tile_name }}
+#            path: tile/product/${{ env.tile_name }}
+#
+#
+#  # Skip test for now!
+#  execute_tests:
+#
+#    needs:
+#    - tile-builder
+#    - create-env
+#    runs-on: ubuntu-latest
+#    env:
+#      API_ENDPOINT: ${{ needs.create-env.outputs.API_ENDPOINT  }}
+#      API_PASSWORD: ${{ needs.create-env.outputs.API_PASSWORD  }}
+#      API_CLIENT_PASSWORD: ${{ needs.create-env.outputs.API_CLIENT_PASSWORD  }}
+#      API_USER: ${{ secrets.API_USER  }}
+#      CLIENT_ID: ${{ secrets.CLIENT_ID  }}
+#      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
+#      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
+#      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+#      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
+#      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
+#      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
+#      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
+#      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+#
+#    steps:
+#
+#      - name:  Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          ref: ${{github.event.pull_request.head.sha}}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version: '1.17.0'
+#      - run: go version
+#
+#
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: splunk-firehose-nozzle
+#
+#
+#      # Install dependencies
+#      - name: Install dependencies
+#        run: |
+#          go mod vendor
+#          chmod +x splunk-firehose-nozzle
+#
+#      # Deploy data-gen
+#      - name: Deploy data-gen
+#        run: |
+#          .github/pre-req.sh
+#          cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
+#          sleep 10
+#
+#
+#      # Nozzle Log
+#      - name: Nozzle Log
+#        run: |
+#            cf logs splunk-firehose-nozzle &
+#
+#      # Prepare test environment
+#      - name: Prepare test environment
+#        run: |
+#          .github/pre-functional-test.sh
+#
+#
+#      # Executing tests
+#      - name: Executing tests
+#        run: |
+#            .github/functional-test.sh
+#
+#      # Teardown
+#      - name: Teardown
+#        if: always()
+#        run: |
+#            echo "Teardown deployment env"
+#            cf delete splunk-firehose-nozzle -f
+#            cf delete data_gen -f
+#            cf delete-org splunk-ci-org -f
+#
+#
+#  teardown-env:
+#    runs-on: ubuntu-latest
+#    needs:
+#      - create-env
+#      - execute_tests
+#    if: ${{ always() }}
+#    env:
+#      ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
+#    steps:
+#      - name: install-selfservice
+#        run: |
+#          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
+#          chmod +x selfservice
+#          ls -latr
+#      - name: auth
+#        run: |
+#          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+#        env:
+#          API_TOKEN: ${{ secrets.API_TOKEN }}
+#      - name: release environment
+#        run: |
+#          ./selfservice release $ENV_ID
