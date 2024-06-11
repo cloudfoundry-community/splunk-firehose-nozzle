@@ -81,8 +81,8 @@ jobs:
       API_USER: ${{ secrets.API_USER  }}
       CLIENT_ID: ${{ secrets.CLIENT_ID  }}
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
-      SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
-      SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
+      SPLUNK_INDEX: main
+      SPLUNK_METRIC_INDEX: pcf_metrics
       #SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
       SPLUNK_URL: https://0.0.0.0:8089
       SPLUNK_USER: admin
@@ -124,7 +124,8 @@ jobs:
 #### CREATE SPLUNK!
       - name: Prepare splunk
         run: |
-          echo "SPLUNK_TOKEN=$(.github/automatic_setup.sh)" 
+          .github/automatic_setup.sh
+          echo "HELLO"
           echo "SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
           echo $SPLUNK_TOKEN
 # Deploy nozzle
