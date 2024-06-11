@@ -126,11 +126,14 @@ jobs:
         run: |
           .github/automatic_setup.sh
           echo "HELLO"
-          SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)
-          echo $SPLUNK_TOKEN
+#          SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)
+#          echo $SPLUNK_TOKEN
+#          echo "SPLUNK_TOKEN=$SPLUNK_TOKEN" >> "$GITHUB_ENV"
+          echo "SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
 # Deploy nozzle
       - name: Deploy nozzle
         run: |
+          echo $SPLUNK_TOKEN
           .github/update_manifest.sh
           .github/pre-req.sh
           cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
