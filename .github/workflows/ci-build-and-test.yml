@@ -126,7 +126,7 @@ jobs:
         run: |
           .github/automatic_setup.sh
           echo "HELLO"
-          echo "SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
+          SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)
           echo $SPLUNK_TOKEN
 # Deploy nozzle
       - name: Deploy nozzle
