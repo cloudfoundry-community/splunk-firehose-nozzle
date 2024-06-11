@@ -83,10 +83,10 @@ jobs:
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
       SPLUNK_INDEX: main
       SPLUNK_METRIC_INDEX: pcf_metrics
-      SPLUNK_URL: https://localhost:8089/
+      #SPLUNK_URL: https://localhost:8089/
       SPLUNK_USER: admin
       SPLUNK_PASSWORD: changeme2
-      SPLUNK_HOST: https://localhost:8088/
+      #SPLUNK_HOST: https://localhost:8088/
 
     steps:
       - name:  Checkout
@@ -127,12 +127,16 @@ jobs:
 
       - name: Print Public IP
         run: |
-          echo ${{ steps.ip.outputs.ipv4 }}
-          echo ${{ steps.ip.outputs.ipv6 }}
+          SPLUNK_URL: https://localhost:8089/
+          SPLUNK_HOST: https://localhost:8088/
+          echo "SPLUNK_HOST=https://${{ steps.ip.outputs.ipv4 }}:8088/" >> "$GITHUB_ENV"
+          echo "SPLUNK_URL=https://${{ steps.ip.outputs.ipv4 }}:8089/" >> "$GITHUB_ENV"
 
 #### Create splunk
       - name: Prepare splunk
         run: |
+          echo $SPLUNK_HOST
+          echo $SPLUNK_URL
           .github/automatic_setup.sh
           echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
 
