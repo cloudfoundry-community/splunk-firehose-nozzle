@@ -16,7 +16,7 @@ class TestSplunkNozzle():
             start_time="-15m@m")
 
         assert len(search_results) > 0, \
-            '\nNumber of events from Splunk should not be {}, however the result is {}'.format(0, len(search_results))
+            '\nNumber of events from Splunk should not be {}, however the result is {}. The index is {}'.format(0, len(search_results),test_env['splunk_index'])
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
