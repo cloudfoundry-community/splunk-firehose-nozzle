@@ -177,6 +177,7 @@ jobs:
         run: |
           cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
           cf target -o "splunk-ci-org" -s "splunk-ci-space"
+          cf apps
           cf logs splunk-firehose-nozzle &
 
       # Prepare test environment

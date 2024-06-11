@@ -1,7 +1,7 @@
 ---
 applications:
   - name: data_gen
-    memory: 128M
+    memory: 256M
     instances: 1
     buildpack: go_buildpack
     cmd: data_gen
