@@ -28,14 +28,14 @@ wait_for_splunk() {
 create_splunk_indexes() {
   index_names=$SPLUNK_METRIC_INDEX
   index_types="metric"
-  if ! curl -k -u admin:"changeme2" "https://localhost:8089/services/data/indexes" \
+  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD "https://localhost:8089/services/data/indexes" \
     -d datatype="${index_types}" -d name="${index_names}" ; then
     echo "Error when creating ${index_names} of type ${index_types}"
   fi
 }
 
 create_splunk_hec() {
-  if ! curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep "token" | cut -c 29-64 > hec_token ; then
+  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep "token" | cut -c 29-64 > hec_token ; then
     echo "Error when creating Splunk token"
   fi
 }
