@@ -133,6 +133,7 @@ jobs:
           .github/update_manifest.sh
           .github/pre-req.sh
           cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
+          cat scripts/ci_nozzle_manifest.yml
 
 #tile-builder
       - name: Tile builder
