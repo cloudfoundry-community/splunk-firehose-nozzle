@@ -133,7 +133,6 @@ jobs:
           .github/update_manifest.sh
           .github/pre-req.sh
           cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
-          cat scripts/ci_nozzle_manifest.yml
 
 #tile-builder
       - name: Tile builder
@@ -170,7 +169,7 @@ jobs:
         run: |
           .github/pre-req.sh
           cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
-          sleep 10
+          sleep 60
       
 
       # Nozzle Log
