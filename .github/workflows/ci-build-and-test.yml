@@ -127,8 +127,6 @@ jobs:
 
       - name: Print Public IP
         run: |
-          SPLUNK_URL: https://localhost:8089/
-          SPLUNK_HOST: https://localhost:8088/
           echo "SPLUNK_HOST=https://${{ steps.ip.outputs.ipv4 }}:8088/" >> "$GITHUB_ENV"
           echo "SPLUNK_URL=https://${{ steps.ip.outputs.ipv4 }}:8089/" >> "$GITHUB_ENV"
 
