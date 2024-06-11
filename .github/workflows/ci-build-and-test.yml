@@ -143,6 +143,7 @@ jobs:
       - name: Nozzle Log
         run: |
           cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
+          cf target -o "splunk-ci-org" -s "splunk-ci-space"
           cf logs splunk-firehose-nozzle &
 
       - name: Get tile name
@@ -175,6 +176,7 @@ jobs:
       - name: Nozzle Log
         run: |
           cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
+          cf target -o "splunk-ci-org" -s "splunk-ci-space"
           cf logs splunk-firehose-nozzle &
 
       # Prepare test environment
@@ -193,6 +195,7 @@ jobs:
         if: always()
         run: |
           cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
+          cf target -o "splunk-ci-org" -s "splunk-ci-space"
           echo "Teardown deployment env"
           cf delete splunk-firehose-nozzle -f
           cf delete data_gen -f
