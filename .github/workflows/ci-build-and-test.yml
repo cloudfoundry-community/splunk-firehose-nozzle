@@ -84,10 +84,10 @@ jobs:
       SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX  }}
       SPLUNK_METRIC_INDEX: ${{ secrets.SPLUNK_METRIC_INDEX  }}
       #SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
-      SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
-      SPLUNK_USER: ${{ secrets.SPLUNK_USER  }}
-      SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
-      SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_URL: https://0.0.0.0:8089
+      SPLUNK_USER: admin
+      SPLUNK_PASSWORD: changeme2
+      SPLUNK_HOST: http://0.0.0.0:8088/
 
     steps:
       - name:  Checkout
@@ -126,6 +126,7 @@ jobs:
         run: |
           echo "SPLUNK_TOKEN=$(.github/automatic_setup.sh)" 
           echo "SPLUNK_TOKEN=$(curl -k -u admin:changeme2 https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
+          echo $SPLUNK_TOKEN
 # Deploy nozzle
       - name: Deploy nozzle
         run: |
