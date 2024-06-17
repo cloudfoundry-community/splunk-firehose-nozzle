@@ -43,7 +43,7 @@ jobs:
 
       - name: Claim environment and wait
         run: |
-          echo "ENV_ID=5066" >> "$GITHUB_ENV"
+          echo "ENV_ID=5073" >> "$GITHUB_ENV"
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
