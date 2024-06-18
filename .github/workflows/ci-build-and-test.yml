@@ -129,6 +129,7 @@ jobs:
 #### Create splunk
       - name: Prepare splunk
         run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
           .github/automatic_setup.sh
           echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
 
