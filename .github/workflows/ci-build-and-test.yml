@@ -83,10 +83,8 @@ jobs:
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET  }}
       SPLUNK_INDEX: main
       SPLUNK_METRIC_INDEX: pcf_metrics
-      SPLUNK_URL: https://localhost:8089/
       SPLUNK_USER: admin
       SPLUNK_PASSWORD: changeme2
-      SPLUNK_HOST: http://localhost:8088/
 
     steps:
       - name:  Checkout
@@ -120,12 +118,17 @@ jobs:
         with:
           name: splunk-firehose-nozzle
           path: splunk-firehose-nozzle
-
+#### Get ip
+      - name: Check IP
+        run: |
+          echo "SPLUNK_IP=$(curl https://api.ipify.org)" >> "$GITHUB_ENV"
+          echo "SPLUNK_URL=https://$(SPLUNK_IP):8089/" >> "$GITHUB_ENV"
+          echo "SPLUNK_HOST=http://$(SPLUNK_IP):8088/" >> "$GITHUB_ENV"
 #### Create splunk
       - name: Prepare splunk
         run: |
           .github/automatic_setup.sh
-          echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD https://localhost:8089/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
+          echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $(SPLUNK_URL)servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
 
 # Deploy nozzle
       - name: Deploy nozzle
