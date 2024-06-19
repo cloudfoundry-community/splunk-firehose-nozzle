@@ -178,8 +178,6 @@ jobs:
 # Nozzle Log
       - name: Nozzle Log
         run: |
-#          cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
-#          cf target -o "splunk-ci-org" -s "splunk-ci-space"
           cf apps
           cf logs splunk-firehose-nozzle &
 
@@ -209,15 +207,12 @@ jobs:
       # Deploy data-gen
       - name: Deploy data-gen
         run: |
-#          .github/pre-req.sh
           cf push -f scripts/data_gen_manifest.yml -u process -p tools/data_gen --random-route
           sleep 60
 
       # Nozzle Log
       - name: Nozzle Log
         run: |
-#          cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD
-#          cf target -o "splunk-ci-org" -s "splunk-ci-space"
           cf apps
           cf logs splunk-firehose-nozzle &
 
