@@ -130,12 +130,6 @@ jobs:
 #### Create splunk
       - name: Prepare splunk
         run: |
-          curl -L \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/meta
-          curl -v $SPLUNK_IP
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
           .github/automatic_setup.sh
           echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL_2/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
