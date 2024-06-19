@@ -171,6 +171,7 @@ jobs:
           .github/update_manifest.sh
           .github/pre-req.sh
           cf push -f scripts/ci_nozzle_manifest.yml -u process --random-route
+          cf tasks splunk-firehose-nozzle
 
 # Tile builder
       - name: Tile builder
@@ -182,6 +183,7 @@ jobs:
         run: |
           cf apps
           cf logs splunk-firehose-nozzle &
+          cf start splunk-firehose-nozzle
 
       - name: Get tile name
         run: |
