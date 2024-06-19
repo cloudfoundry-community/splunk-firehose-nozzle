@@ -18,8 +18,8 @@ jobs:
 
 
   create-env:
-#    needs:
-#      - workflow_approval
+    needs:
+      - workflow_approval
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
