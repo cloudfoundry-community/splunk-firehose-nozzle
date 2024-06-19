@@ -73,7 +73,7 @@ jobs:
     steps:
       - name: Install Selfservice
         run: |
-          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
+          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.9/selfservice
           chmod +x selfservice
           ls -latr
 
@@ -253,7 +253,7 @@ jobs:
     steps:
       - name: install-selfservice
         run: |
-          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.8/selfservice
+          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.9/selfservice
           chmod +x selfservice
           ls -latr
       - name: auth
