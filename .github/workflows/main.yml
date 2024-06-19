@@ -85,7 +85,9 @@ jobs:
 
       - name: Claim environment and wait
         run: |
-          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_srt_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
+          echo ENV_ID="5073" >> "$GITHUB_ENV"
+#          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_srt_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -238,25 +240,25 @@ jobs:
             cf delete-org splunk-ci-org -f
 
 
-  teardown-env:
-    runs-on: ubuntu-latest
-    needs:
-      - create-env
-      - build-and-test
-    if: ${{ always() }}
-    env:
-      ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
-    steps:
-      - name: install-selfservice
-        run: |
-          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.9/selfservice
-          chmod +x selfservice
-          ls -latr
-      - name: auth
-        run: |
-          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
-        env:
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-      - name: release environment
-        run: |
-          ./selfservice release $ENV_ID
+#  teardown-env:
+#    runs-on: ubuntu-latest
+#    needs:
+#      - create-env
+#      - build-and-test
+#    if: ${{ always() }}
+#    env:
+#      ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
+#    steps:
+#      - name: install-selfservice
+#        run: |
+#          wget https://github.com/cf-platform-eng/selfservice/releases/download/0.2.9/selfservice
+#          chmod +x selfservice
+#          ls -latr
+#      - name: auth
+#        run: |
+#          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+#        env:
+#          API_TOKEN: ${{ secrets.API_TOKEN }}
+#      - name: release environment
+#        run: |
+#          ./selfservice release $ENV_ID
