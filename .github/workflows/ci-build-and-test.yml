@@ -119,6 +119,7 @@ jobs:
         with:
           name: splunk-firehose-nozzle
           path: splunk-firehose-nozzle
+
 #### Get ip
       - name: Check IP
         run: echo "SPLUNK_IP=$(curl https://api.ipify.org)" >> "$GITHUB_ENV"
@@ -127,6 +128,7 @@ jobs:
           echo $SPLUNK_IP
           echo "SPLUNK_URL=https://$SPLUNK_IP:8089/" >> "$GITHUB_ENV"
           echo "SPLUNK_HOST=http://$SPLUNK_IP:8088/" >> "$GITHUB_ENV"
+
 #### Create splunk
       - name: Prepare splunk
         run: |
