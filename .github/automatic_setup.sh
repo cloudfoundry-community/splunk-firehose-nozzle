@@ -28,14 +28,14 @@ wait_for_splunk() {
 create_splunk_indexes() {
   index_names=$SPLUNK_METRIC_INDEX
   index_types="metric"
-  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD "$SPLUNK_URL/services/data/indexes" \
+  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD "$SPLUNK_URL_2/services/data/indexes" \
     -d datatype="${index_types}" -d name="${index_names}" ; then
     echo "Error when creating ${index_names} of type ${index_types}"
   fi
 }
 
 create_splunk_hec() {
-  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep "token" | cut -c 29-64 > hec_token ; then
+  if ! curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL_2/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep "token" | cut -c 29-64 > hec_token ; then
     echo "Error when creating Splunk token"
   fi
 }
@@ -43,7 +43,7 @@ create_splunk_hec() {
 change_min_free_space() {
   DOCKER_ID=$(sudo docker ps | grep 'splunk/splunk:latest' | awk '{ print $1 }')
   sudo docker exec --user splunk "$DOCKER_ID" bash -c "echo -e '\n[diskUsage]\nminFreeSpace = 2000' >> /opt/splunk/etc/system/local/server.conf"
-  curl -k -u admin:changeme2 $SPLUNK_URL/services/server/control/restart -X POST
+  curl -k -u admin:changeme2 $SPLUNK_URL_2/services/server/control/restart -X POST
   sleep 60
 }
 

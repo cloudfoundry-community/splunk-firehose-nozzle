@@ -85,6 +85,7 @@ jobs:
       SPLUNK_METRIC_INDEX: pcf_metrics
       SPLUNK_USER: admin
       SPLUNK_PASSWORD: changeme2
+      SPLUNK_URL_2: https://localhost:8089
 
     steps:
       - name:  Checkout
@@ -134,10 +135,10 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/meta
-          ping $SPLUNK_IP
+          curl -v $SPLUNK_IP
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
           .github/automatic_setup.sh
-          echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
+          echo "SPLUNK_TOKEN=$(curl -k -u $SPLUNK_USER:$SPLUNK_PASSWORD $SPLUNK_URL_2/servicesNS/admin/splunk_httpinput/data/inputs/http -d name=some_name | grep 'token' | cut -c 29-64)"  >> "$GITHUB_ENV"
 
 # Deploy nozzle
       - name: Deploy nozzle
