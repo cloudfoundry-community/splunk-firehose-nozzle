@@ -131,6 +131,7 @@ jobs:
       SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD  }}
       SPLUNK_URL: ${{ secrets.SPLUNK_URL  }}
       SPLUNK_HOST: ${{ secrets.SPLUNK_HOST  }}
+      SPLUNK_TOKEN: ${{ secrets.SPLUNK_TOKEN  }}
 
     steps:
       - name:  Checkout
@@ -183,7 +184,6 @@ jobs:
         run: |
           cf apps
           cf logs splunk-firehose-nozzle &
-          cf start splunk-firehose-nozzle
 
       - name: Get tile name
         run: |
