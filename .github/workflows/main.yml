@@ -7,6 +7,10 @@ on:
 
   workflow_dispatch:
 
+env:
+  GO_VERSION: '1.18.1'
+  RUBY_VERSION: '3.3'
+
 jobs:
   workflow_approval:
     name: Approve workflow
@@ -91,7 +95,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1'
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Set up Brew
         uses: Homebrew/actions/setup-homebrew@master
@@ -112,11 +116,11 @@ jobs:
           echo API_ENDPOINT="https://api.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
           echo API_UAA_ENDPOINT="https://uaa.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
           API_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_credentials | jq -r '.password')"
-          API_PASSWORD_ENC="$(echo $API_PASSWORD | openssl aes-256-cbc -a -pbkdf2 -salt -pass pass:$ENCRYPT_KEY)"
-          echo API_PASSWORD=$API_PASSWORD_ENC >> "$GITHUB_OUTPUT"
+          API_PASSWORD_ENCRYPTED="$(echo $API_PASSWORD | openssl aes-256-cbc -a -pbkdf2 -salt -pass pass:$ENCRYPT_KEY)"
+          echo API_PASSWORD=$API_PASSWORD_ENCRYPTED >> "$GITHUB_OUTPUT"
           API_CLIENT_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_client_credentials | jq -r '.password')"
-          API_CLIENT_PASSWORD_ENC="$(echo $API_CLIENT_PASSWORD | openssl aes-256-cbc -a -pbkdf2 -salt -pass pass:$ENCRYPT_KEY)"
-          echo API_CLIENT_PASSWORD=$API_CLIENT_PASSWORD_ENC >> "$GITHUB_OUTPUT"
+          API_CLIENT_PASSWORD_ENCRYPTED="$(echo $API_CLIENT_PASSWORD | openssl aes-256-cbc -a -pbkdf2 -salt -pass pass:$ENCRYPT_KEY)"
+          echo API_CLIENT_PASSWORD=$API_CLIENT_PASSWORD_ENCRYPTED >> "$GITHUB_OUTPUT"
           echo ENV_ID=$ENV_ID >> "$GITHUB_OUTPUT"
         env:
           ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
@@ -135,7 +139,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1'
+          go-version: ${{ env.GO_VERSION }}
       - run: go version
 
       # Install Dependencies
@@ -186,12 +190,12 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1'
+          go-version: ${{ env.GO_VERSION }}
       - run: go version
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: ${{ env.RUBY_VERSION }}
       - run: ruby -v
 
       - uses: actions/download-artifact@v3
@@ -246,7 +250,7 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1'
+          go-version: ${{ env.GO_VERSION }}
       - run: go version
 
       - uses: actions/download-artifact@v3
@@ -300,12 +304,12 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.1'
+          go-version: ${{ env.GO_VERSION }}
       - run: go version
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: ${{ env.RUBY_VERSION }}
       - run: ruby -v
 
       - uses: actions/download-artifact@v3
@@ -359,7 +363,7 @@ jobs:
     needs:
       - create-env
       - execute_tests
-    if: ${{ always() }}
+    if: always()
     env:
       ENV_ID: ${{ needs.create-env.outputs.ENV_ID  }}
     steps:
