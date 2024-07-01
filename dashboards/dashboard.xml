@@ -1,14 +1,32 @@
 <form version="1.1" hideEdit="false">
-  <label>PCF dashboard POC</label>
-  <fieldset submitButton="false"></fieldset>
+  <label>PCF dashboard</label>
+  <fieldset submitButton="false">
+    <input type="time" token="main_time_range" searchWhenChanged="true">
+      <label>Time range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="text" token="index_token" searchWhenChanged="true">
+      <label>Index</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="text" token="metrics_index_token" searchWhenChanged="true">
+      <label>Metrics index</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
   <row>
     <panel>
       <title>Event count</title>
       <chart>
         <search>
-          <query>index=* sourcetype="cf:*" | timechart  span=10m count </query>
-          <earliest>-24h</earliest>
-          <latest></latest>
+          <query>index=$index_token$ sourcetype="cf:*" | timechart  span=10m count </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -23,8 +41,9 @@
       <title>Distributions of events by index</title>
       <chart>
         <search>
-          <query>index=* sourcetype="cf:*" | stats count by index</query>
-          <earliest>0</earliest>
+          <query>index=$index_token$ sourcetype="cf:*" | stats count by index</query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
@@ -52,15 +71,16 @@
         <option name="charting.layout.splitSeries">0</option>
         <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
     <panel>
       <title>Total number of PCF events by index</title>
       <table>
         <search>
-          <query>index=* sourcetype="cf:*" | chart sparkline(count) AS "Indexes Trend" count AS Total BY index</query>
-          <earliest>0</earliest>
-          <latest></latest>
+          <query>index=$index_token$ sourcetype="cf:*" | chart sparkline(count) AS "Indexes Trend" count AS Total BY index</query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">20</option>
@@ -77,19 +97,12 @@
   <row>
     <panel>
       <title>Events by sources</title>
-      <input type="time" token="source_time_range" searchWhenChanged="true">
-        <label>Time Range</label>
-        <default>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-        </default>
-      </input>
       <chart>
         <title>Events by source</title>
         <search>
-          <query>index=* sourcetype="cf:*" | top source</query>
-          <earliest>$source_time_range.earliest$</earliest>
-          <latest>$source_time_range.latest$</latest>
+          <query>index=$index_token$ sourcetype="cf:*" | top source</query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
         </search>
         <option name="charting.axisY.abbreviation">none</option>
         <option name="charting.chart">pie</option>
@@ -99,21 +112,14 @@
         <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
-     <panel>
+    <panel>
       <title>Events by sourcetype</title>
-      <input type="time" token="source_time_range" searchWhenChanged="true">
-        <label>Time Range</label>
-        <default>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-        </default>
-      </input>
       <chart>
         <title>Events by sourcetype</title>
         <search>
-          <query>index=* sourcetype="cf:*" | top sourcetype</query>
-          <earliest>$source_time_range.earliest$</earliest>
-          <latest>$source_time_range.latest$</latest>
+          <query>index=$index_token$ sourcetype="cf:*" | top sourcetype</query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
         </search>
         <option name="charting.axisY.abbreviation">none</option>
         <option name="charting.chart">pie</option>
@@ -130,8 +136,8 @@
       <chart>
         <search>
           <query>index=_internal component=HttpInputDataHandler (log_level="WARN" OR log_level="ERROR") | timechart  span=10m count </query>
-          <earliest>-24h</earliest>
-          <latest></latest>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -144,8 +150,9 @@
       <title>Internal Splunk errors sample</title>
       <table>
         <search>
-          <query>index=_internal component=HttpInputDataHandler (log_level="WARN" OR log_level="ERROR") | table name,parsing_err</query>
-          <earliest>0</earliest>
+          <query>index=_internal component=HttpInputDataHandler (log_level="WARN" OR log_level="ERROR") | table name,parsing_err | stats count by name,parsing_err </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="drilldown">none</option>
@@ -155,15 +162,14 @@
       </table>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Nozzle errors count</title>
       <chart>
         <search>
-          <query>index=* sourcetype="cf:splunknozzle" message="*error*" | timechart  span=10m count </query>
-          <earliest>-24h</earliest>
-          <latest></latest>
+          <query>index=$index_token$ sourcetype="cf:splunknozzle" message="*error*" | timechart  span=10m count </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -176,8 +182,9 @@
       <title>Nozzle errors sample</title>
       <table>
         <search>
-          <query>index=* sourcetype="cf:splunknozzle" message="*error*" | table source,logger_source,message</query>
-          <earliest>0</earliest>
+          <query>index=$index_token$ sourcetype="cf:splunknozzle" message="*error*" | table source,logger_source,message | stats count by source,logger_source,message </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="drilldown">none</option>
@@ -187,15 +194,14 @@
       </table>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Nozzle CPU usage</title>
       <chart>
         <search>
-          <query>| mstats avg("nozzle.usage.cpu") prestats=true WHERE "index"="pcf_metrics" span=10s | timechart avg("nozzle.usage.cpu") AS Avg span=10s | fields - _span* </query>
-          <earliest>-1h</earliest>
-          <latest></latest>
+          <query>| mstats avg("nozzle.usage.cpu") prestats=true WHERE "index"=$metrics_index_token$ span=10s | timechart avg("nozzle.usage.cpu") AS Avg span=10s | fields - _span* </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -205,15 +211,14 @@
       </chart>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Nozzle RAM usage</title>
       <chart>
         <search>
-          <query>| mstats avg("nozzle.usage.ram") prestats=true WHERE "index"="pcf_metrics" span=10s | timechart avg("nozzle.usage.ram") AS Avg span=10s | fields - _span* </query>
-          <earliest>-1h</earliest>
-          <latest></latest>
+          <query>| mstats avg("nozzle.usage.ram") prestats=true WHERE "index"=$metrics_index_token$ span=10s | timechart avg("nozzle.usage.ram") AS Avg span=10s | fields - _span* </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -223,15 +228,14 @@
       </chart>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Nozzle events sent</title>
       <chart>
         <search>
-          <query>  | mstats rate_avg("firehose.events.received.count") as "Rate (Avg) /s" chart=true WHERE "index"="pcf_metrics" span=30s | fields - _span* </query>
-          <earliest>-1h</earliest>
-          <latest></latest>
+          <query>  | mstats rate_avg("firehose.events.received.count") as "Rate (Avg) /s" chart=true WHERE "index"=$metrics_index_token$ span=30s | fields - _span* </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -244,9 +248,9 @@
       <title>Nozzle events dropped</title>
       <chart>
         <search>
-          <query>  | mstats rate_avg("firehose.events.dropped.count") as "Rate (Avg) /s" chart=true WHERE "index"="pcf_metrics" span=30s | fields - _span* </query>
-          <earliest>-1h</earliest>
-          <latest></latest>
+          <query>  | mstats rate_avg("firehose.events.dropped.count") as "Rate (Avg) /s" chart=true WHERE "index"=$metrics_index_token$ span=30s | fields - _span* </query>
+          <earliest>$main_time_range.earliest$</earliest>
+          <latest>$main_time_range.latest$</latest>
           <refresh>5m</refresh>
           <refreshType>delay</refreshType>
         </search>
@@ -256,6 +260,4 @@
       </chart>
     </panel>
   </row>
-
-  
 </form>
