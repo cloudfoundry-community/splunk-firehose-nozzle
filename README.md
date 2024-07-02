@@ -304,6 +304,8 @@ FORMAT = new_index
 
 <p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
 
+You can find a pre-made dashboard that can be used for monitoring in the `dashboards` directory.
+
 ### Routing data through edge processor via HEC
 Logs can be routed to Splunk via Edge Processor. Assuming that you have a working Edge Processor instance, you can use it with minimal 
 changes to nozzle configuration.
