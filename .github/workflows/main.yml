@@ -351,11 +351,15 @@ jobs:
       - name: Teardown
         if: always()
         run: |
+          API_PASSWORD_DEC=$(echo "$API_PASSWORD" | openssl aes-256-cbc -d -pbkdf2 -a -pass pass:"$ENCRYPT_KEY")
+          cf login --skip-ssl-validation -a "$API_ENDPOINT" -u "$API_USER" -p "$API_PASSWORD_DEC"
           echo "Teardown deployment env"
           cf target -o "splunk-ci-org" -s "splunk-ci-space"
           cf delete splunk-firehose-nozzle -f
           cf delete data_gen -f
           cf delete-org splunk-ci-org -f
+        env:
+          ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
 
 
   teardown-env:
