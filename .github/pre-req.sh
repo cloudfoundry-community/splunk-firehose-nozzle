@@ -10,7 +10,9 @@ sudo apt-get update
 sudo apt-get install apt-transport-https ca-certificates
 sudo apt-get install cf-cli
 #CF Login
-cf login --skip-ssl-validation -a $API_ENDPOINT -u $API_USER -p $API_PASSWORD -o system -s system
+API_PASSWORD_DECRYPTED=$(echo "$API_PASSWORD" | openssl aes-256-cbc -d -pbkdf2 -a -pass pass:"$ENCRYPT_KEY")
+cf login --skip-ssl-validation -a "$API_ENDPOINT" -u "$API_USER" -p "$API_PASSWORD_DECRYPTED"
+
 #Create splunk-ci org and space
 if [  "`cf o | grep "splunk-ci-org"`" == "splunk-ci-org" ]; then
    echo "splunk-ci-org org already exists"
@@ -21,4 +23,13 @@ else
    cf target -o splunk-ci-org
    cf create-space splunk-ci-space
    cf target -o "splunk-ci-org" -s "splunk-ci-space"
+fi
+
+gem install cf-uaac
+uaac target "$API_UAA_ENDPOINT" --skip-ssl-validation
+API_CLIENT_PASSWORD_DECRYPTED=$(echo "$API_CLIENT_PASSWORD" | openssl aes-256-cbc -d -pbkdf2 -a -pass pass:"$ENCRYPT_KEY")
+uaac token client get "$API_USER" -s "$API_CLIENT_PASSWORD_DECRYPTED"
+
+if [ $(uaac client get "$CLIENT_ID" | grep -woc "$CLIENT_ID") -eq 0 ]; then
+  uaac client add "$CLIENT_ID" --name splunk-firehose --secret "$CLIENT_SECRET" --authorized_grant_types client_credentials,refresh_token --authorities doppler.firehose,cloud_controller.admin_read_only
 fi
