@@ -245,7 +245,7 @@ func (s *Splunk) buildEvent(fields map[string]interface{}) map[string]interface{
 
 	if s.config.TraceLogging {
 		extraFields["nozzle-event-counter"] = strconv.FormatUint(atomic.AddUint64(&s.eventCount, 1), 10)
-		extraFields["subscription-id"] = s.config.SubscriptionID
+		extraFields["firehose-subscription-id"] = s.config.SubscriptionID
 		extraFields["uuid"] = s.config.UUID
 	}
 	for k, v := range s.config.ExtraFields {

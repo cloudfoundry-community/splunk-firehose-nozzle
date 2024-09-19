@@ -71,7 +71,7 @@ class TestSplunkNozzleLocal():
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
         "index={0} test_tag::{1} nozzle-event-counter>0",  # nozzle-event-counter should not be searchable
-        "index={0} test_tag::{1} subscription-id::splunk-ci",  # subscription-id should not be searchable
+        "index={0} test_tag::{1} firehose-subscription-id::splunk-ci",  # subscription-id should not be searchable
         "index={0} test_tag::{1} uuid::*"  # uuid should not be searchable
     ])
     def test_enable_event_tracing_is_false(self, test_env, query_input, splunk_logger):
