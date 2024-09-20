@@ -39,7 +39,7 @@ jobs:
         env:
           FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
       - name: upload THIRDPARTY file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: THIRDPARTY
           path: /tmp/THIRDPARTY
@@ -158,7 +158,7 @@ jobs:
         run: |
           make testall
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: splunk-firehose-nozzle
           path: splunk-firehose-nozzle
@@ -198,7 +198,7 @@ jobs:
           ruby-version: ${{ env.RUBY_VERSION }}
       - run: ruby -v
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: splunk-firehose-nozzle
 
@@ -253,7 +253,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - run: go version
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: splunk-firehose-nozzle
 
@@ -267,7 +267,7 @@ jobs:
           echo "tile_name=$(ls tile/product | grep ".pivotal")" >> "$GITHUB_ENV"
 
       - name: Upload tile
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.tile_name }}
           path: tile/product/${{ env.tile_name }}
@@ -312,7 +312,7 @@ jobs:
           ruby-version: ${{ env.RUBY_VERSION }}
       - run: ruby -v
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: splunk-firehose-nozzle
 

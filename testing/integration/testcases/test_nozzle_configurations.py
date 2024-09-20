@@ -21,7 +21,7 @@ class TestSplunkNozzle():
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
         "index={} cf_app_name=data_gen nozzle-event-counter>0",  # nozzle-event-counter should be searchable
-        "index={} cf_app_name=data_gen subscription-id::splunk-ci",  # subscription-id should be searchable
+        "index={} cf_app_name=data_gen firehose-subscription-id::splunk-ci",  # subscription-id should be searchable
         "index={} cf_app_name=data_gen uuid::*"  # uuid should be searchable
     ])
     def test_enable_event_tracing_is_true(self, test_env, splunk_logger, query_input):
@@ -109,7 +109,7 @@ class TestSplunkNozzle():
 
     @pytest.mark.Critical
     @pytest.mark.parametrize("query_input", [
-        "index={} cf_app_name=data_gen subscription-id::* event_type=LogMessage"
+        "index={} cf_app_name=data_gen firehose-subscription-id::* event_type=LogMessage"
     ])
     def test_fields_and_values_in_splunk_event(self, test_env, splunk_logger, query_input):
         self.splunk_api = SplunkApi(test_env, splunk_logger)
@@ -125,7 +125,7 @@ class TestSplunkNozzle():
             'index': test_env['splunk_index'],
             'source': 'compute',
             'sourcetype': 'cf:logmessage',
-            'subscription-id': 'splunk-ci'
+            'firehose-subscription-id': 'splunk-ci'
         }
 
         assert_json_contains(expect_content, last_event, "Event raw data results mismatch")

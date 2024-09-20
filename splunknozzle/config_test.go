@@ -171,7 +171,7 @@ var _ = Describe("Config", func() {
 				"--job-host=nozzle.example.comc",
 				"--skip-ssl-validation-cf",
 				"--skip-ssl-validation-splunk",
-				"--subscription-id=my-nozzlec",
+				"--firehose-subscription-id=my-nozzlec",
 				"--firehose-keep-alive=24s",
 				"--add-app-info=OrgName",
 				"--ignore-missing-app",

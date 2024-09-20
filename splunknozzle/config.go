@@ -27,7 +27,7 @@ type Config struct {
 
 	SkipSSLCF      bool          `json:"skip-ssl-cf"`
 	SkipSSLSplunk  bool          `json:"skip-ssl-splunk"`
-	SubscriptionID string        `json:"subscription-id"`
+	SubscriptionID string        `json:"firehose-subscription-id"`
 	KeepAlive      time.Duration `json:"keep-alive"`
 
 	AddAppInfo         string        `json:"add-app-info"`
@@ -99,7 +99,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_CF").Default("false").BoolVar(&c.SkipSSLCF)
 	kingpin.Flag("skip-ssl-validation-splunk", "Skip cert validation (for dev environments").
 		OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION_SPLUNK").Default("false").BoolVar(&c.SkipSSLSplunk)
-	kingpin.Flag("subscription-id", "Id for the subscription.").
+	kingpin.Flag("firehose-subscription-id", "Id for the subscription.").
 		OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").Default("splunk-firehose").StringVar(&c.SubscriptionID)
 	kingpin.Flag("firehose-keep-alive", "Keep Alive duration for the firehose consumer").
 		OverrideDefaultFromEnvar("FIREHOSE_KEEP_ALIVE").Default("25s").DurationVar(&c.KeepAlive)
@@ -141,7 +141,7 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 	kingpin.Flag("keep-alive-timer", "Interval used to close and refresh connection to Splunk").
 		OverrideDefaultFromEnvar("KEEP_ALIVE_TIMER").Default("30s").DurationVar(&c.KeepAliveTimer)
 
-	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, subscription-id, nozzle event counter").
+	kingpin.Flag("enable-event-tracing", "Enable event trace logging: Adds splunk trace logging fields to events. uuid, firehose-subscription-id, nozzle event counter").
 		OverrideDefaultFromEnvar("ENABLE_EVENT_TRACING").Default("false").BoolVar(&c.TraceLogging)
 	kingpin.Flag("debug", "Enable debug mode: forward to standard out instead of splunk").
 		OverrideDefaultFromEnvar("DEBUG").Default("false").BoolVar(&c.Debug)

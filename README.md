@@ -88,32 +88,32 @@ __Advanced Configuration Features:__
 This is recommended for dev environments only. (Default: false)
 * `SKIP_SSL_VALIDATION_SPLUNK`: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. (Default: false)
 This is recommended for dev environments only.
-* `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html. (Default: splunk-firehose)
+* `FIREHOSE_SUBSCRIPTION_ID`: Tags nozzle events with a Firehose subscription id. See https://docs.vmware.com/en/VMware-Tanzu-Application-Service/6.0/tas-for-vms/log-ops-guide.html. (Default: splunk-firehose)
 * `FIREHOSE_KEEP_ALIVE`: Keep alive duration for the Firehose consumer. (Default: 25s)
 * `ADD_APP_INFO`: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid). (Default: "")
 * `ADD_TAGS`: Add additional tags from envelope to splunk event. (Default: false)
-    (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
+    (Please note: Enabling this feature may slightly impact the performance due to the increased event size)
 * `IGNORE_MISSING_APP`: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
 * `MISSING_APP_CACHE_INVALIDATE_TTL`:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
 * `APP_CACHE_INVALIDATE_TTL`: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
 * `ORG_SPACE_CACHE_INVALIDATE_TTL`: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
 * `APP_LIMITS`: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
 * `BOLTDB_PATH`: Bolt database path. (Default: cache.db)
-* `EVENTS`: A comma separated list of events to include. It is a required field. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If no eventtype is selected, nozzle will automatically select LogMessage to keep the nozzle running. (Default: "ValueMetric,CounterEvent,ContainerMetric")
+* `EVENTS`: A comma separated list of events to include. It is a required field. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If no event type is selected, nozzle will automatically select LogMessage to keep the nozzle running. (Default: "ValueMetric,CounterEvent,ContainerMetric")
 * `EXTRA_FIELDS`: Extra fields to annotate your events with (format is key:value,key:value). (Default: "")
-* `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems. (Default: 5s)
+* `FLUSH_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of `CONSUMER_QUEUE_SIZE`. Protects against stale events in low throughput systems. (Default: 5s)
 * `CONSUMER_QUEUE_SIZE`: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full. (Default: 10000)
 * `HEC_BATCH_SIZE`: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). (Default: 100)
 * `HEC_RETRIES`: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss. (Default: 5)
 * `HEC_WORKERS`: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
 * `ENABLE_EVENT_TRACING`: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
-* `SPLUNK_LOGGING_INDEX`: The Splunk index where logs from the nozzle of the sourcetype `cf:splunknozzle` will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX. The default value is `""`
-* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring (Metric data of insights with in the connectors). Default is 0s (Disabled).
+* `SPLUNK_LOGGING_INDEX`: The Splunk index where logs from the nozzle of the sourcetype `cf:splunknozzle` will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX. (Default: "")
+* `STATUS_MONITOR_INTERVAL`: Time interval (in s/m/h. For example, 3600s or 60m or 1h) to enable monitoring of metric data within the connector. (This increases CPU load and should be used only for insights purposes. Default: 0s).
 * `SPLUNK_METRIC_INDEX`: Index in which metric data will be ingested when monitoring module is enabled
 * `SELECTED_MONITORING_METRICS`: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
 * `REFRESH_SPLUNK_CONNECTION`: If set to true, PCF will periodically refresh connection to Splunk (how often depends on KEEP_ALIVE_TIMER value). If set to false connection will be kept alive and reused. (Default: false)
-* `KEEP_ALIVE_TIMER`: Time after which connection to Splunk will be refreshed, if REFRESH_SPLUNK_CONNECTION is set to true (in s/m/h. For example, 3600s or 60m or 1h). (Default: 30s)
-* `MEMORY_BALLAST_SIZE`: Size of memory allocated to reduce GC cycles. Default is 0, Size should be less than the total memory.
+* `KEEP_ALIVE_TIMER`: Time after which connection to Splunk will be refreshed, if `REFRESH_SPLUNK_CONNECTION` is set to true (in s/m/h. For example, 3600s or 60m or 1h). (Default: 30s)
+* `MEMORY_BALLAST_SIZE`: Size of memory allocated to reduce GC cycles. Size should be less than the total memory. (Default: 0).
 
 __About app cache params:__
 
@@ -418,7 +418,7 @@ A correct setup logs a start message with configuration parameters of the Nozzle
      skip-ssl: true
      splunk-host: http://localhost:8088
      splunk-index: atomic
-     subscription-id: splunk-firehose
+     firehose-subscription-id: splunk-firehose
      trace-logging: true
      status-monitor-interval: 0s
      version:
@@ -487,7 +487,7 @@ sourcetype="cf:counterevent"
 
 ### 7. Nozzle is not collecting any data with 'websocket' (bad handshake) error
 
-If the nozzle reports below error, then check if the configured "subscription-id" has '#' as a prefix. Please remove the prefix or prepend any other character than '#' to fix this issue.
+If the nozzle reports below error, then check if the configured "firehose-subscription-id" has '#' as a prefix. Please remove the prefix or prepend any other character than '#' to fix this issue.
 ```
 Error dialing trafficcontroller server: websocket: bad handshake.\nPlease ask your Cloud Foundry Operator to check the platform configuration (trafficcontroller is wss://****:443).
 ```
