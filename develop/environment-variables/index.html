@@ -1,0 +1,811 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../setup/">
+      
+      
+        <link rel="next" href="../troubleshooting/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Environment variables - Splunk Firehose Nozzle</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#environment-parameters" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Splunk Firehose Nozzle" class="md-header__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Splunk Firehose Nozzle
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Environment variables
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Splunk Firehose Nozzle" class="md-nav__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Splunk Firehose Nozzle
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    General information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Initial setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Environment variables
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Environment variables
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-configuration-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloud Foundry configuration parameters:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#splunk-configuration-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk configuration parameters:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration Features:
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration Features:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#about-app-cache-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      About app cache params:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-configuration-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloud Foundry configuration parameters:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#splunk-configuration-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk configuration parameters:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration Features:
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration Features:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#about-app-cache-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      About app cache params:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="environment-parameters">Environment Parameters<a class="headerlink" href="#environment-parameters" title="Permanent link">&para;</a></h1>
+<p>You can declare parameters by making a copy of the <code>scripts/ci_nozzle_manifest.sh</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Variable name</th>
+<th>Description</th>
+<th>Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DEBUG</code></td>
+<td>Enable debug mode (forward to standard out instead of Splunk)</td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cloud-foundry-configuration-parameters">Cloud Foundry configuration parameters:<a class="headerlink" href="#cloud-foundry-configuration-parameters" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable name</th>
+<th>Description</th>
+<th>Default value</th>
+<th>Mandatory parameter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>API_ENDPOINT</code></td>
+<td>Cloud Foundry API endpoint address</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>CLIENT_ID</code></td>
+<td>UAA Client ID (Must have authorities and grant_types described above)</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>CLIENT_SECRET</code></td>
+<td>Secret for Client ID.</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="splunk-configuration-parameters">Splunk configuration parameters:<a class="headerlink" href="#splunk-configuration-parameters" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable name</th>
+<th>Description</th>
+<th>Default value</th>
+<th>Mandatory parameter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SPLUNK_TOKEN</code></td>
+<td><a href="http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/">Splunk HTTP event collector token</a></td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>SPLUNK_HOST</code></td>
+<td>Splunk HTTP event collector host, example: https://example.cloud.splunk.com:8088</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>SPLUNK_INDEX</code></td>
+<td>The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the <code>SPLUNK_TOKEN</code> parameter.</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="advanced-configuration-features">Advanced Configuration Features:<a class="headerlink" href="#advanced-configuration-features" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable name</th>
+<th>Description</th>
+<th>Default value</th>
+<th>Mandatory parameter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JOB_NAME</code></td>
+<td>Tags nozzle log events with job name.</td>
+<td>&lsquo;splunk-nozzle&rsquo;</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>JOB_INDEX</code></td>
+<td>Tags nozzle log events with job index.</td>
+<td>-1</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>JOB_HOST</code></td>
+<td>Tags nozzle log events with job host.</td>
+<td>&rdquo;&ldquo;</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SKIP_SSL_VALIDATION_CF</code></td>
+<td>Skips SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted certificate authority. This is recommended for dev environments only.</td>
+<td>false</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SKIP_SSL_VALIDATION_SPLUNK</code></td>
+<td>Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. This is recommended for dev environments only.</td>
+<td>false</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>FIREHOSE_SUBSCRIPTION_ID</code></td>
+<td>Tags nozzle events with a Firehose subscription id. See <a href="https://docs.vmware.com/en/VMware-Tanzu-Application-Service/6.0/tas-for-vms/log-ops-guide.html">here</a>.</td>
+<td>splunk-firehose</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>FIREHOSE_KEEP_ALIVE</code></td>
+<td>Keep alive duration for the Firehose consumer.</td>
+<td>25s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ADD_APP_INFO</code></td>
+<td>Enrich raw data with app info. A comma separated list of app metadata (<code>AppName,OrgName,OrgGuid,SpaceName,SpaceGuid</code>).</td>
+<td>&rdquo;&ldquo;</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ADD_TAGS</code></td>
+<td>Add additional tags from envelope to splunk event. (Please note: Enabling this feature may slightly impact the performance due to the increased event size)</td>
+<td>false</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>IGNORE_MISSING_APP</code></td>
+<td>If the application is missing, then stop repeatedly querying application info from Cloud Foundry.</td>
+<td>true</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>MISSING_APP_CACHE_INVALIDATE_TTL</code></td>
+<td>How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). See <a href="#about-app-cache-params">about app cache params</a></td>
+<td>0s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>APP_CACHE_INVALIDATE_TTL</code></td>
+<td>How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). See <a href="#about-app-cache-params">about app cache params</a></td>
+<td>0s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ORG_SPACE_CACHE_INVALIDATE_TTL</code></td>
+<td>How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h).</td>
+<td>72h</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>APP_LIMITS</code></td>
+<td>Restrict to <code>APP_LIMITS</code> the most updated apps per request when populating the app metadata cache. Keep it 0 to update all the apps.</td>
+<td>0</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>BOLTDB_PATH</code></td>
+<td>Bolt database path.</td>
+<td>cache.db</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>EVENTS</code></td>
+<td>A comma separated list of events to include. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If no event type is selected, nozzle will automatically select LogMessage to keep the nozzle running.</td>
+<td>&ldquo;ValueMetric,CounterEvent,ContainerMetric&rdquo;</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>EXTRA_FIELDS</code></td>
+<td>Extra fields to annotate your events with (format is key:value,key:value).</td>
+<td>&rdquo;&ldquo;</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>FLUSH_INTERVAL</code></td>
+<td>Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of <code>CONSUMER_QUEUE_SIZE</code>. Protects against stale events in low throughput systems.</td>
+<td>5s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CONSUMER_QUEUE_SIZE</code></td>
+<td>Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full.</td>
+<td>10000</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>HEC_BATCH_SIZE</code></td>
+<td>Set the batch size for the events to push to HEC (Splunk HTTP Event Collector).</td>
+<td>100</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>HEC_RETRIES</code></td>
+<td>Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss.</td>
+<td>5</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>HEC_WORKERS</code></td>
+<td>Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk.</td>
+<td>8</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ENABLE_EVENT_TRACING</code></td>
+<td>Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches.</td>
+<td>false</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SPLUNK_LOGGING_INDEX</code></td>
+<td>The Splunk index where logs from the nozzle of the sourcetype <code>cf:splunknozzle</code> will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the <code>SPLUNK_TOKEN</code> parameter. When not provided, all logging events will be forwarded to the default <code>SPLUNK_INDEX</code>.</td>
+<td>&rdquo;&ldquo;</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>STATUS_MONITOR_INTERVAL</code></td>
+<td>Time interval (in s/m/h. For example, 3600s or 60m or 1h) to enable monitoring of metric data within the connector. (This increases CPU load and should be used only for insights purposes).</td>
+<td>0s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SPLUNK_METRIC_INDEX</code></td>
+<td>Index in which metric data will be ingested when monitoring module is enabled</td>
+<td>-</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SELECTED_MONITORING_METRICS</code></td>
+<td>Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below</td>
+<td>-</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>REFRESH_SPLUNK_CONNECTION</code></td>
+<td>If set to true, PCF will periodically refresh connection to Splunk (how often depends on <code>KEEP_ALIVE_TIMER</code> value). If set to false connection will be kept alive and reused.</td>
+<td>false</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>KEEP_ALIVE_TIMER</code></td>
+<td>Time after which connection to Splunk will be refreshed, if <code>REFRESH_SPLUNK_CONNECTION</code> is set to true (in s/m/h. For example, 3600s or 60m or 1h).</td>
+<td>30s</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>MEMORY_BALLAST_SIZE</code></td>
+<td>Size of memory allocated to reduce GC cycles. Size should be less than the total memory.</td>
+<td>0</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="about-app-cache-params">About app cache params:<a class="headerlink" href="#about-app-cache-params" title="Permanent link">&para;</a></h3>
+<p>When <code>ADD_APP_INFO</code> config is enabled, the nozzle will enrich the event with app metadata. 
+For this, the nozzle maintains a cache of all the apps locally so that it does not need to query from remote every time.</p>
+<p>Now, when there is a change in this app data in remote, the nozzle has to update this local cache. 
+For this, the config has <code>APP_CACHE_INVALIDATE_TTL</code> parameter. At every <code>APP_CACHE_INVALIDATE_TTL</code> interval, the nozzle will update the local cache by querying the remote (CF APIs).</p>
+<p>If <code>APP_CACHE_INVALIDATE_TTL</code> is set to 10s, the nozzle will refresh the local cache at every 10s. 
+So, AppCacheTTL should be set based on how frequently the app data is expected to change.</p>
+<p>When the nozzle receives events from the doppler, it will check the local cache for the given app-id. 
+But on cache-miss, it will query remote for that specific app. 
+If it doesn’t find the app data from remote too, then the nozzle will add that app to MissingAppCache 
+(if <code>IGNORE_MISSING_APP</code> config is <strong>enabled</strong>. so that the nozzle does not waste time in querying the remote for an app which is likely not to be found).
+So, from the next time onwards, the nozzle will first check in the MissingAppCache, if found then it will ignore the app and move on to the next event with a warning.</p>
+<p><code>MISSING_APP_CACHE_INVALIDATE_TTL</code> is used to clear the MissingAppCache so nozzle can retry querying from remote.</p>
+<p>For example, given <code>MISSING_APP_CACHE_INVALIDATE_TTL</code> is set to 60s, when nozzle receives event from app that is not available in local cache and remote, 
+it’ll add it to MissingAppCache. Until next <code>MISSING_APP_CACHE_INVALIDATE_TTL</code>, nozzle will not query from remote for the missing app.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <p>Webpages built on GitHub Pages | <a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">Github Terms</a> | <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy</a></p>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+        <script src="../javascripts/footer.js"></script>
+      
+    
+  </body>
+</html>
