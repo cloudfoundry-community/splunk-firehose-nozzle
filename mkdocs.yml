@@ -1,0 +1,40 @@
+---
+site_name: Splunk Firehose Nozzle
+
+extra:
+  version:
+    provider: mike
+    default: develop
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - smarty
+  - fenced_code
+  - sane_lists
+  - codehilite
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search:
+      lang: en
+  - mike
+
+extra_javascript:
+  - javascripts/footer.js
+
+copyright: <p>Webpages built on GitHub Pages | <a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">Github Terms</a> | <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy</a></p>
+
+theme:
+  name: "material"
+  palette:
+    primary: "black"
+    accent: "orange"
+
+nav:
+  - General information: "index.md"
+  - Initial setup: "setup.md"
+  - Environment variables: "environment-variables.md"
+  - Troubleshooting: "troubleshooting.md"
+  - Development: "development.md"

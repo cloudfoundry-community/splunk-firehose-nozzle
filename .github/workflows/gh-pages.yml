@@ -1,0 +1,33 @@
+name: ci
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+        - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.x
+      - name: Install dependencies
+        run: |
+          pip install mkdocs-material
+          pip install mike
+      - name: Setup git user
+        run: |
+          git config --global user.name ${{github.actor}} 
+          git config --global user.email ${{  github.actor }}@users.noreply.github.com
+      - name: Build docs website
+        run: mike deploy --push ${GITHUB_REF##*/}
