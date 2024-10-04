@@ -1,0 +1,660 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Initial setup - Splunk Firehose Nozzle</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#initial-setup" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Splunk Firehose Nozzle" class="md-header__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Splunk Firehose Nozzle
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Initial setup
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Splunk Firehose Nozzle" class="md-nav__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Splunk Firehose Nozzle
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    General information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#push-as-an-app-to-cloud-foundry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Push as an App to Cloud Foundry
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Push as an App to Cloud Foundry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dump-application-info-to-boltdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dump application info to boltdb
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disable-logging-for-noisy-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disable logging for noisy applications
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#index-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Index routing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#per-application-index-routing-via-application-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Per application index routing via application manifest
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per application index routing via application manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-manifest-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Manifest file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#please-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Please note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#index-routing-via-splunk-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing via Splunk configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoring-metric-data-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monitoring (Metric data Ingestion):
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring (Metric data Ingestion):">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#routing-data-through-edge-processor-via-hec" class="md-nav__link">
+    <span class="md-ellipsis">
+      Routing data through edge processor via HEC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="initial-setup">Initial setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h1>
+<p>The Nozzle requires a client with the authorities <code>doppler.firehose</code> and <code>cloud_controller.admin_read_only</code> (the latter is only required if <code>ADD_APP_INFO</code> is enabled) and grant-types <code>client_credentials</code> and <code>refresh_token</code>. If <code>cloud_controller.admin_read_only</code> is not
+available in the system, switch to use <code>cloud_controller.admin</code>.</p>
+<p>You can either
+* Add the client manually using <a href="https://github.com/cloudfoundry/cf-uaac">uaac</a>
+* Add the client to the deployment manifest; see <a href="https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec">uaa.scim.users</a></p>
+<p>Manifest example:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Clients</span>
+<span class="nt">uaa.clients</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">splunk-firehose</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">splunk-firehose</span>
+<span class="w">      </span><span class="nt">override</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">splunk-firehose-secret</span>
+<span class="w">      </span><span class="nt">authorized-grant-types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">client_credentials,refresh_token</span>
+<span class="w">      </span><span class="nt">authorities</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">doppler.firehose,cloud_controller.admin_read_only</span>
+</code></pre></div>
+
+<p><code>uaac</code> example:</p>
+<div class="codehilite"><pre><span></span><code>uaac<span class="w"> </span>target<span class="w"> </span>https://uaa.<span class="o">[</span>system<span class="w"> </span>domain<span class="w"> </span>url<span class="o">]</span>
+uaac<span class="w"> </span>token<span class="w"> </span>client<span class="w"> </span>get<span class="w"> </span>admin<span class="w"> </span>-s<span class="w"> </span><span class="o">[</span>admin<span class="w"> </span>client<span class="w"> </span>credentials<span class="w"> </span>secret<span class="o">]</span>
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--name<span class="w"> </span>splunk-firehose
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--secret<span class="w"> </span><span class="o">[</span>your_client_secret<span class="o">]</span>
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--authorized_grant_types<span class="w"> </span>client_credentials,refresh_token
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--authorities<span class="w"> </span>doppler.firehose,cloud_controller.admin_read_only
+</code></pre></div>
+
+<p><code>cloud_controller.admin_read_only</code> will work for cf v241
+or later. Earlier versions should use <code>cloud_controller.admin</code> instead.</p>
+<h3 id="push-as-an-app-to-cloud-foundry">Push as an App to Cloud Foundry<a class="headerlink" href="#push-as-an-app-to-cloud-foundry" title="Permanent link">&para;</a></h3>
+<p>Push Splunk Firehose Nozzle as an application to Cloud Foundry. Please refer to <strong>Setup</strong> section for details
+on user authentication.</p>
+<ol>
+<li>
+<p>Download the latest release</p>
+<p><code>shell
+git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git
+cd splunk-firehose-nozzle</code></p>
+</li>
+<li>
+<p>Authenticate to Cloud Foundry</p>
+<p><code>shell
+cf login -a https://api.[your cf system domain] -u [your id]</code></p>
+</li>
+<li>
+<p>Copy the manifest template and fill in needed values (using the credentials created during setup)</p>
+<p><code>shell
+vim scripts/ci_nozzle_manifest.yml</code></p>
+</li>
+<li>
+<p>Push the nozzle</p>
+<p><code>shell
+make deploy-nozzle</code></p>
+</li>
+</ol>
+<h4 id="dump-application-info-to-boltdb">Dump application info to boltdb<a class="headerlink" href="#dump-application-info-to-boltdb" title="Permanent link">&para;</a></h4>
+<p>If in production where there are lots of CF applications (say tens of thousands) and if the user would like to enrich
+application logs by including application metadata, querying all application metadata information from CF may take some time -
+for example if we include: add app name, space ID, space name, org ID and org name to the events.
+If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
+cache the metadata information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
+Users can run this tool to generate a copy of all application metadata and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.</p>
+<p>Example of how to run the dump application info tool:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>tools/dump_app_info
+$<span class="w"> </span>go<span class="w"> </span>build<span class="w"> </span>dump_app_info.go
+$<span class="w"> </span>./dump_app_info<span class="w"> </span>--skip-ssl-validation<span class="w"> </span>--api-endpoint<span class="o">=</span>https://&lt;your<span class="w"> </span>api<span class="w"> </span>endpoint&gt;<span class="w"> </span>--user<span class="o">=</span>&lt;api<span class="w"> </span>endpoint<span class="w"> </span>login<span class="w"> </span>username&gt;<span class="w"> </span>--password<span class="o">=</span>&lt;api<span class="w"> </span>endpoint<span class="w"> </span>login<span class="w"> </span>password&gt;
+</code></pre></div>
+
+<p>After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
+specifying correct &ldquo;&ndash;boltdb-path&rdquo; flag or &ldquo;BOLTDB_PATH&rdquo; environment variable.</p>
+<h3 id="disable-logging-for-noisy-applications">Disable logging for noisy applications<a class="headerlink" href="#disable-logging-for-noisy-applications" title="Permanent link">&para;</a></h3>
+<p>Set <code>F2S_DISABLE_LOGGING</code> = true as a environment variable in applications&rsquo;s manifest to disable logging.</p>
+<h2 id="index-routing">Index routing<a class="headerlink" href="#index-routing" title="Permanent link">&para;</a></h2>
+<p>Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.</p>
+<h3 id="per-application-index-routing-via-application-manifest">Per application index routing via application manifest<a class="headerlink" href="#per-application-index-routing-via-application-manifest" title="Permanent link">&para;</a></h3>
+<p>To enable per app index routing,
+* Please set environment variable <code>SPLUNK_INDEX</code> in your application&rsquo;s manifest (<a href="#example-manifest-file">example below</a>)
+* Make sure Splunk nozzle is configured with <code>ADD_APP_INFO</code> (Select at least one of AppName,OrgName,OrgGuid,SpaceName,SpaceGuid) to enable app info caching
+* Make sure <code>SPLUNK_INDEX</code> specified in app&rsquo;s manifest exist in Splunk and can receive data for the configured Splunk HEC token.</p>
+<blockquote>
+<p><strong>WARNING</strong>: If <code>SPLUNK_INDEX</code> is invalid, events from other apps may also get lost as splunk will drop entire event batch if any of the event from batch is invalid (i.e. invalid index)</p>
+</blockquote>
+<p>There are two ways to set the variable:</p>
+<p>In your app manifest provide an environment variable called <code>SPLUNK_INDEX</code> and assign it the index you would like to send the app data to.</p>
+<h4 id="example-manifest-file">Example Manifest file<a class="headerlink" href="#example-manifest-file" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>applications:
+<span class="k">-</span> name: &lt;App-Name&gt;
+  memory: 256M
+  disk_quota: 256M
+  ...
+  env:
+    SPLUNK_INDEX: &lt;SPLUNK_INDEX&gt;
+    ...
+</code></pre></div>
+
+<p>You can also update the env on the fly using cf-cli command:</p>
+<div class="codehilite"><pre><span></span><code>cf set-env &lt;APP_NAME&gt; SPLUNK_INDEX &lt;ENV_VAR_VALUE&gt;
+</code></pre></div>
+
+<h4 id="please-note">Please note<a class="headerlink" href="#please-note" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p>If you are updating env on the fly, make sure that <code>APP_CACHE_INVALIDATE_TTL</code> is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.</p>
+</blockquote>
+<h3 id="index-routing-via-splunk-configuration">Index routing via Splunk configuration<a class="headerlink" href="#index-routing-via-splunk-configuration" title="Permanent link">&para;</a></h3>
+<p>Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
+Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.</p>
+<p>Below are few sample configuration:</p>
+<ol>
+<li>Route data from application ID <code>95930b4e-c16c-478e-8ded-5c6e9c5981f8</code> to a Splunk <code>prod</code> index:</li>
+</ol>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:logmessage]</span>
+<span class="na">TRANSFORMS-index_routing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_data_to_index_by_field_cf_app_id</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_app_id]</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;(\w+)&quot;:&quot;95930b4e-c16c-478e-8ded-5c6e9c5981f8&quot;</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">prod</span>
+</code></pre></div>
+
+<ol start="2">
+<li>Routing application logs from any Cloud Foundry orgs whose names are prefixed with <code>sales</code> to a Splunk <code>sales</code> index.</li>
+</ol>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:logmessage]</span>
+<span class="na">TRANSFORMS-index_routing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_data_to_index_by_field_cf_org_name</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_org_name]</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cf_org_name&quot;:&quot;(sales.*)&quot;</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sales</span>
+</code></pre></div>
+
+<ol start="3">
+<li>Routing data from sourcetype <code>cf:splunknozzle</code> to index <code>new_index</code>:</li>
+</ol>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:splunknozzle]</span>
+<span class="na">TRANSFORMS-route_to_new_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_to_new_index</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_to_new_index]</span>
+<span class="na">SOURCE_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">MetaData:Sourcetype</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="s">_MetaData:Index</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">(sourcetype::cf:splunknozzle)</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">new_index</span>
+</code></pre></div>
+
+<p><strong>Note:</strong> Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
+<h2 id="monitoring-metric-data-ingestion">Monitoring (Metric data Ingestion):<a class="headerlink" href="#monitoring-metric-data-ingestion" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Metric Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nozzle.queue.percentage</code></td>
+<td>Shows how much internal queue is filled</td>
+</tr>
+<tr>
+<td><code>splunk.events.dropped.count</code></td>
+<td>Number of events dropped from splunk HEC</td>
+</tr>
+<tr>
+<td><code>splunk.events.sent.count</code></td>
+<td>Number of events sent to splunk</td>
+</tr>
+<tr>
+<td><code>firehose.events.dropped.count</code></td>
+<td>Number of events dropped from nozzle</td>
+</tr>
+<tr>
+<td><code>firehose.events.received.count</code></td>
+<td>Number of events received from firehose(websocket)</td>
+</tr>
+<tr>
+<td><code>splunk.events.throughput</code></td>
+<td>Average Payload size</td>
+</tr>
+<tr>
+<td><code>nozzle.usage.ram</code></td>
+<td>RAM Usage</td>
+</tr>
+<tr>
+<td><code>nozzle.usage.cpu</code></td>
+<td>CPU Usage</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.memory.hit</code></td>
+<td>How many times it has successfully retrieved the data from memory</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.memory.miss</code></td>
+<td>How many times it has unsuccessfully tried to retreive the data from memory</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.remote.hit</code></td>
+<td>How many times it has successfully retrieved the data from remote</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.remote.miss</code></td>
+<td>How many times it has unsuccessfully tried to retrieve the data from remote</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.boltdb.hit</code></td>
+<td>How many times it has successfully retrieved the data from BoltDB</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.boltdb.miss</code></td>
+<td>How many times it has unsuccessfully tried to retrieve the data from BoltDB</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="event_count" src="https://user-images.githubusercontent.com/89519924/200804220-1adff84c-e6f1-4438-8d30-6e2cce4984f5.png" /></p>
+<p><img alt="nozzle_logs" src="https://user-images.githubusercontent.com/89519924/200804285-22ad7863-1db3-493a-8196-cc589837db76.png" /></p>
+<p><strong>Note:</strong> Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
+<p>You can find a pre-made dashboard that can be used for monitoring in the <code>dashboards</code> directory.</p>
+<h3 id="routing-data-through-edge-processor-via-hec">Routing data through edge processor via HEC<a class="headerlink" href="#routing-data-through-edge-processor-via-hec" title="Permanent link">&para;</a></h3>
+<p>Logs can be routed to Splunk via Edge Processor. Assuming that you have a working Edge Processor instance, you can use it with minimal
+changes to nozzle configuration.</p>
+<p>Configuration fields that you should change are:
+* <code>SPLUNK_HOST</code>: Use the host of your Edge Processor instance instead of Splunk. Example: https://x.x.x.x:8088.
+* <code>SPLUNK_TOKEN</code>: It is a required parameter. A token used to authorize your request, can be found in Edge Processor settings. If your
+  EP token authentication is turned off, you can enter a placeholder values instead (e.x. &ldquo;-&ldquo;).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <p>Webpages built on GitHub Pages | <a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">Github Terms</a> | <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy</a></p>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+        <script src="../javascripts/footer.js"></script>
+      
+    
+  </body>
+</html>

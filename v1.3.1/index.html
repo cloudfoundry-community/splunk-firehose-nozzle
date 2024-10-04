@@ -1,0 +1,1569 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Splunk Firehose Nozzle</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#splunk-nozzle" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Splunk Firehose Nozzle" class="md-header__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Splunk Firehose Nozzle
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              General information
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Splunk Firehose Nozzle" class="md-nav__button md-logo" aria-label="Splunk Firehose Nozzle" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Splunk Firehose Nozzle
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    General information
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    General information
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#splunk-nozzle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk Nozzle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Splunk Nozzle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vmware-tanzu-application-service-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMware Tanzu Application Service version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vmware-ops-manager-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMware Ops Manager version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#push-as-an-app-to-cloud-foundry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Push as an App to Cloud Foundry
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Push as an App to Cloud Foundry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dump-application-info-to-boltdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dump application info to boltdb
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-logging-for-noisy-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disable logging for noisy applications
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#index-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Index routing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#per-application-index-routing-via-application-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Per application index routing via application manifest
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per application index routing via application manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-manifest-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Manifest file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#please-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Please note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#index-routing-via-splunk-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing via Splunk configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringmetric-data-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monitoring(Metric data Ingestion):
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring(Metric data Ingestion):">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#routing-data-through-edge-processor-via-hec" class="md-nav__link">
+    <span class="md-ellipsis">
+      Routing data through edge processor via HEC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-i-cant-find-my-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. I can&rsquo;t find my data!
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#here-are-a-few-common-errors-and-possible-resolutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Here are a few common errors and possible resolutions:
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Here are a few common errors and possible resolutions:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#splunk-configuration-related-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk configuration related errors:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloud-foundry-configuration-related-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloud Foundry configuration related errors:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-ensure-splunk-nozzle-is-forwarding-events-from-the-firehose" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Ensure Splunk Nozzle is forwarding events from the Firehose:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-check-for-dropped-events-due-to-http-event-collector-availability" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Check for dropped events due to HTTP Event Collector availability:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-check-for-dropped-events-due-to-slow-downstreamnetworksplunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Check for dropped events due to slow downstream(Network/Splunk):
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-check-for-data-loss-inside-the-splunk-firehose-nozzle" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Check for data loss inside the Splunk Firehose Nozzle:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-authentication-is-not-working-even-if-correct-cf-client-idsecret-is-configured-applicable-in-v123" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#searching-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Searching Events
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-nozzle-is-not-collecting-any-data-with-websocket-bad-handshake-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Nozzle is not collecting any data with &lsquo;websocket&rsquo; (bad handshake) error
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#software-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Software Requirements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance And Support
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#splunk-nozzle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk Nozzle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Splunk Nozzle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vmware-tanzu-application-service-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMware Tanzu Application Service version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vmware-ops-manager-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMware Ops Manager version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#push-as-an-app-to-cloud-foundry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Push as an App to Cloud Foundry
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Push as an App to Cloud Foundry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dump-application-info-to-boltdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dump application info to boltdb
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-logging-for-noisy-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disable logging for noisy applications
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#index-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Index routing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#per-application-index-routing-via-application-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Per application index routing via application manifest
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per application index routing via application manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-manifest-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Manifest file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#please-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Please note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#index-routing-via-splunk-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Index routing via Splunk configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringmetric-data-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monitoring(Metric data Ingestion):
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring(Metric data Ingestion):">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#routing-data-through-edge-processor-via-hec" class="md-nav__link">
+    <span class="md-ellipsis">
+      Routing data through edge processor via HEC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-i-cant-find-my-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. I can&rsquo;t find my data!
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#here-are-a-few-common-errors-and-possible-resolutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Here are a few common errors and possible resolutions:
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Here are a few common errors and possible resolutions:">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#splunk-configuration-related-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splunk configuration related errors:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloud-foundry-configuration-related-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloud Foundry configuration related errors:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-ensure-splunk-nozzle-is-forwarding-events-from-the-firehose" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Ensure Splunk Nozzle is forwarding events from the Firehose:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-check-for-dropped-events-due-to-http-event-collector-availability" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Check for dropped events due to HTTP Event Collector availability:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-check-for-dropped-events-due-to-slow-downstreamnetworksplunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Check for dropped events due to slow downstream(Network/Splunk):
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-check-for-data-loss-inside-the-splunk-firehose-nozzle" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Check for data loss inside the Splunk Firehose Nozzle:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-authentication-is-not-working-even-if-correct-cf-client-idsecret-is-configured-applicable-in-v123" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#searching-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Searching Events
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-nozzle-is-not-collecting-any-data-with-websocket-bad-handshake-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Nozzle is not collecting any data with &lsquo;websocket&rsquo; (bad handshake) error
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#software-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Software Requirements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance And Support
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h2 id="splunk-nozzle">Splunk Nozzle<a class="headerlink" href="#splunk-nozzle" title="Permanent link">&para;</a></h2>
+<p>Cloud Foundry Firehose-to-Splunk Nozzle</p>
+<hr />
+<h3 id="vmware-tanzu-application-service-version">VMware Tanzu Application Service version<a class="headerlink" href="#vmware-tanzu-application-service-version" title="Permanent link">&para;</a></h3>
+<p>Splunk Firehose Nozzle has been tested on v3.0.0 and v4.0.0 of Tanzu Application Service</p>
+<hr />
+<h3 id="vmware-ops-manager-version">VMware Ops Manager version<a class="headerlink" href="#vmware-ops-manager-version" title="Permanent link">&para;</a></h3>
+<p>Splunk Firehose Nozzle has been tested on v3.0.9 LTS of VMware Ops Manager</p>
+<hr />
+<h3 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h3>
+<p>Splunk nozzle is used to stream Cloud Foundry Firehose events to Splunk HTTP Event Collector. Using pre-defined Splunk sourcetypes, the nozzle automatically parses the events and enriches them with additional metadata before forwarding to Splunk. For detailed descriptions of each Firehose event type and their fields, refer to underlying <a href="https://github.com/cloudfoundry/dropsonde-protocol">dropsonde protocol</a>. Below is a mapping of each Firehose event type to its corresponding Splunk sourcetype. Refer to <a href="#searching-events">Searching Events</a> for example Splunk searches.</p>
+<table>
+<thead>
+<tr>
+<th>Firehose event type</th>
+<th>Splunk sourcetype</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error</td>
+<td><code>cf:error</code></td>
+<td>An Error event represents an error in the originating process</td>
+</tr>
+<tr>
+<td>HttpStartStop</td>
+<td><code>cf:httpstartstop</code></td>
+<td>An HttpStartStop event represents the whole lifecycle of an HTTP request</td>
+</tr>
+<tr>
+<td>LogMessage</td>
+<td><code>cf:logmessage</code></td>
+<td>A LogMessage contains a &ldquo;log line&rdquo; and associated metadata</td>
+</tr>
+<tr>
+<td>ContainerMetric</td>
+<td><code>cf:containermetric</code></td>
+<td>A ContainerMetric records resource usage of an app in a container</td>
+</tr>
+<tr>
+<td>CounterEvent</td>
+<td><code>cf:counterevent</code></td>
+<td>A CounterEvent represents the increment of a counter</td>
+</tr>
+<tr>
+<td>ValueMetric</td>
+<td><code>cf:valuemetric</code></td>
+<td>A ValueMetric indicates the value of a metric at an instant in time</td>
+</tr>
+</tbody>
+</table>
+<p>In addition, logs from the nozzle itself are of sourcetype <code>cf:splunknozzle</code>.</p>
+<h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h3>
+<p>The Nozzle requires a client with the authorities <code>doppler.firehose</code> and <code>cloud_controller.admin_read_only</code> (the latter is only required if <code>ADD_APP_INFO</code> is enabled) and grant-types <code>client_credentials</code> and <code>refresh_token</code>. If <code>cloud_controller.admin_read_only</code> is not
+available in the system, switch to use <code>cloud_controller.admin</code>.</p>
+<p>You can either
+* Add the client manually using <a href="https://github.com/cloudfoundry/cf-uaac">uaac</a>
+* Add the client to the deployment manifest; see <a href="https://github.com/cloudfoundry/uaa-release/blob/master/jobs/uaa/spec">uaa.scim.users</a></p>
+<p>Manifest example:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Clients</span>
+<span class="nt">uaa.clients</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">splunk-firehose</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">splunk-firehose</span>
+<span class="w">      </span><span class="nt">override</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">splunk-firehose-secret</span>
+<span class="w">      </span><span class="nt">authorized-grant-types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">client_credentials,refresh_token</span>
+<span class="w">      </span><span class="nt">authorities</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">doppler.firehose,cloud_controller.admin_read_only</span>
+</code></pre></div>
+
+<p><code>uaac</code> example:</p>
+<div class="codehilite"><pre><span></span><code>uaac<span class="w"> </span>target<span class="w"> </span>https://uaa.<span class="o">[</span>system<span class="w"> </span>domain<span class="w"> </span>url<span class="o">]</span>
+uaac<span class="w"> </span>token<span class="w"> </span>client<span class="w"> </span>get<span class="w"> </span>admin<span class="w"> </span>-s<span class="w"> </span><span class="o">[</span>admin<span class="w"> </span>client<span class="w"> </span>credentials<span class="w"> </span>secret<span class="o">]</span>
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--name<span class="w"> </span>splunk-firehose
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--secret<span class="w"> </span><span class="o">[</span>your_client_secret<span class="o">]</span>
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--authorized_grant_types<span class="w"> </span>client_credentials,refresh_token
+uaac<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>splunk-firehose<span class="w"> </span>--authorities<span class="w"> </span>doppler.firehose,cloud_controller.admin_read_only
+</code></pre></div>
+
+<p><code>cloud_controller.admin_read_only</code> will work for cf v241
+or later. Earlier versions should use <code>cloud_controller.admin</code> instead.</p>
+<hr />
+<h4 id="environment-parameters">Environment Parameters<a class="headerlink" href="#environment-parameters" title="Permanent link">&para;</a></h4>
+<p>You can declare parameters by making a copy of the scripts/nozzle.sh.template.
+* <code>DEBUG</code>: Enable debug mode (forward to standard out instead of Splunk). (Default: false).</p>
+<p><strong>Cloud Foundry configuration parameters:</strong>
+* <code>API_ENDPOINT</code>: Cloud Foundry API endpoint address. It is required parameter.
+* <code>CLIENT_ID</code>: UAA Client ID (Must have authorities and grant_types described above). It is required parameter.
+* <code>CLIENT_SECRET</code>: Secret for Client ID. It is required parameter.</p>
+<p><strong>Splunk configuration parameters:</strong>
+* <code>SPLUNK_TOKEN</code>: <a href="http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector/">Splunk HTTP event collector token</a>. It is required parameter.
+* <code>SPLUNK_HOST</code>: Splunk HTTP event collector host. example: https://example.cloud.splunk.com:8088. It is required parameter.
+* <code>SPLUNK_INDEX</code>: The Splunk index events will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. It is required parameter.</p>
+<p><strong>Advanced Configuration Features:</strong>
+* <code>JOB_NAME</code>: Tags nozzle log events with job name. It is optional. (Default: &lsquo;splunk-nozzle&rsquo;)
+* <code>JOB_INDEX</code>: Tags nozzle log events with job index. (Default: -1)
+* <code>JOB_HOST</code>: Tags nozzle log events with job host. (Default: &ldquo;&rdquo;)
+* <code>SKIP_SSL_VALIDATION_CF</code>: Skips SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted certificate authority.
+  This is recommended for dev environments only. (Default: false)
+* <code>SKIP_SSL_VALIDATION_SPLUNK</code>: Skips SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted certificate authority. (Default: false)
+  This is recommended for dev environments only.
+* <code>FIREHOSE_SUBSCRIPTION_ID</code>: Tags nozzle events with a Firehose subscription id. See https://docs.pivotal.io/pivotalcf/1-11/loggregator/log-ops-guide.html. (Default: splunk-firehose)
+* <code>FIREHOSE_KEEP_ALIVE</code>: Keep alive duration for the Firehose consumer. (Default: 25s)
+* <code>ADD_APP_INFO</code>: Enrich raw data with app info. A comma separated list of app metadata (AppName,OrgName,OrgGuid,SpaceName,SpaceGuid). (Default: &ldquo;&rdquo;)
+* <code>ADD_TAGS</code>: Add additional tags from envelope to splunk event. (Default: false)
+  (Please note: Adding tags / Enabling this feature may slightly impact the performance due to the increased event size)
+* <code>IGNORE_MISSING_APP</code>: If the application is missing, then stop repeatedly querying application info from Cloud Foundry. (Default: true)
+* <code>MISSING_APP_CACHE_INVALIDATE_TTL</code>:  How frequently the missing app info cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
+* <code>APP_CACHE_INVALIDATE_TTL</code>: How frequently the app info local cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 0s) (see below for more details)
+* <code>ORG_SPACE_CACHE_INVALIDATE_TTL</code>: How frequently the org and space cache invalidates (in s/m/h. For example, 3600s or 60m or 1h). (Default: 72h)
+* <code>APP_LIMITS</code>: Restrict to APP_LIMITS the most updated apps per request when populating the app metadata cache. keep it 0 to update all the apps. (Default: 0)
+* <code>BOLTDB_PATH</code>: Bolt database path. (Default: cache.db)
+* <code>EVENTS</code>: A comma separated list of events to include. It is a required field. Possible values: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric. If no eventtype is selected, nozzle will automatically select LogMessage to keep the nozzle running. (Default: &ldquo;ValueMetric,CounterEvent,ContainerMetric&rdquo;)
+* <code>EXTRA_FIELDS</code>: Extra fields to annotate your events with (format is key:value,key:value). (Default: &ldquo;&rdquo;)
+* <code>FLUSH_INTERVAL</code>: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to Splunk regardless of CONSUMER_QUEUE_SIZE. Protects against stale events in low throughput systems. (Default: 5s)
+* <code>CONSUMER_QUEUE_SIZE</code>: Sets the internal consumer queue buffer size. Events will be pushed to Splunk after queue is full. (Default: 10000)
+* <code>HEC_BATCH_SIZE</code>: Set the batch size for the events to push to HEC (Splunk HTTP Event Collector). (Default: 100)
+* <code>HEC_RETRIES</code>: Retry count for sending events to Splunk. After expiring, events will begin dropping causing data loss. (Default: 5)
+* <code>HEC_WORKERS</code>: Set the amount of Splunk HEC workers to increase concurrency while ingesting in Splunk. (Default: 8)
+* <code>ENABLE_EVENT_TRACING</code>: Enables event trace logging. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription-ID for Splunk correlation searches. (Default: false)
+* <code>SPLUNK_LOGGING_INDEX</code>: The Splunk index where logs from the nozzle of the sourcetype <code>cf:splunknozzle</code> will be sent to. Warning: Setting an invalid index will cause events to be lost. This index must match one of the selected indexes for the Splunk HTTP event collector token used for the SPLUNK_TOKEN parameter. When not provided, all logging events will be forwarded to the default SPLUNK_INDEX. The default value is <code>""</code>
+* <code>STATUS_MONITOR_INTERVAL</code>: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for Enabling Monitoring (Metric data of insights with in the connectors). Default is 0s (Disabled).
+* <code>SPLUNK_METRIC_INDEX</code>: Index in which metric data will be ingested when monitoring module is enabled
+* <code>SELECTED_MONITORING_METRICS</code>: Name of the metrics that you want to monitor and add using comma seprated values. List of the metrics that are supported in the metrics modules are given below
+* <code>REFRESH_SPLUNK_CONNECTION</code>: If set to true, PCF will periodically refresh connection to Splunk (how often depends on KEEP_ALIVE_TIMER value). If set to false connection will be kept alive and reused. (Default: false)
+* <code>KEEP_ALIVE_TIMER</code>: Time after which connection to Splunk will be refreshed, if REFRESH_SPLUNK_CONNECTION is set to true (in s/m/h. For example, 3600s or 60m or 1h). (Default: 30s)</p>
+<p><strong>About app cache params:</strong></p>
+<p>When ADD_APP_INFO config is enabled, the nozzle will enrich the event with app metadata. For this, the nozzle maintains a cache of all the apps locally so that it doesn’t need to query from remote every time.</p>
+<p>Now, when there is a change in this app data in remote, the nozzle has to update this local cache. For this, the config has APP_CACHE_INVALIDATE_TTL parameter. At every APP_CACHE_INVALIDATE_TTL interval, the nozzle will update the local cache by querying the remote (CF APIs).</p>
+<p>If APP_CACHE_INVALIDATE_TTL is set to 10s, the nozzle will refresh the local cache at every 10s. So, AppCacheTTL should be set based on how frequently the app data is expected to change.</p>
+<p>When the nozzle receives events from the doppler, it will check the local cache for the given app-id. But on cache-miss, it will query remote for that specific app. If it doesn’t find the app data from remote too, then the nozzle will add that app to MissingAppCache (if IGNORE_MISSING_APP config is <strong>enabled</strong>. so that the nozzle does not waste time in querying the remote for an app which is likely not to be found). So, from the next time onwards, the nozzle will first check in the MissingAppCache, if found then it will ignore the app and move on to the next event with a warning.</p>
+<p>MISSING_APP_CACHE_INVALIDATE_TTL is used to clear the MissingAppCache so nozzle can retry querying from remote.</p>
+<p>For example, given MISSING_APP_CACHE_INVALIDATE_TTL is set to 60s, when nozzle receives event from app that is not available in local cache and remote, it’ll add it to MissingAppCache. Until next MISSING_APP_CACHE_INVALIDATE_TTL, nozzle will not query from remote for the missing app.</p>
+<hr />
+<h3 id="push-as-an-app-to-cloud-foundry">Push as an App to Cloud Foundry<a class="headerlink" href="#push-as-an-app-to-cloud-foundry" title="Permanent link">&para;</a></h3>
+<p>Push Splunk Firehose Nozzle as an application to Cloud Foundry. Please refer to <strong>Setup</strong> section for details
+on user authentication.</p>
+<ol>
+<li>
+<p>Download the latest release</p>
+<p><code>shell
+git clone https://github.com/cloudfoundry-community/splunk-firehose-nozzle.git
+cd splunk-firehose-nozzle</code></p>
+</li>
+<li>
+<p>Authenticate to Cloud Foundry</p>
+<p><code>shell
+cf login -a https://api.[your cf system domain] -u [your id]</code></p>
+</li>
+<li>
+<p>Copy the manifest template and fill in needed values (using the credentials created during setup)</p>
+<p><code>shell
+vim scripts/ci_nozzle_manifest.yml</code></p>
+</li>
+<li>
+<p>Push the nozzle</p>
+<p><code>shell
+make deploy-nozzle</code></p>
+</li>
+</ol>
+<h4 id="dump-application-info-to-boltdb">Dump application info to boltdb<a class="headerlink" href="#dump-application-info-to-boltdb" title="Permanent link">&para;</a></h4>
+<p>If in production where there are lots of CF applications (say tens of thousands) and if the user would like to enrich
+application logs by including application metadata, querying all application metadata information from CF may take some time -
+for example if we include: add app name, space ID, space name, org ID and org name to the events.
+If there are multiple instances of Spunk nozzle deployed the situation will be even worse, since each of the Splunk nozzle(s) will query all applications meta data and
+cache the metadata information to the local boltdb file. These queries will introduce load to the CF system and could potentially take a long time to finish.
+Users can run this tool to generate a copy of all application metadata and copy this to each Splunk nozzle deployment. Each Splunk nozzle can pick up the cache copy and update the cache file incrementally afterwards.</p>
+<p>Example of how to run the dump application info tool:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>tools/dump_app_info
+$<span class="w"> </span>go<span class="w"> </span>build<span class="w"> </span>dump_app_info.go
+$<span class="w"> </span>./dump_app_info<span class="w"> </span>--skip-ssl-validation<span class="w"> </span>--api-endpoint<span class="o">=</span>https://&lt;your<span class="w"> </span>api<span class="w"> </span>endpoint&gt;<span class="w"> </span>--user<span class="o">=</span>&lt;api<span class="w"> </span>endpoint<span class="w"> </span>login<span class="w"> </span>username&gt;<span class="w"> </span>--password<span class="o">=</span>&lt;api<span class="w"> </span>endpoint<span class="w"> </span>login<span class="w"> </span>password&gt;
+</code></pre></div>
+
+<p>After populating the application info cache file, user can copy to different Splunk nozzle deployments and start Splunk nozzle to pick up this cache file by
+specifying correct &ldquo;&ndash;boltdb-path&rdquo; flag or &ldquo;BOLTDB_PATH&rdquo; environment variable.</p>
+<h3 id="disable-logging-for-noisy-applications">Disable logging for noisy applications<a class="headerlink" href="#disable-logging-for-noisy-applications" title="Permanent link">&para;</a></h3>
+<p>Set F2S_DISABLE_LOGGING = true as a environment variable in applications&rsquo;s manifest to disable logging.</p>
+<h2 id="index-routing">Index routing<a class="headerlink" href="#index-routing" title="Permanent link">&para;</a></h2>
+<p>Index routing is a feature that can be used to send different Cloud Foundry logs to different indexes for better ACL and data retention control in Splunk.</p>
+<h3 id="per-application-index-routing-via-application-manifest">Per application index routing via application manifest<a class="headerlink" href="#per-application-index-routing-via-application-manifest" title="Permanent link">&para;</a></h3>
+<p>To enable per app index routing,
+* Please set environment variable <code>SPLUNK_INDEX</code> in your application&rsquo;s manifest (<a href="#example-manifest-file">example below</a>)
+* Make sure Splunk nozzle is configured with <code>ADD_APP_INFO</code> (Select at least one of AppName,OrgName,OrgGuid,SpaceName,SpaceGuid) to enable app info caching
+* Make sure <code>SPLUNK_INDEX</code> specified in app&rsquo;s manifest exist in Splunk and can receive data for the configured Splunk HEC token.</p>
+<blockquote>
+<p><strong>WARNING</strong>: If <code>SPLUNK_INDEX</code> is invalid, events from other apps may also get lost as splunk will drop entire event batch if any of the event from batch is invalid (i.e. invalid index)</p>
+</blockquote>
+<p>There are two ways to set the variable:</p>
+<p>In your app manifest provide an environment variable called <code>SPLUNK_INDEX</code> and assign it the index you would like to send the app data to.</p>
+<h4 id="example-manifest-file">Example Manifest file<a class="headerlink" href="#example-manifest-file" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>applications:
+<span class="k">-</span> name: &lt;App-Name&gt;
+  memory: 256M
+  disk_quota: 256M
+  ...
+  env:
+    SPLUNK_INDEX: &lt;SPLUNK_INDEX&gt;
+    ...
+</code></pre></div>
+
+<p>You can also update the env on the fly using cf-cli command:</p>
+<div class="codehilite"><pre><span></span><code>cf set-env &lt;APP_NAME&gt; SPLUNK_INDEX &lt;ENV_VAR_VALUE&gt;
+</code></pre></div>
+
+<h4 id="please-note">Please note<a class="headerlink" href="#please-note" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p>If you are updating env on the fly, make sure that <code>APP_CACHE_INVALIDATE_TTL</code> is greater tha 0s. Otherwise cached app-info will not be updated and events will not be sent to required index.</p>
+</blockquote>
+<h3 id="index-routing-via-splunk-configuration">Index routing via Splunk configuration<a class="headerlink" href="#index-routing-via-splunk-configuration" title="Permanent link">&para;</a></h3>
+<p>Logs can be routed using fields such as app ID/name, space ID/name or org ID/name.
+Users can configure the Splunk configuration files props.conf and transforms.conf on Splunk indexers or Splunk Heavy Forwarders if deployed.</p>
+<p>Below are few sample configuration:</p>
+<p><span>1. </span> Route data from application ID <code>95930b4e-c16c-478e-8ded-5c6e9c5981f8</code> to a Splunk <code>prod</code> index:</p>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:logmessage]</span>
+<span class="na">TRANSFORMS-index_routing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_data_to_index_by_field_cf_app_id</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_app_id]</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;(\w+)&quot;:&quot;95930b4e-c16c-478e-8ded-5c6e9c5981f8&quot;</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">prod</span>
+</code></pre></div>
+
+<p><span>2.</span> Routing application logs from any Cloud Foundry orgs whose names are prefixed with <code>sales</code> to a Splunk <code>sales</code> index.</p>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:logmessage]</span>
+<span class="na">TRANSFORMS-index_routing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_data_to_index_by_field_cf_org_name</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_org_name]</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cf_org_name&quot;:&quot;(sales.*)&quot;</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sales</span>
+</code></pre></div>
+
+<p><span>3.</span> Routing data from sourcetype <code>cf:splunknozzle</code> to index <code>new_index</code>:</p>
+<p><em>$SPLUNK_HOME/etc/system/local/props.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[cf:splunknozzle]</span>
+<span class="na">TRANSFORMS-route_to_new_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">route_to_new_index</span>
+</code></pre></div>
+
+<p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
+<div class="codehilite"><pre><span></span><code><span class="k">[route_to_new_index]</span>
+<span class="na">SOURCE_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">MetaData:Sourcetype</span>
+<span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="s">_MetaData:Index</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">(sourcetype::cf:splunknozzle)</span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">new_index</span>
+</code></pre></div>
+
+<p class="note"><strong>Note:</strong>Moving from version 1.2.4 to 1.2.5, timestamp will use nanosecond precision instead of milliseconds.</p>
+
+<h2 id="monitoringmetric-data-ingestion"><strong>Monitoring(Metric data Ingestion):</strong><a class="headerlink" href="#monitoringmetric-data-ingestion" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Metric Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nozzle.queue.percentage</code></td>
+<td>Shows how much internal queue is filled</td>
+</tr>
+<tr>
+<td><code>splunk.events.dropped.count</code></td>
+<td>Number of events dropped from splunk HEC</td>
+</tr>
+<tr>
+<td><code>splunk.events.sent.count</code></td>
+<td>Number of events sent to splunk</td>
+</tr>
+<tr>
+<td><code>firehose.events.dropped.count</code></td>
+<td>Number of events dropped from nozzle</td>
+</tr>
+<tr>
+<td><code>firehose.events.received.count</code></td>
+<td>Number of events received from firehose(websocket)</td>
+</tr>
+<tr>
+<td><code>splunk.events.throughput</code></td>
+<td>Average Payload size</td>
+</tr>
+<tr>
+<td><code>nozzle.usage.ram</code></td>
+<td>RAM Usage</td>
+</tr>
+<tr>
+<td><code>nozzle.usage.cpu</code></td>
+<td>CPU Usage</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.memory.hit</code></td>
+<td>How many times it has successfully retrieved the data from memory</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.memory.miss</code></td>
+<td>How many times it has unsuccessfully tried to retreive the data from memory</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.remote.hit</code></td>
+<td>How many times it has successfully retrieved the data from remote</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.remote.miss</code></td>
+<td>How many times it has unsuccessfully tried to retrieve the data from remote</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.boltdb.hit</code></td>
+<td>How many times it has successfully retrieved the data from BoltDB</td>
+</tr>
+<tr>
+<td><code>nozzle.cache.boltdb.miss</code></td>
+<td>How many times it has unsuccessfully tried to retrieve the data from BoltDB</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="event_count" src="https://user-images.githubusercontent.com/89519924/200804220-1adff84c-e6f1-4438-8d30-6e2cce4984f5.png" /></p>
+<p><img alt="nozzle_logs" src="https://user-images.githubusercontent.com/89519924/200804285-22ad7863-1db3-493a-8196-cc589837db76.png" /></p>
+<p class="note"><strong>Note:</strong>Select value Rate(Avg) for Aggregation from Analysis tab on the top right.</p>
+
+<h3 id="routing-data-through-edge-processor-via-hec">Routing data through edge processor via HEC<a class="headerlink" href="#routing-data-through-edge-processor-via-hec" title="Permanent link">&para;</a></h3>
+<p>Logs can be routed to Splunk via Edge Processor. Assuming that you have a working Edge Processor instance, you can use it with minimal
+changes to nozzle configuration.</p>
+<p>Configuratino fields that you should change are:
+* <code>SPLUNK_HOST</code>: Use the host of your Edge Processor instance instead of Splunk. Example: https://x.x.x.x:8088.
+* <code>SPLUNK_TOKEN</code>: It is a required parameter. A token used to authorize your request, can be found in Edge Processor settings. If your
+  EP token authentication is turned off, you can enter a placeholder values instead (e.x. &ldquo;-&ldquo;).</p>
+<h2 id="troubleshooting"><a id='walkthrough'></a> Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<p>This topic describes how to troubleshoot Splunk Firehose Nozzle for Cloud Foundry.</p>
+<h4 id="1-i-cant-find-my-data">1. I can&rsquo;t find my data!<a class="headerlink" href="#1-i-cant-find-my-data" title="Permanent link">&para;</a></h4>
+<p>Are you searching for events and not finding them or looking at a dashboard and seeing &ldquo;No result found&rdquo;? Check Splunk Nozzle app logs.</p>
+<p>To view the nozzle&rsquo;s logs running on CF do the following:</p>
+<ol>
+  <li>Log in as an admin via the CLI.</li>
+  <li>Target the org created by the tile.<br/>
+  <pre class="terminal">cf target -o SPLUNK-NOZZLE-ORG</pre>
+  </li>
+  <li>View the recent app Splunk Nozzle logs (the version number installed by the tile will vary).<br/>
+  <pre class="terminal">cf logs --recent splunk-firehoze-nozzle</pre>
+  </li>
+  <li>Alternatively, you can stream the app logs as they're emitted.<br/>
+  <pre class="terminal">cf logs splunk-firehose-nozzle</pre>
+  </li>
+</ol>
+
+<h3 id="here-are-a-few-common-errors-and-possible-resolutions">Here are a few common errors and possible resolutions:<a class="headerlink" href="#here-are-a-few-common-errors-and-possible-resolutions" title="Permanent link">&para;</a></h3>
+<h4 id="splunk-configuration-related-errors">Splunk configuration related errors:<a class="headerlink" href="#splunk-configuration-related-errors" title="Permanent link">&para;</a></h4>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Unable to talk to Splunk","log_level":2,"data":{"error":"Post http://localhost:8088/services/collector: read tcp 10.0.0.0:62931-\u003elocalhost:8088: read: connection reset by peer"}}</pre>
+
+<p>This error usually occurs when SSL is enabled on the Splunk HEC endpoint. Confirm that you&rsquo;re using https&rsquo; in the Splunk HEC URL.</p>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Unable to talk to Splunk","log_level":2,"data":{"error":"Non-ok response code [400] from splunk: {\"text\":\"Incorrect index\",\"code\":7,\"invalid-event-number\":1}"}}</pre>
+
+<p>This usually means the index value specified in the configuration doesn&rsquo;t exist on Splunk Host. Confirm that you&rsquo;re using the correct Splunk index value.</p>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Unable to talk to Splunk","log_level":2,"data":{"error":"Non-ok response code [403] from splunk: {\"text\":\"Invalid token\",\"code\":4}"}}</pre>
+
+<p>This can occur when the Splunk HEC Token value is invalid. Confirm that you&rsquo;re using a valid token.</p>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Unable to talk to Splunk","log_level":2,"data":{"error":"Post https://localhost:8088/services/collector: x509: cannot validate certificate for localhost because it doesn't contain any IP SANs"}}</pre>
+
+<p>This usually means that there was no valid SSL certificate found. Confirm that you&rsquo;re using a valid SSL certificate for the Splunk server, or set &lsquo;Skip SSL Validation&rsquo; to <code>true</code> under Splunk settings.</p>
+<p class="note"><strong>Note:</strong>Disabling SSL validation is not recommended for production environments.</p>
+
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Unable to talk to Splunk","log_level":2,"data":{"error":"Post https://localhost:8088/services/collector: dial tcp localhost:8088: getsockopt: connection refused"}}</pre>
+
+<p>This error can occur when the Splunk server is offline or when the Splunk HEC URL is not valid. Confirm that both the Splunk server is running and that you&rsquo;re using a valid URL.</p>
+<h4 id="cloud-foundry-configuration-related-errors">Cloud Foundry configuration related errors:<a class="headerlink" href="#cloud-foundry-configuration-related-errors" title="Permanent link">&para;</a></h4>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Failed to run splunk-firehose-nozzle","log_level":2,"data":{"error":"Error getting token: oauth2: cannot fetch token: 401 Unauthorized\nResponse: {\"error\":\"unauthorized\",\"error_description\":\"Bad credentials\"}"}}</pre>
+
+<p>This error can occur when the credentials provided for CF environment are invalid. Confirm that the API User and API Password each have access to the CF environment.</p>
+<pre class="terminal">{"timestamp":"<time>","source":"splunk-nozzle-logger","message":"splunk-nozzle-logger.Failed to run splunk-firehose-nozzle","log_level":2,"data":{"error":"Could not get api /v2/info: Get https://api.cfendpoint.com/v2/info: x509: certificate signed by unknown authority"}}</pre>
+
+<p>This means that no valid SSL certificate was found. To remediate this error, provide a valid SSL certificate for Cloud Foundry or set &lsquo;Skip SSL Validation&rsquo; to true under Cloud Foundry Settings.</p>
+<p class="note"><strong>Note:</strong>Disabling SSL validation is not recommended for production environments.</p>
+
+<p>The following troubleshooting tips assume you have access to Splunk to run basic searches against index <code>_internal</code> and the user-specified index for Firehose events.</p>
+<h3 id="2-ensure-splunk-nozzle-is-forwarding-events-from-the-firehose">2. Ensure Splunk Nozzle is forwarding events from the Firehose:<a class="headerlink" href="#2-ensure-splunk-nozzle-is-forwarding-events-from-the-firehose" title="Permanent link">&para;</a></h3>
+<p>Search app logs of the Nozzle to confirm correct behavior:</p>
+<pre class="terminal">
+sourcetype="cf:splunknozzle"
+</pre>
+
+<p>A correct setup logs a start message with configuration parameters of the Nozzle logged as a JSON object, for example:</p>
+<pre class="terminal">
+  data: {
+     add-app-info: AppName,OrgName,OrgGuid,SpaceName,SpaceGuid
+     api-endpoint: https://api.endpoint.com
+     app-cache-ttl: 0
+     app-limits: 0
+     batch-size: 1000
+     boltdb-path: cache.db
+     branch: null
+     buildos: null
+     commit: null
+     debug:  false
+     extra-fields:
+     flush-interval: 5000000000
+     hec-workers: 8
+     ignore-missing-apps: true
+     job-host:
+     job-index: -1
+     job-name: splunk-nozzle
+     keep-alive: 25000000000
+     missing-app-cache-ttl:  0
+     queue-size: 10000
+     retries: 2
+     skip-ssl: true
+     splunk-host: http://localhost:8088
+     splunk-index: atomic
+     subscription-id: splunk-firehose
+     trace-logging: true
+     status-monitor-interval: 0s
+     version:
+     wanted-events: ValueMetric,CounterEvent,Error,LogMessage,HttpStartStop,ContainerMetric
+  }
+  ip: 10.0.0.0
+  log_level: 1
+  logger_source: splunk-nozzle-logger
+  message: splunk-nozzle-logger.Running splunk-firehose-nozzle with following configuration variables
+  origin: splunk_nozzle
+</pre>
+
+<p>Search app logs of the Nozzle for any errors:</p>
+<pre class="terminal">
+sourcetype="cf:splunknozzle" data.error=*
+</pre>
+
+<p>Errors are logged with corresponding message and stacktrace.</p>
+<h3 id="3-check-for-dropped-events-due-to-http-event-collector-availability">3. Check for dropped events due to HTTP Event Collector availability:<a class="headerlink" href="#3-check-for-dropped-events-due-to-http-event-collector-availability" title="Permanent link">&para;</a></h3>
+<p>As the Splunk Firehose Nozzle sends data to Splunk via HTTPS using the HTTP Event Collector, it is also susceptible to any network issues across the network path from point to point. Run the following search to determine if Splunk has indexed any events indicating issues with the HEC Endpoint.</p>
+<pre class="terminal">
+  sourcetype="cf:splunknozzle" "dropping events"
+</pre>
+
+<h3 id="4-check-for-dropped-events-due-to-slow-downstreamnetworksplunk">4. Check for dropped events due to slow downstream(Network/Splunk):<a class="headerlink" href="#4-check-for-dropped-events-due-to-slow-downstreamnetworksplunk" title="Permanent link">&para;</a></h3>
+<p>If the nozzle emits the ‘dropped events’ warning saying that downstream is slow, then the network or Splunk environment might needs to be scaled. (eg. Splunk HEC receiver node, Splunk Indexer, LB etc)</p>
+<p>Run the following search to determine if Splunk has indexed any events indicating such issues.</p>
+<pre class="terminal">
+  sourcetype="cf:splunknozzle" "dropped Total of"
+</pre>
+
+<h3 id="5-check-for-data-loss-inside-the-splunk-firehose-nozzle">5. Check for data loss inside the Splunk Firehose Nozzle:<a class="headerlink" href="#5-check-for-data-loss-inside-the-splunk-firehose-nozzle" title="Permanent link">&para;</a></h3>
+<p>If &ldquo;Event Tracing&rdquo; is enabled, extra metadata will be attached to events. This allows searches to calculate the percentage of data loss inside the Splunk Firehose Nozzle, if applicable.</p>
+<p>Each instance of the Splunk Firehose Nozzle will run with a randomly generated UUID. The query below will display the message success rate for each UUID (Please update the index value based on your nozzle configuration).</p>
+<pre class="terminal">
+index=main | stats count as total_events, min(nozzle-event-counter) as min_number, max(nozzle-event-counter) as max_number by uuid | eval event_number =  max_number - min_number | eval success_percentage = total_events/event_number*100 | stats max(success_percentage) by uuid
+</pre>
+
+<h3 id="6-authentication-is-not-working-even-if-correct-cf-client-idsecret-is-configured-applicable-in-v123">6. Authentication is not working even if correct CF Client ID/secret is configured: (applicable in v1.2.3)<a class="headerlink" href="#6-authentication-is-not-working-even-if-correct-cf-client-idsecret-is-configured-applicable-in-v123" title="Permanent link">&para;</a></h3>
+<p>Due to a known issue in an indirect dependency (an OAuth library), if the client secret has any special characters (eg. *!#$&amp;@^) then it will not work. For now, user has to configure a client secret without any of this characters. Once the library in question is updated in the next release it will work even with the special characters.</p>
+<h4 id="searching-events">Searching Events<a class="headerlink" href="#searching-events" title="Permanent link">&para;</a></h4>
+<p>Here are two short Splunk queries to start exploring some of the Cloud Foundry events in Splunk.</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">sourcetype</span><span class="p">=</span><span class="s">&quot;cf:valuemetric&quot;</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nx">stats</span><span class="w"> </span><span class="nx">avg</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span><span class="w"> </span><span class="nx">by</span><span class="w"> </span><span class="nx">job_instance</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="nx">sourcetype</span><span class="p">=</span><span class="s">&quot;cf:counterevent&quot;</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nx">eval</span><span class="w"> </span><span class="nx">job_and_name</span><span class="p">=</span><span class="nx">source</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">+</span><span class="nx">name</span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="nx">stats</span><span class="w"> </span><span class="nx">values</span><span class="p">(</span><span class="nx">job_and_name</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="7-nozzle-is-not-collecting-any-data-with-websocket-bad-handshake-error">7. Nozzle is not collecting any data with &lsquo;websocket&rsquo; (bad handshake) error<a class="headerlink" href="#7-nozzle-is-not-collecting-any-data-with-websocket-bad-handshake-error" title="Permanent link">&para;</a></h3>
+<p>If the nozzle reports below error, then check if the configured &ldquo;subscription-id&rdquo; has &lsquo;#&rsquo; as a prefix. Please remove the prefix or prepend any other character than &lsquo;#&rsquo; to fix this issue.</p>
+<div class="codehilite"><pre><span></span><code>Error dialing trafficcontroller server: websocket: bad handshake.\nPlease ask your Cloud Foundry Operator to check the platform configuration (trafficcontroller is wss://****:443).
+</code></pre></div>
+
+<h3 id="development">Development<a class="headerlink" href="#development" title="Permanent link">&para;</a></h3>
+<h4 id="software-requirements">Software Requirements<a class="headerlink" href="#software-requirements" title="Permanent link">&para;</a></h4>
+<p>Make sure you have the following installed on your workstation:</p>
+<table>
+<thead>
+<tr>
+<th>Software</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>go</td>
+<td>go1.17.x</td>
+</tr>
+</tbody>
+</table>
+<p>Then make sure that all dependent packages are there:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>&lt;REPO_ROOT_DIRECTORY&gt;
+$<span class="w"> </span>make<span class="w"> </span>installdeps
+</code></pre></div>
+
+<h4 id="environment">Environment<a class="headerlink" href="#environment" title="Permanent link">&para;</a></h4>
+<p>For development against <a href="https://github.com/cloudfoundry/bosh-lite">bosh-lite</a>,
+copy <code>tools/nozzle.sh.template</code> to <code>tools/nozzle.sh</code> and supply missing values:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>cp<span class="w"> </span>tools/nozzle.sh.template<span class="w"> </span>tools/nozzle.sh
+$<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>tools/nozzle.sh
+</code></pre></div>
+
+<p>Build project:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>make<span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.3.1
+</code></pre></div>
+
+<p>Run tests with <a href="http://onsi.github.io/ginkgo/">Ginkgo</a></p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>ginkgo<span class="w"> </span>-r
+</code></pre></div>
+
+<p>Run all kinds of testing</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="c1"># run all unittest</span>
+$<span class="w"> </span>make<span class="w"> </span>race<span class="w"> </span><span class="c1"># test if there is race condition in the code</span>
+$<span class="w"> </span>make<span class="w"> </span>vet<span class="w">  </span><span class="c1"># examine GoLang code</span>
+$<span class="w"> </span>make<span class="w"> </span>cov<span class="w">  </span><span class="c1"># code coverage test and code coverage html report</span>
+</code></pre></div>
+
+<p>Or run all testings: unit test, race condition test, code coverage etc</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>make<span class="w"> </span>testall
+</code></pre></div>
+
+<p>Run app</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># this will run: go run main.go</span>
+<span class="o">$</span><span class="w"> </span><span class="o">./</span><span class="n">tools</span><span class="o">/</span><span class="n">nozzle</span><span class="o">.</span><span class="n">sh</span>
+</code></pre></div>
+
+<h1 id="maintenance-and-support">Maintenance And Support<a class="headerlink" href="#maintenance-and-support" title="Permanent link">&para;</a></h1>
+<p>Splunk Firehose Nozzle project is supported through Splunk Support assuming the customer has a current Splunk support entitlement.  For customers that do not have a current Splunk support entitlement, please file an issue at <a href="https://github.com/cloudfoundry-community/splunk-firehose-nozzle/issues/new/choose">create a new issue</a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <p>Webpages built on GitHub Pages | <a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">Github Terms</a> | <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy</a></p>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.525ec568.min.js"></script>
+      
+        <script src="javascripts/footer.js"></script>
+      
+    
+  </body>
+</html>
