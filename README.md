@@ -1,6 +1,6 @@
 # Documentation
 
-For deployment and user documentation [see](https://github.com/cloudfoundry-community/splunk-firehose-nozzle/).
+For deployment and user documentation [see](https://cloudfoundry-community.github.io/splunk-firehose-nozzle/develop/).
 
 There are plenty of versions you can browse:
 1. Branch `develop` refers to the latest version
