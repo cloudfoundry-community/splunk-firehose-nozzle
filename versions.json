@@ -1,12 +1,12 @@
 [
   {
-    "version": "develop",
-    "title": "develop",
+    "version": "main",
+    "title": "main",
     "aliases": []
   },
   {
-    "version": "main",
-    "title": "main",
+    "version": "develop",
+    "title": "develop",
     "aliases": []
   },
   {
