@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,6 +22,7 @@ func main() {
 	lagerflags.AddFlags(flag.CommandLine)
 
 	logger, _ := lagerflags.New("splunk-nozzle-logger")
+	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true}) // Disable the `time` field, it is already included in the cf logging
 	logger.Info("Running splunk-firehose-nozzle")
 
 	shutdownChan := make(chan os.Signal, 2)
