@@ -21,8 +21,8 @@ var (
 
 func main() {
 	lagerflags.AddFlags(flag.CommandLine)
-
 	logger := lager.NewLogger("splunk-nozzle-logger")
+	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))
 	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true}) // disable the `time` field, it is already included in the cf logging
 	logger.Info("Running splunk-firehose-nozzle")
 
