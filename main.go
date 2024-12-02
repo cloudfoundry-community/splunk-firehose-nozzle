@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"flag"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -22,8 +22,7 @@ var (
 func main() {
 	lagerflags.AddFlags(flag.CommandLine)
 
-	logger, _ := lagerflags.New("splunk-nozzle-logger")
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))    // no longer include the default `timestamp` field
+	logger := lager.NewLogger("splunk-nozzle-logger")
 	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true}) // disable the `time` field, it is already included in the cf logging
 	logger.Info("Running splunk-firehose-nozzle")
 
