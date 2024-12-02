@@ -205,7 +205,7 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	appInfo, err := appCache.GetApp(appGuid)
 	if err != nil {
 		if err == cache.ErrMissingAndIgnored {
-			logrus.Info(err.Error(), cfAppId)
+			logrus.Info(err.Error(), " (", cfAppId, ")")
 		} else {
 			logrus.Error("Failed to fetch application metadata from remote: ", err)
 		}
