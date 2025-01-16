@@ -1,6 +1,7 @@
 package splunknozzle
 
 import (
+	"code.cloudfoundry.org/lager"
 	"context"
 	"fmt"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
@@ -22,6 +23,7 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
 
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/nozzle"
 	"github.com/google/uuid"
 )
@@ -31,7 +33,10 @@ type SplunkFirehoseNozzle struct {
 	logger lager.Logger
 }
 
-type NozzleCfClient client.Client // NozzleCfClient is a wrapper around cfclient.Client
+type NozzleCfClient struct {
+	client.Client
+	CfClientVersion string
+} // NozzleCfClient is a wrapper around cfclient.Client
 
 var cfContext = context.Background()
 
@@ -48,18 +53,30 @@ func (ncc NozzleCfClient) GetToken() (string, error) {
 }
 
 func (ncc NozzleCfClient) AppByGuid(appGUID string) (*resource.App, error) {
+	if ncc.CfClientVersion == "v2" {
+		return ncc.AppByGuid(appGUID)
+	}
 	return ncc.Applications.Get(cfContext, appGUID)
 }
 
 func (ncc NozzleCfClient) ListApps() ([]*resource.App, error) {
+	if ncc.CfClientVersion == "v2" {
+		return ncc.ListApps()
+	}
 	return ncc.Applications.ListAll(cfContext, &client.AppListOptions{ListOptions: &client.ListOptions{PerPage: 500}})
 }
 
 func (ncc NozzleCfClient) GetSpaceByGuid(spaceGUID string) (*resource.Space, error) {
+	if ncc.CfClientVersion == "v2" {
+		return ncc.GetSpaceByGuid(spaceGUID)
+	}
 	return ncc.Spaces.Get(cfContext, spaceGUID)
 }
 
 func (ncc NozzleCfClient) GetOrgByGuid(orgGUID string) (*resource.Organization, error) {
+	if ncc.CfClientVersion == "v2" {
+		return ncc.GetOrgByGuid(orgGUID)
+	}
 	return ncc.Organizations.Get(cfContext, orgGUID)
 }
 
@@ -86,22 +103,49 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 	return eventrouter.New(cache, eventSink, config)
 }
 
+// v2
+//func (s *SplunkFirehoseNozzle) PCFClientV2() (*cfclient.Client, error) {
+//
+//}
+
+// v3
 // CFClient creates a client object which can talk to Cloud Foundry
 func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
-	var skipSSL config.Option
-	if s.config.SkipSSLCF {
-		skipSSL = config.SkipTLSValidation()
-	}
-	if cfConfig, err := config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), skipSSL, config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version))); err != nil {
-		return nil, err
-	} else {
-		if cfClient, err := client.New(cfConfig); err != nil {
+	if s.config.CfClientVersion == "v2" {
+		cfConfig := &cfclient.Config{
+			ApiAddress:        s.config.ApiEndpoint,
+			Username:          s.config.User,
+			Password:          s.config.Password,
+			SkipSslValidation: s.config.SkipSSLCF,
+			ClientID:          s.config.ClientID,
+			ClientSecret:      s.config.ClientSecret,
+		}
+		if cfClient, err := cfclient.NewClient(cfConfig); err != nil {
 			return nil, err
 		} else {
 			nozzleCfClient := NozzleCfClient(*cfClient)
+			nozzleCfClient.CfClientVersion = "v2"
 			return &nozzleCfClient, nil
 		}
 	}
+	if s.config.CfClientVersion == "v3" {
+		var skipSSL config.Option
+		if s.config.SkipSSLCF {
+			skipSSL = config.SkipTLSValidation()
+		}
+		if cfConfig, err := config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), skipSSL, config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version))); err != nil {
+			return nil, err
+		} else {
+			if cfClient, err := client.New(cfConfig); err != nil {
+				return nil, err
+			} else {
+				nozzleCfClient := NozzleCfClient(*cfClient)
+				nozzleCfClient.CfClientVersion = "v2"
+				return &nozzleCfClient, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unsupported Splunk Firehose Nozzle version %s", s.config.Version)
 }
 
 // AppCache creates in-memory cache or boltDB cache
@@ -114,6 +158,7 @@ func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, er
 			AppCacheTTL:        s.config.AppCacheTTL,
 			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
 			Logger:             s.logger,
+			CfClientVersion:    s.config.CfClientVersion,
 		}
 		return cache.NewBoltdb(client, &c)
 	}
@@ -211,8 +256,33 @@ func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
 
 }
 
+// v2
+//func (s *SplunkFirehoseNozzle) EventSourceV2(pcfClient *cfclient.Client) *eventsource.Firehose {
+//	config := &eventsource.FirehoseConfig{
+//		KeepAlive:      s.config.KeepAlive,
+//		SkipSSL:        s.config.SkipSSLCF,
+//		Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+//		SubscriptionID: s.config.SubscriptionID,
+//	}
+//
+//	return eventsource.NewFirehose(pcfClient, config)
+//}
+
+// v3
 // EventSource creates eventsource.Source object which can read events from
+
 func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsource.Firehose {
+	if pcfClient.CfClientVersion == "v2" {
+		firehoseConfig := &eventsource.FirehoseConfig{
+			KeepAlive:      s.config.KeepAlive,
+			SkipSSL:        s.config.SkipSSLCF,
+			Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+			SubscriptionID: s.config.SubscriptionID,
+		}
+
+		return eventsource.NewFirehose(pcfClient, firehoseConfig)
+	}
+
 	root, err := pcfClient.Root.Get(context.Background())
 	if err != nil {
 		fmt.Printf("Root: %v, err: %s\n", root, err)
@@ -223,7 +293,6 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsour
 		Endpoint:       root.Links.Logging.Href,
 		SubscriptionID: s.config.SubscriptionID,
 	}
-
 	return eventsource.NewFirehose(*pcfClient, firehoseConfig)
 }
 

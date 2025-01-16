@@ -23,6 +23,7 @@ func NewCloudControllerMock(port int) *CloudControllerMock {
 func (c *CloudControllerMock) Start() error {
 	// /v2/info
 	info := []byte(`{"name":"","build":"","support":"https://support.pivotal.io","version":0,"description":"","authorization_endpoint":"","token_endpoint":"","min_cli_version":"6.23.0","min_recommended_cli_version":"6.23.0","api_version":"2.82.0","app_ssh_endpoint":"","app_ssh_host_key_fingerprint":"f3:f1:53:6d:dd:a3:94:37:0a:f8:ab:2b:3e:f7:56:27","app_ssh_oauth_client":"ssh-proxy","routing_endpoint":"","doppler_logging_endpoint":"","user":"5404b6b1-d8da-4f94-bcdf-1b78d8fed7eb"}`)
+	//v3
 	root := []byte(`{"links":{"self":{"href":"http://localhost:9911"},"cloud_controller_v3":{"href":"http://localhost:9911/v3","meta":{"version":"3.181.0"}},"uaa":{"href":"http://localhost:9911"},"logging":{"href":"ws://localhost:9911"}}}`)
 	var v map[string]interface{}
 	err := json.Unmarshal(info, &v)
@@ -55,6 +56,7 @@ func (c *CloudControllerMock) Start() error {
 		w.Write([]byte("access_token=mocktoken&scope=user&token_type=bearer"))
 	})
 
+	//v3
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(root))
 	})

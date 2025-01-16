@@ -2,6 +2,9 @@ package cache
 
 import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
+	"net/url"
+
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
 type App struct {
@@ -11,7 +14,8 @@ type App struct {
 	SpaceGuid   string
 	OrgName     string
 	OrgGuid     string
-	CfAppLabels map[string]*string
+	CfAppEnv    map[string]interface{} //V2
+	CfAppLabels map[string]*string     //V3
 	IgnoredApp  bool
 }
 
@@ -22,9 +26,18 @@ type Cache interface {
 	GetApp(string) (*App, error)
 }
 
+//type AppClientV2 interface {
+//	AppByGuid(appGuid string) (cfclient.App, error)
+//	ListApps() ([]cfclient.App, error)
+//	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
+//	GetSpaceByGuid(spaceGUID string) (cfclient.Space, error)
+//	GetOrgByGuid(orgGUID string) (cfclient.Org, error)
+//}
+
 type AppClient interface {
 	AppByGuid(appGuid string) (*resource.App, error)
 	ListApps() ([]*resource.App, error)
+	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]resource.App, error)
 	GetSpaceByGuid(spaceGUID string) (*resource.Space, error)
 	GetOrgByGuid(orgGUID string) (*resource.Organization, error)
 }

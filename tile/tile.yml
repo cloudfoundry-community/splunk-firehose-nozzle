@@ -278,7 +278,16 @@ forms:
         label: Memory Ballast Size
         default: 0
         description: Size of memory allocated to reduce GC cycles. Size should be less than the total memory (Default:0).
-
+      - name: cf_client_version
+        type: selector
+        label: CfClient version
+        default: "V2"
+        option_templates:
+          - name: V2
+            label: V2
+          - name: V3
+            label: V3
+            
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
     if (properties['properties']['.properties.add_app_info']['value']==true) {

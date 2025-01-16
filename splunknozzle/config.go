@@ -61,6 +61,8 @@ type Config struct {
 	SelectedMonitoringMetrics string        `json:"selected-monitoring-metrics"`
 	SplunkMetricIndex         string        `json:"splunk-metric-index"`
 	MemoryBallastSize         int           `json:"memory-ballast-size"`
+
+	CfClientVersion string `json:"cf-client-version"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -153,6 +155,9 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("SPLUNK_METRIC_INDEX").StringVar(&c.SplunkMetricIndex)
 	kingpin.Flag("memory-ballast-size", "Size of ballast in MB").
 		OverrideDefaultFromEnvar("MEMORY_BALLAST_SIZE").Default("0").IntVar(&c.MemoryBallastSize)
+
+	kingpin.Flag("cf-client-version", "Version of used CfClient").
+		OverrideDefaultFromEnvar("CF_CLIENT_VERSION").Default("V2").StringVar(&c.CfClientVersion)
 
 	kingpin.Parse()
 	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)

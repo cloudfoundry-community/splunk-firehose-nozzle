@@ -224,7 +224,8 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 	cfOrgId := appInfo.OrgGuid
 	cfOrgName := appInfo.OrgName
 	cfIgnoredApp := appInfo.IgnoredApp
-	appLabels := appInfo.CfAppLabels
+	appLabels := appInfo.CfAppLabels //v3
+	appEnv := appInfo.CfAppEnv       //v2
 
 	if cfAppName != "" && config.AddAppName {
 		e.Fields["cf_app_name"] = cfAppName
@@ -245,7 +246,11 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 	if cfOrgName != "" && config.AddOrgName {
 		e.Fields["cf_org_name"] = cfOrgName
 	}
-
+	//v2
+	if appEnv["SPLUNK_INDEX"] != nil {
+		e.Fields["info_splunk_index"] = appEnv["SPLUNK_INDEX"]
+	}
+	//v3
 	if appLabels["SPLUNK_INDEX"] != nil {
 		e.Fields["info_splunk_index"] = appLabels["SPLUNK_INDEX"]
 	}

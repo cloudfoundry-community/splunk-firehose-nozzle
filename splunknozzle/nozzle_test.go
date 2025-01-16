@@ -1,6 +1,7 @@
 package splunknozzle_test
 
 import (
+	"code.cloudfoundry.org/lager"
 	"fmt"
 	"os"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
 func newConfig() *Config {
@@ -60,6 +63,8 @@ func newConfig() *Config {
 		StatusMonitorInterval:     time.Second * 5,
 		SelectedMonitoringMetrics: "splunk.events.dropped.count",
 		SplunkMetricIndex:         "metric",
+
+		CfClientVersion: "V2",
 	}
 }
 
@@ -116,6 +121,17 @@ var _ = Describe("SplunkFirehoseNozzle", func() {
 		s := testing.NewMemorySinkMock()
 		_, err := noz.EventRouter(c, s)
 		Ω(err).ShouldNot(HaveOccurred())
+	})
+	//v2
+	It("EventSource", func() {
+		client := &cfclient.Client{
+			Endpoint: cfclient.Endpoint{
+				DopplerEndpoint: "ws://localhost:9911",
+			},
+		}
+
+		f := noz.EventSource(client)
+		Expect(f).ToNot(BeNil())
 	})
 
 	It("Monitoring Enabled", func() {

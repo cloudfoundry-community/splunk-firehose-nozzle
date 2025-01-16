@@ -1,14 +1,17 @@
 package cache
 
 import (
+	"code.cloudfoundry.org/lager"
 	"errors"
 	"fmt"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
+	"net/url"
 	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager/v3"
 
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	json "github.com/mailru/easyjson"
@@ -31,7 +34,8 @@ type BoltdbConfig struct {
 	OrgSpaceCacheTTL   time.Duration
 	AppLimits          int
 
-	Logger lager.Logger
+	Logger          lager.Logger
+	CfClientVersion string
 }
 
 // Org is a CAPI org
@@ -301,22 +305,50 @@ func (c *Boltdb) getAppFromDatabase(appGuid string) (*App, error) {
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 	c.config.Logger.Info("Retrieving apps from remote")
 
-	cfApps, err := c.appClient.ListApps()
-	if err != nil {
-		return nil, err
+	if c.config.CfClientVersion == "V2" {
+		totalPages := 0
+		q := url.Values{}
+		q.Set("inline-relations-depth", "0")
+		if c.config.AppLimits > 0 {
+			// Latest N apps
+			q.Set("order-direction", "desc")
+			q.Set("results-per-page", "100")
+			totalPages = c.config.AppLimits/100 + 1
+		}
+
+		cfApps, err := c.appClient.ListAppsByQueryWithLimits(q, totalPages)
+		if err != nil {
+			return nil, err
+		}
+
+		apps := make(map[string]*App, len(cfApps))
+		for i := range cfApps {
+			app := c.fromPCFApp(&cfApps[i])
+			apps[app.Guid] = app
+		}
+
+		c.fillDatabase(apps)
+		c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
+		return apps, nil
+	} else {
+		cfApps, err := c.appClient.ListApps()
+		if err != nil {
+			return nil, err
+		}
+
+		apps := make(map[string]*App, len(cfApps))
+		for i := range cfApps {
+			app := c.fromPCFApp(cfApps[i])
+			apps[app.Guid] = app
+		}
+
+		c.fillDatabase(apps)
+
+		c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
+
+		return apps, nil
 	}
 
-	apps := make(map[string]*App, len(cfApps))
-	for i := range cfApps {
-		app := c.fromPCFApp(cfApps[i])
-		apps[app.Guid] = app
-	}
-
-	c.fillDatabase(apps)
-
-	c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
-
-	return apps, nil
 }
 
 func (c *Boltdb) createBucket() error {
@@ -403,17 +435,36 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 }
 
 func (c *Boltdb) fromPCFApp(app *resource.App) *App {
-	cachedApp := &App{
-		Name:        app.Name,
-		Guid:        app.GUID,
-		SpaceGuid:   app.Relationships.Space.Data.GUID,
-		IgnoredApp:  c.isOptOut(app.Metadata.Labels),
-		CfAppLabels: app.Metadata.Labels,
+	if c.config.CfClientVersion == "V2" {
+		cachedApp := &App{
+			Name:       app.Name,
+			Guid:       app.Guid,
+			SpaceGuid:  app.SpaceGuid,
+			IgnoredApp: c.isOptOutV2(app.Environment),
+			CfAppEnv:   app.Environment,
+		}
+
+		c.fillOrgAndSpace(cachedApp)
+		return cachedApp
+	} else {
+		cachedApp := &App{
+			Name:        app.Name,
+			Guid:        app.GUID,
+			SpaceGuid:   app.Relationships.Space.Data.GUID,
+			IgnoredApp:  c.isOptOutV3(app.Metadata.Labels),
+			CfAppLabels: app.Metadata.Labels,
+		}
+
+		c.fillOrgAndSpace(cachedApp)
+		return cachedApp
 	}
+}
 
-	c.fillOrgAndSpace(cachedApp)
-
-	return cachedApp
+func (c *Boltdb) chooseOrgFromCfVersion(cfspace *resource.Space) string {
+	if c.config.CfClientVersion == "V2" {
+		return cfspace.OrganizationGuid
+	}
+	return cfspace.Relationships.Organization.Data.GUID
 }
 
 func (c *Boltdb) fillOrgAndSpace(app *App) error {
@@ -431,7 +482,7 @@ func (c *Boltdb) fillOrgAndSpace(app *App) error {
 
 		space = Space{
 			Name:        cfspace.Name,
-			OrgGUID:     cfspace.Relationships.Organization.Data.GUID,
+			OrgGUID:     c.chooseOrgFromCfVersion(cfspace),
 			LastUpdated: now,
 		}
 
@@ -473,14 +524,24 @@ func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	app := c.fromPCFApp(cfApp)
+	//app := c.fromPCFApp(&cfApp)
+
 	c.fillDatabase(map[string]*App{app.Guid: app})
 
 	return app, nil
 }
 
-func (c *Boltdb) isOptOut(appLabels map[string]*string) bool {
+func (c *Boltdb) isOptOutV3(appLabels map[string]*string) bool {
 	if val, ok := appLabels["F2S_DISABLE_LOGGING"]; ok && *val == "true" {
+		return true
+	}
+	return false
+}
+
+func (c *Boltdb) isOptOutV2(envVar map[string]interface{}) bool {
+	if val, ok := envVar["F2S_DISABLE_LOGGING"]; ok && val == "true" {
 		return true
 	}
 	return false
