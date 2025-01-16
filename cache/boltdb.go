@@ -11,7 +11,7 @@ import (
 
 	"code.cloudfoundry.org/lager/v3"
 
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
+	//cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	json "github.com/mailru/easyjson"

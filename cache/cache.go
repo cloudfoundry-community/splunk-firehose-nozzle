@@ -3,8 +3,7 @@ package cache
 import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"net/url"
-
-	cfclient "github.com/cloudfoundry-community/go-cfclient"
+	//cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
 type App struct {
