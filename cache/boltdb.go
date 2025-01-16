@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"code.cloudfoundry.org/lager"
 	//"code.cloudfoundry.org/lager"
 	"errors"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 
 	"code.cloudfoundry.org/lager/v3"
 
-	//cfclient "github.com/cloudfoundry-community/go-cfclient"
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/monitoring"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	json "github.com/mailru/easyjson"
@@ -316,14 +317,14 @@ func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 			totalPages = c.config.AppLimits/100 + 1
 		}
 
-		cfApps, err := c.appClient.ListAppsByQueryWithLimits(q, totalPages)
+		cfApps, err := c.appClient.v2.ListAppsByQueryWithLimits(q, totalPages)
 		if err != nil {
 			return nil, err
 		}
 
 		apps := make(map[string]*App, len(cfApps))
 		for i := range cfApps {
-			app := c.fromPCFApp(&cfApps[i])
+			app := c.fromPCFAppV2(&cfApps[i])
 			apps[app.Guid] = app
 		}
 
@@ -331,14 +332,14 @@ func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 		c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
 		return apps, nil
 	} else {
-		cfApps, err := c.appClient.ListApps()
+		cfApps, err := c.appClient.v3.ListApps()
 		if err != nil {
 			return nil, err
 		}
 
 		apps := make(map[string]*App, len(cfApps))
 		for i := range cfApps {
-			app := c.fromPCFApp(cfApps[i])
+			app := c.fromPCFAppV3(cfApps[i])
 			apps[app.Guid] = app
 		}
 
@@ -434,38 +435,39 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 	}
 }
 
-func (c *Boltdb) fromPCFApp(app *resource.App) *App {
-	if c.config.CfClientVersion == "V2" {
-		cachedApp := &App{
-			Name:       app.Name,
-			Guid:       app.Guid,
-			SpaceGuid:  app.SpaceGuid,
-			IgnoredApp: c.isOptOutV2(app.Environment),
-			CfAppEnv:   app.Environment,
-		}
-
-		c.fillOrgAndSpace(cachedApp)
-		return cachedApp
-	} else {
-		cachedApp := &App{
-			Name:        app.Name,
-			Guid:        app.GUID,
-			SpaceGuid:   app.Relationships.Space.Data.GUID,
-			IgnoredApp:  c.isOptOutV3(app.Metadata.Labels),
-			CfAppLabels: app.Metadata.Labels,
-		}
-
-		c.fillOrgAndSpace(cachedApp)
-		return cachedApp
+// func (c *Boltdb) fromPCFApp[T *resource.App | *cfclient.App](app T) *App {
+func (c *Boltdb) fromPCFAppV3(app *resource.App) *App {
+	cachedApp := &App{
+		Name:        app.Name,
+		Guid:        app.GUID,
+		SpaceGuid:   app.Relationships.Space.Data.GUID,
+		IgnoredApp:  c.isOptOutV3(app.Metadata.Labels),
+		CfAppLabels: app.Metadata.Labels,
 	}
+
+	c.fillOrgAndSpace(cachedApp)
+	return cachedApp
 }
 
-func (c *Boltdb) chooseOrgFromCfVersion(cfspace *resource.Space) string {
-	if c.config.CfClientVersion == "V2" {
-		return cfspace.OrganizationGuid
+func (c *Boltdb) fromPCFAppV2(app *cfclient.App) *App {
+	cachedApp := &App{
+		Name:       app.Name,
+		Guid:       app.Guid,
+		SpaceGuid:  app.SpaceGuid,
+		IgnoredApp: c.isOptOutV2(app.Environment),
+		CfAppEnv:   app.Environment,
 	}
-	return cfspace.Relationships.Organization.Data.GUID
+
+	c.fillOrgAndSpace(cachedApp)
+	return cachedApp
 }
+
+//func (c *Boltdb) chooseOrgFromCfVersion[Space *resource.Space | *cfclient.Space](cfspace Space) string {
+//	if c.config.CfClientVersion == "V2" {
+//		return cfspace.OrganizationGuid
+//	}
+//	return cfspace.Relationships.Organization.Data.GUID
+//}
 
 func (c *Boltdb) fillOrgAndSpace(app *App) error {
 	now := time.Now()
@@ -475,17 +477,29 @@ func (c *Boltdb) fillOrgAndSpace(app *App) error {
 	c.lock.RUnlock()
 
 	if !ok || now.Sub(space.LastUpdated) > c.config.OrgSpaceCacheTTL {
-		cfspace, err := c.appClient.GetSpaceByGuid(app.SpaceGuid)
-		if err != nil {
-			return err
-		}
+		if c.config.CfClientVersion == "V2" {
+			cfspace, err := c.appClient.v2.GetSpaceByGuid(app.SpaceGuid)
+			if err != nil {
+				return err
+			}
 
-		space = Space{
-			Name:        cfspace.Name,
-			OrgGUID:     c.chooseOrgFromCfVersion(cfspace),
-			LastUpdated: now,
-		}
+			space = Space{
+				Name:        cfspace.Name,
+				OrgGUID:     cfspace.OrganizationGuid,
+				LastUpdated: now,
+			}
+		} else {
+			cfspace, err := c.appClient.v3.GetSpaceByGuid(app.SpaceGuid)
+			if err != nil {
+				return err
+			}
 
+			space = Space{
+				Name:        cfspace.Name,
+				OrgGUID:     cfspace.Relationships.Organization.Data.GUID,
+				LastUpdated: now,
+			}
+		}
 		c.lock.Lock()
 		c.spaceNameCache[app.SpaceGuid] = space
 		c.lock.Unlock()
@@ -498,14 +512,26 @@ func (c *Boltdb) fillOrgAndSpace(app *App) error {
 	org, ok := c.orgNameCache[space.OrgGUID]
 	c.lock.RUnlock()
 	if !ok || now.Sub(org.LastUpdated) > c.config.OrgSpaceCacheTTL {
-		cforg, err := c.appClient.GetOrgByGuid(space.OrgGUID)
-		if err != nil {
-			return err
-		}
+		if c.config.CfClientVersion == "V2" {
+			cforg, err := c.appClient.v2.GetOrgByGuid(space.OrgGUID)
+			if err != nil {
+				return err
+			}
 
-		org = Org{
-			Name:        cforg.Name,
-			LastUpdated: now,
+			org = Org{
+				Name:        cforg.Name,
+				LastUpdated: now,
+			}
+		} else {
+			cforg, err := c.appClient.v3.GetOrgByGuid(space.OrgGUID)
+			if err != nil {
+				return err
+			}
+
+			org = Org{
+				Name:        cforg.Name,
+				LastUpdated: now,
+			}
 		}
 
 		c.lock.Lock()
@@ -520,13 +546,24 @@ func (c *Boltdb) fillOrgAndSpace(app *App) error {
 }
 
 func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
-	cfApp, err := c.appClient.AppByGuid(appGuid)
+	if c.appClient.version == "V2" {
+		cfApp, err := c.appClient.v2.AppByGuid(appGuid)
+		if err != nil {
+			return nil, err
+		}
+
+		app := c.fromPCFAppV2(&cfApp)
+
+		c.fillDatabase(map[string]*App{app.Guid: app})
+
+		return app, nil
+	}
+	cfApp, err := c.appClient.v3.AppByGuid(appGuid)
 	if err != nil {
 		return nil, err
 	}
 
-	app := c.fromPCFApp(cfApp)
-	//app := c.fromPCFApp(&cfApp)
+	app := c.fromPCFAppV3(cfApp)
 
 	c.fillDatabase(map[string]*App{app.Guid: app})
 

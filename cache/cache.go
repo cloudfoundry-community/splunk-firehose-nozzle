@@ -3,7 +3,8 @@ package cache
 import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"net/url"
-	//cfclient "github.com/cloudfoundry-community/go-cfclient"
+
+	cfclient "github.com/cloudfoundry-community/go-cfclient"
 )
 
 type App struct {
@@ -25,18 +26,23 @@ type Cache interface {
 	GetApp(string) (*App, error)
 }
 
-//type AppClientV2 interface {
-//	AppByGuid(appGuid string) (cfclient.App, error)
-//	ListApps() ([]cfclient.App, error)
-//	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
-//	GetSpaceByGuid(spaceGUID string) (cfclient.Space, error)
-//	GetOrgByGuid(orgGUID string) (cfclient.Org, error)
-//}
+type AppClient struct {
+	version string
+	v2      AppClientV2
+	v3      AppClientV3
+}
 
-type AppClient interface {
+type AppClientV2 interface {
+	AppByGuid(appGuid string) (cfclient.App, error)
+	ListApps() ([]cfclient.App, error)
+	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]cfclient.App, error)
+	GetSpaceByGuid(spaceGUID string) (cfclient.Space, error)
+	GetOrgByGuid(orgGUID string) (cfclient.Org, error)
+}
+
+type AppClientV3 interface {
 	AppByGuid(appGuid string) (*resource.App, error)
 	ListApps() ([]*resource.App, error)
-	ListAppsByQueryWithLimits(query url.Values, totalPages int) ([]resource.App, error)
 	GetSpaceByGuid(spaceGUID string) (*resource.Space, error)
 	GetOrgByGuid(orgGUID string) (*resource.Organization, error)
 }
