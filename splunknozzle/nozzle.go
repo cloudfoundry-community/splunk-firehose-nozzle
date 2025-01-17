@@ -40,8 +40,8 @@ type NozzleCfClient struct {
 	CfClientVersion string
 }
 
-func NewNozzleCfClient(clientV3 *client.Client, cfClientVersion string, clientV2 *cfclient.Client) *NozzleCfClient {
-	return &NozzleCfClient{clientV3: clientV3, CfClientVersion: cfClientVersion, clientV2: clientV2}
+func NewNozzleCfClient(clientV3 *client.Client, clientV2 *cfclient.Client, cfClientVersion string) *NozzleCfClient {
+	return &NozzleCfClient{clientV3: clientV3, clientV2: clientV2, CfClientVersion: cfClientVersion}
 }
 
 var cfContext = context.Background()
