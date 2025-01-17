@@ -1,7 +1,6 @@
 package splunknozzle_test
 
 import (
-	"code.cloudfoundry.org/lager"
 	"fmt"
 	"os"
 	"time"

@@ -1,12 +1,11 @@
 package splunknozzle
 
 import (
-	"code.cloudfoundry.org/lager"
 	"context"
 	"fmt"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"golang.org/x/oauth2"
-	"net/url"
+	// "net/url"
 	"os"
 	"strings"
 	"time"
@@ -36,14 +35,14 @@ type SplunkFirehoseNozzle struct {
 }
 
 type NozzleCfClient struct {
-	clientV3        client.Client
-	clientV2        cfclient.Client
+	clientV3        *client.Client
+	clientV2        *cfclient.Client
 	CfClientVersion string
 }
 
-func NewNozzleCfClient(clientV3 client.Client, clientV2 cfclient.Client, cfClientVersion string) *NozzleCfClient {
-	return &NozzleCfClient{clientV3: clientV3, clientV2: clientV2, CfClientVersion: cfClientVersion}
-} // NozzleCfClient is a wrapper around cfclient.Client
+func NewNozzleCfClient(clientV3 *client.Client, cfClientVersion string, clientV2 *cfclient.Client) *NozzleCfClient {
+	return &NozzleCfClient{clientV3: clientV3, CfClientVersion: cfClientVersion, clientV2: clientV2}
+}
 
 var cfContext = context.Background()
 

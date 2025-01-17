@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"code.cloudfoundry.org/lager"
-	//"code.cloudfoundry.org/lager"
 	"errors"
 	"fmt"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
@@ -34,9 +32,8 @@ type BoltdbConfig struct {
 	AppCacheTTL        time.Duration
 	OrgSpaceCacheTTL   time.Duration
 	AppLimits          int
-
-	Logger          lager.Logger
-	CfClientVersion string
+	Logger             lager.Logger
+	CfClientVersion    string
 }
 
 // Org is a CAPI org
