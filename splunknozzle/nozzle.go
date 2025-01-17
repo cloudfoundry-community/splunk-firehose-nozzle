@@ -2,9 +2,11 @@ package splunknozzle
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
-	"golang.org/x/oauth2"
+
 	// "net/url"
 	"os"
 	"strings"
@@ -35,43 +37,30 @@ type SplunkFirehoseNozzle struct {
 }
 
 type NozzleCfClient struct {
-	clientV3        *client.Client
-	clientV2        *cfclient.Client
+	clientV3        client.Client
+	clientV2        cfclient.Client
 	CfClientVersion string
 }
 
-func NewNozzleCfClient(clientV3 *client.Client, clientV2 *cfclient.Client, cfClientVersion string) *NozzleCfClient {
+func NewNozzleCfClient(clientV3 client.Client, clientV2 cfclient.Client, cfClientVersion string) *NozzleCfClient {
 	return &NozzleCfClient{clientV3: clientV3, clientV2: clientV2, CfClientVersion: cfClientVersion}
 }
 
 var cfContext = context.Background()
 
-func (ncc NozzleCfClient) GetTokenSource() (oauth2.TokenSource, error) {
-	if ncc.CfClientVersion == "V2" {
-		if tokenSource, err := ncc.clientV2.Config.CreateOAuth2TokenSource(context.Background()); err != nil {
-			return nil, err
-		} else {
-			return tokenSource, nil
-		}
-	} else {
-		if tokenSource, err := ncc.clientV3.Config.CreateOAuth2TokenSource(context.Background()); err != nil {
-			return nil, err
-		} else {
-			return tokenSource, nil
-		}
-	}
-}
-
 func (ncc NozzleCfClient) GetToken() (string, error) {
-	if tokenSource, err := ncc.GetTokenSource(); err != nil {
-		return "", err
-	} else {
-		if token, err := tokenSource.Token(); err != nil {
+	if ncc.CfClientVersion == "V3" {
+		if tokenSource, err := ncc.clientV3.Config.CreateOAuth2TokenSource(context.Background()); err != nil {
 			return "", err
 		} else {
-			return token.AccessToken, nil
+			if token, err := tokenSource.Token(); err != nil {
+				return "", err
+			} else {
+				return token.AccessToken, nil
+			}
 		}
 	}
+	return "", errors.New("No valid token found")
 }
 
 func (ncc NozzleCfClient) AppByGuid(appGUID string) (*resource.App, error) {
@@ -133,7 +122,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
 		if cfClient, err := cfclient.NewClient(cfConfig); err != nil {
 			return nil, err
 		} else {
-			nozzleCfClient := NewNozzleCfClient(nil, *cfClient, "V2")
+			nozzleCfClient := NewNozzleCfClient(client.Client{}, cfClient, "V2")
 			return nozzleCfClient, nil
 		}
 	}
@@ -148,7 +137,7 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
 			if cfClient, err := client.New(cfConfig); err != nil {
 				return nil, err
 			} else {
-				nozzleCfClient := NewNozzleCfClient(*cfClient, nil, "V3")
+				nozzleCfClient := NewNozzleCfClient(cfClient, cfclient.Client{}, "V3")
 				return nozzleCfClient, nil
 			}
 		}
@@ -284,14 +273,14 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsour
 		firehoseConfig := &eventsource.FirehoseConfig{
 			KeepAlive:      s.config.KeepAlive,
 			SkipSSL:        s.config.SkipSSLCF,
-			Endpoint:       pcfClient.Endpoint.DopplerEndpoint,
+			Endpoint:       pcfClient.clientV2.Endpoint.DopplerEndpoint,
 			SubscriptionID: s.config.SubscriptionID,
 		}
 
-		return eventsource.NewFirehose(pcfClient.Client, firehoseConfig)
+		return eventsource.NewFirehose(pcfClient.clientV2, firehoseConfig)
 	}
 
-	root, err := pcfClient.client.Root.Get(context.Background())
+	root, err := pcfClient.clientV3.Root.Get(context.Background())
 	if err != nil {
 		fmt.Printf("Root: %v, err: %s\n", root, err)
 	}
@@ -301,7 +290,7 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsour
 		Endpoint:       root.Links.Logging.Href,
 		SubscriptionID: s.config.SubscriptionID,
 	}
-	return eventsource.NewFirehose(pcfClient.client, firehoseConfig)
+	return eventsource.NewFirehose(pcfClient.clientV3, firehoseConfig)
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router
