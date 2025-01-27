@@ -7,15 +7,15 @@ applications:
     cmd: splunk-firehose-nozzle
     env:
       GOPACKAGENAME: main
-      API_ENDPOINT: null          # Should be replaced
-      API_USER: null              # Should be replaced
-      API_PASSWORD: null          # Should be replaced
-      CLIENT_ID: null             # Should be replaced
-      CLIENT_SECRET: null         # Should be replaced
-      SPLUNK_HOST: null           # Should be replaced
-      SPLUNK_TOKEN: null          # Should be replaced
-      SPLUNK_INDEX: null          # Should be replaced
-      SPLUNK_METRIC_INDEX: null   # Should be replaced
+      API_ENDPOINT:
+      API_USER:
+      API_PASSWORD:
+      CLIENT_ID:
+      CLIENT_SECRET:
+      SPLUNK_HOST:
+      SPLUNK_TOKEN:
+      SPLUNK_INDEX:
+      SPLUNK_METRIC_INDEX:
       SKIP_SSL_VALIDATION_CF: true
       SKIP_SSL_VALIDATION_SPLUNK: true
       JOB_NAME: splunk-nozzle
@@ -28,8 +28,7 @@ applications:
       APP_CACHE_INVALIDATE_TTL: 86440s
       APP_LIMITS: 1000
       BOLTDB_PATH: cache.db
-      EVENTS: |
-        ValueMetric,CounterEvent,Error,HttpStartStop,LogMessage,ContainerMetric
+      EVENTS: ValueMetric,CounterEvent,Error,HttpStartStop,LogMessage,ContainerMetric
       EXTRA_FIELDS: name:update-ci-test
       FIREHOSE_SUBSCRIPTION_ID: splunk-ci
       FLUSH_INTERVAL: 5s
@@ -40,9 +39,4 @@ applications:
       DEBUG: false
       ENABLE_EVENT_TRACING: true
       STATUS_MONITOR_INTERVAL: 1s
-      SELECTED_MONITORING_METRICS: |
-        nozzle.queue.percentage,splunk.events.dropped.count,
-        splunk.events.sent.count,firehose.events.dropped.count,
-        firehose.events.received.count,splunk.events.throughput,
-        nozzle.usage.ram,nozzle.usage.cpu,nozzle.cache.memory.hit,
-        nozzle.cache.remote.hit,nozzle.cache.boltdb.hit
+      SELECTED_MONITORING_METRICS: nozzle.queue.percentage,splunk.events.dropped.count,splunk.events.sent.count,firehose.events.dropped.count,firehose.events.received.count,splunk.events.throughput,nozzle.usage.ram,nozzle.usage.cpu,nozzle.cache.memory.hit,nozzle.cache.remote.hit,nozzle.cache.boltdb.hit

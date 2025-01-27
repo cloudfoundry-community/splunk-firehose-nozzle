@@ -45,9 +45,7 @@ forms:
           communications will not check SSL certificates against a trusted
           Certificate Authority. Skipping SSL validation in production
           environment is not recommended.
-      - name: splunk_index
-        # Required parameter in config.go without default,
-        # but here it has default value
+      - name: splunk_index #It's a required parameter in config.go and doesn't have default, but here it has default value
         type: string
         label: Index
         description: |
