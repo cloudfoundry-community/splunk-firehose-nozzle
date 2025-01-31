@@ -90,7 +90,7 @@ jobs:
 
       - name: Claim environment and wait
         run: |
-          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_srt_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
+          echo ENV_ID="$(./selfservice claimAndWait isv_ci_tas_lite_4_0 | jq -r '.id')" >> "$GITHUB_ENV"
 
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -301,6 +301,11 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.sha}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
       - uses: actions/setup-go@v3
         with:

@@ -24,8 +24,8 @@ class SplunkApi():
             events = self.collect_events(query, start_time, end_time,type)
             return events
         except Exception as e:
-            self.logger.error(e)
-            raise
+            #self.logger.error(e)
+            raise Exception(e)
 
     @staticmethod
     def compose_search_query(query,type="events"):
@@ -89,7 +89,8 @@ class SplunkApi():
                 events = self.get_events(job_id,type)
                 break
             if dispatch_state == 'FAILED':
-                raise self.logger.error('Search job: {0} failed'.format(job_url))
+                # self.logger.error(f'Search job: {job_url} failed')
+                raise Exception(f'Search job: {job_url} failed')
 
             time.sleep(1)
 
@@ -121,8 +122,8 @@ class SplunkApi():
         returns True/False
         '''
         if not req_obj.ok:
-            raise self.logger.error('status code: {0} \n details: {1}'.format(
-                str(req_obj.status_code), req_obj.text))
+            # self.logger.error(f'status code: {str(req_obj.status_code)} \n details: {req_obj.text}')
+            raise Exception(f'status code: {str(req_obj.status_code)} \n details: {req_obj.text}')
 
     def requests_retry_session(self,
                                backoff_factor=0.1,
@@ -146,4 +147,3 @@ class SplunkApi():
         session.mount('https://', adapter)
 
         return session
-        
