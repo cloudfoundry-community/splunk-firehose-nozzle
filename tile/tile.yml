@@ -23,30 +23,44 @@ forms:
     label: Splunk Settings
     description: Splunk HTTP Event Collector Settings
     markdown: |
-      Configure your Splunk HTTP Event Collector. See http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
+      Configure your Splunk HTTP Event Collector. See
+      http://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector
     properties:
       - name: splunk_host
         type: string
         label: HTTP Event Collector Endpoint URL
-        description: Splunk HTTP Event Collector endpoint URL. It is a required parameter.
+        description: |
+          Splunk HTTP Event Collector endpoint URL. It is a required parameter.
       - name: splunk_token
         type: secret
         label: HTTP Event Collector Token
-        description: Splunk HTTP Event Collector token. It is a required parameter.
+        description: |
+          Splunk HTTP Event Collector token. It is a required parameter.
       - name: skip_ssl_validation_splunk
         type: boolean
         label: Skip SSL Validation
         default: false
-        description: Skip SSL certificate validation for connection to Splunk. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
+        description: |
+          Skip SSL certificate validation for connection to Splunk. Secure
+          communications will not check SSL certificates against a trusted
+          Certificate Authority. Skipping SSL validation in production
+          environment is not recommended.
       - name: splunk_index #It's a required parameter in config.go and doesn't have default, but here it has default value
         type: string
         label: Index
-        description: The name of the Splunk index that events will be sent to. It is a required parameter. WARNING:Setting an invalid index will cause events to be lost.
+        description: |
+          The name of the Splunk index that events will be sent to. It is
+          a required parameter. WARNING: Setting an invalid index will
+          cause events to be lost.
         default: main
       - name: splunk_logging_index
         type: string
         label: Logging Index
-        description: The name of the Splunk index where logging events will be sent to. When not provided, all logging events will be forwarded to the splunk_index. WARNING:Setting an invalid index will cause internal events to be lost.
+        description: |
+          The name of the Splunk index where logging events will be sent to.
+          When not provided, all logging events will be forwarded to the
+          splunk_index. WARNING: Setting an invalid index will cause internal
+          events to be lost.
         default: ""
         optional: true
 
@@ -70,7 +84,11 @@ forms:
         type: boolean
         label: Skip SSL Validation
         default: false
-        description: Skip SSL certificate validation for connection to Cloud Foundry. Secure communications will not check SSL certificates against a trusted Certificate Authority. Skipping SSL validation in production environment is not recommended.
+        description: |
+          Skip SSL certificate validation for connection to Cloud Foundry.
+          Secure communications will not check SSL certificates against a
+          trusted Certificate Authority. Skipping SSL validation in production
+          environment is not recommended.
       - name: events
         type: multi_select_options
         label: Event Types
@@ -102,12 +120,17 @@ forms:
       - name: scale_out_nozzle
         type: integer
         label: Scale Out Nozzle
-        description: Adds more Splunk nozzle instances to spread the load. Recommendation:Run 2 or more nozzles for high availability.
+        description: |
+          Adds more Splunk nozzle instances to spread the load. Recommendation:
+          Run 2 or more nozzles for high availability.
         default: 2
       - name: firehose_subscription_id
         type: string
         label: Firehose Subscription ID
-        description: Unique subscription ID to tag nozzle events. Firehose distribute data evenly across all instances if you use the same subscription ID on each nozzle instance.
+        description: |
+          Unique subscription ID to tag nozzle events. Firehose distributes data
+          evenly across all instances if you use the same subscription ID on
+          each nozzle instance.
         optional: true
         default: splunk-firehose
       - name: add_app_info
@@ -130,62 +153,94 @@ forms:
         type: boolean
         label: Add Tags
         default: false
-        description: Add additional tags from envelope to Splunk Event. WARNING:Enabling this feature may slightly impact the performance due to the increased event size.
+        description: |
+          Add additional tags from envelope to Splunk Event. WARNING: Enabling
+          this feature may slightly impact the performance due to the increased
+          event size.
       - name: extra_fields
         type: string
         label: Additional Fields
-        description: A set of user defined key:value pairs that are added to all Splunk events that do not occur in the event payload. Expected format - key1:value1, key2:value2, key3:value3
-        optional: true
+        description: |
+          A set of user defined key:value pairs that are added to all Splunk
+          events that do not occur in the event payload. Expected format -
+          key1:value1, key2:value2, key3:value3
       - name: hec_retries
         type: integer
         label: HEC Retries
         default: 5
-        description: The retry count for sending events to the Splunk platform. Events not successfully sent after this number of retries will be dropped, causing data loss.
+        description: |
+          The retry count for sending events to the Splunk platform. Events not
+          successfully sent after this number of retries will be dropped,
+          causing data loss.
       - name: hec_batch_size
         type: integer
         label: HEC Batch Size
         default: 100
-        description: The number of events per batch sent to Splunk HTTP Event Collector.
+        description: |
+          The number of events per batch sent to Splunk HTTP Event Collector.
       - name: hec_workers
         type: integer
         label: HEC Workers
         default: 8
-        description: The number of concurrent workers sending data to Splunk HTTP Event Collector. Scaling this number will improve your Splunk platform data collection capacity.
+        description: |
+          The number of concurrent workers sending data to Splunk HTTP Event
+          Collector. Scaling this number will improve your Splunk platform data
+          collection capacity.
       - name: consumer_queue_size
         type: integer
         label: Consumer Queue Size
         default: 10000
-        description: The internal consumer queue buffer size. Events will be sent to your Splunk platform after queue is full.
+        description: |
+          The internal consumer queue buffer size. Events will be sent to your
+          Splunk platform after queue is full.
       - name: status_monitor_interval
         type: string
         label: Status Monitor Interval
         default: 0s
-        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) to enable monitoring of metric data within the connector. (This increases CPU load and should be used only for insights purposes. Default:0s)
+        description: |
+          Time interval (in s/m/h. For example, 3600s or 60m or 1h) to enable
+          monitoring of metric data within the connector. (This increases CPU
+          load and should be used only for insights purposes. Default: 0s)
       - name: flush_interval
         type: string
         label: Flush Interval
         default: 5s
-        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing queue to the Splunk platform regardless of Consumer Queue Size. Prevents stale events in low throughput systems.
+        description: |
+          Time interval (in s/m/h. For example, 3600s or 60m or 1h) for flushing
+          queue to the Splunk platform regardless of Consumer Queue Size.
+          Prevents stale events in low throughput systems.
       - name: missing_app_cache_invalidate_ttl
         type: string
         label: Missing App Cache Invalidate TTL
         default: 0s
-        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the cache of missed application information. Set to 0s to maintain cache until nozzle restart.
+        description: |
+          Time interval (in s/m/h. For example, 3600s or 60m or 1h) between
+          refreshing the cache of missed application information. Set to 0s to
+          maintain cache until nozzle restart.
       - name: app_cache_invalidate_ttl
         type: string
         label: App Cache Invalidate TTL
         default: 0s
-        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the application information local cache. Set to 0s to only populate the cache during startup or restart of the nozzle.
+        description: |
+          Time interval (in s/m/h. For example, 3600s or 60m or 1h) between
+          refreshing the application information local cache. Set to 0s to only
+          populate the cache during startup or restart of the nozzle.
       - name: org_space_cache_invalidate_ttl
         type: string
         label: Org Space Cache Invalidate TTL
         default: 72h
-        description: Time interval (in s/m/h. For example, 3600s or 60m or 1h) between refreshing the organization and space cache. (Default:72h)
+        description: |
+          Time interval (in s/m/h. For example, 3600s or 60m or 1h) between
+          refreshing the organization and space cache. (Default: 72h)
       - name: app_limits
         type: integer
         label: App Limits
         default: 0
-        description: The number of applications for which metadata is gathered when refreshing the application metadata cache (order is based on application creation date). Set to 0 to remove limit and update all of the applications.
+        description: |
+          The number of applications for which metadata is gathered when
+          refreshing the application metadata cache (order is based on
+          application creation date). Set to 0 to remove limit and update all
+          of the applications.
       - name: nozzle_memory
         type: string
         label: Nozzle Memory
@@ -200,12 +255,17 @@ forms:
         type: boolean
         label: Enable Event Tracing
         default: false
-        description: Enables tracing of data loss. Splunk events will now contain a UUID, Splunk Nozzle Event Counts, and a Subscription ID for Splunk correlation searches.
+        description: |
+          Enables tracing of data loss. Splunk events will now contain a UUID,
+          Splunk Nozzle Event Counts, and a Subscription ID for Splunk
+          correlation searches.
       - name: ignore_missing_app
         type: boolean
         label: Ignore Missing App
         default: true
-        description: If the application is missing, then stop repeatedly querying for information from Cloud Foundry.
+        description: |
+          If the application is missing, then stop repeatedly querying for
+          information from Cloud Foundry.
       - name: selected_monitoring_metrics
         type: multi_select_options
         label: Metric types
@@ -259,7 +319,9 @@ forms:
       - name: splunk_metric_index
         type: string
         label: Splunk Metric Index
-        description: Index where Metric Data will be ingested when monitoring module is enabled
+        description: |
+          Index where Metric Data will be ingested when monitoring module is
+          enabled.
         optional: true
       - name: refresh_splunk_connection
         type: boolean
@@ -270,21 +332,26 @@ forms:
       - name: keep_alive_timer
         type: string
         label: Keep alive timer
-        description: Time after which connection to Splunk will be refreshed, if Refresh Splunk Connection is set to true (in s/m/h. For example, 3600s or 60m or 1h).
+        description: |
+          Time after which connection to Splunk will be refreshed, if Refresh
+          Splunk Connection is set to true (in s/m/h. For example, 3600s or 60m
+          or 1h).
         optional: true
         default: 30s
       - name: memory_ballast_size
         type: integer
         label: Memory Ballast Size
         default: 0
-        description: Size of memory allocated to reduce GC cycles. Size should be less than the total memory (Default:0).
+        description: |
+          Size of memory allocated to reduce GC cycles. Size should be less than
+          the total memory (Default: 0).
 
 migration: |
   if (typeof properties['properties']['.properties.add_app_info']['value'] == "boolean") {
-    if (properties['properties']['.properties.add_app_info']['value']==true) {
-        properties['properties']['.properties.add_app_info']['value']="[AppName,OrgName,OrgGuid,SpaceName,SpaceGuid]";
+    if (properties['properties']['.properties.add_app_info']['value'] == true) {
+        properties['properties']['.properties.add_app_info']['value'] = "[AppName,OrgName,OrgGuid,SpaceName,SpaceGuid]";
     } else {
-      properties['properties']['.properties.add_app_info']['value']="";
+      properties['properties']['.properties.add_app_info']['value'] = "";
     }
   }
 
