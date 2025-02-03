@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.1">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.a40c8224.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -208,6 +208,7 @@
   
   <span class="md-ellipsis">
     General information
+    
   </span>
   
 
@@ -237,6 +238,7 @@
   
   <span class="md-ellipsis">
     Initial setup
+    
   </span>
   
 
@@ -248,6 +250,7 @@
   
   <span class="md-ellipsis">
     Initial setup
+    
   </span>
   
 
@@ -402,6 +405,7 @@
   
   <span class="md-ellipsis">
     Environment variables
+    
   </span>
   
 
@@ -422,6 +426,7 @@
   
   <span class="md-ellipsis">
     Troubleshooting
+    
   </span>
   
 
@@ -442,6 +447,7 @@
   
   <span class="md-ellipsis">
     Development
+    
   </span>
   
 
@@ -605,6 +611,7 @@
                   
 
 
+
 <h1 id="initial-setup">Initial setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h1>
 <p>The Nozzle requires a client with the authorities <code>doppler.firehose</code> and <code>cloud_controller.admin_read_only</code> (the latter is only required if <code>ADD_APP_INFO</code> is enabled) and grant-types <code>client_credentials</code> and <code>refresh_token</code>. If <code>cloud_controller.admin_read_only</code> is not
 available in the system, switch to use <code>cloud_controller.admin</code>.</p>
@@ -721,7 +728,7 @@ Users can configure the Splunk configuration files props.conf and transforms.con
 
 <p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
 <div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_app_id]</span>
-<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;(\w+)&quot;:&quot;95930b4e-c16c-478e-8ded-5c6e9c5981f8&quot;</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;(\w+)&quot;</span><span class="o">:</span><span class="s">&quot;95930b4e-c16c-478e-8ded-5c6e9c5981f8&quot;</span>
 <span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
 <span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">prod</span>
 </code></pre></div>
@@ -736,7 +743,7 @@ Users can configure the Splunk configuration files props.conf and transforms.con
 
 <p><em>$SPLUNK_HOME/etc/system/local/transforms.conf</em></p>
 <div class="codehilite"><pre><span></span><code><span class="k">[route_data_to_index_by_field_cf_org_name]</span>
-<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cf_org_name&quot;:&quot;(sales.*)&quot;</span>
+<span class="na">REGEX</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cf_org_name&quot;</span><span class="o">:</span><span class="s">&quot;(sales.*)&quot;</span>
 <span class="na">DEST_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">_MetaData:Index</span>
 <span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sales</span>
 </code></pre></div>
@@ -865,7 +872,14 @@ changes to nozzle configuration.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      <p>Webpages built on GitHub Pages | <a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">Github Terms</a> | <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy</a></p>
+      <p>Webpages built on GitHub Pages |
+<a href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service">
+  Github Terms
+</a> |
+<a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">
+  GitHub Privacy
+</a></p>
+
     </div>
   
   
@@ -886,10 +900,10 @@ changes to nozzle configuration.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../assets/javascripts/bundle.5090c770.min.js"></script>
       
         <script src="../javascripts/footer.js"></script>
       
