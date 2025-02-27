@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sudo apt-get install python3.7
+sudo apt-get install python3.13
 sudo apt-get install python3-pip
 cd testing/integration
 pip3 install virtualenv
