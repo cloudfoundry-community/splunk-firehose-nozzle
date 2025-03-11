@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.18.1'
+  GO_VERSION: '1.23'
   RUBY_VERSION: '3.3'
 
 jobs:
