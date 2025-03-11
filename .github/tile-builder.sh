@@ -9,6 +9,7 @@ source tile-generator-env/bin/activate
 echo "Installing tile-generator..."
 pip install wheel
 pip install jinja2==3.0.3
+pip install setuptools
 pip install tile-generator
 cd tile
 echo "Installing bosh..."
