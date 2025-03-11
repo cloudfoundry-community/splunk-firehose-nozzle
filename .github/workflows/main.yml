@@ -305,7 +305,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.13"
 
       - uses: actions/setup-go@v3
         with:
