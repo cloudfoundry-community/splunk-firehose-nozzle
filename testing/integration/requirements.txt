@@ -1,4 +1,4 @@
 pytest
 requests
 json_delta
-pyyaml<5.4.0
+pyyaml>=5.4.0
