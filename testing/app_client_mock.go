@@ -93,7 +93,7 @@ func (m *AppClientMock) CreateApp(appID, spaceID string) {
 	app := resource.App{
 		Resource:      resource.Resource{GUID: appID},
 		Name:          appID,
-		Relationships: resource.SpaceRelationship{Space: resource.ToOneRelationship{Data: &resource.Relationship{GUID: spaceID}}},
+		Relationships: resource.AppRelationships{Space: resource.ToOneRelationship{Data: &resource.Relationship{GUID: spaceID}}},
 		Metadata:      &resource.Metadata{Labels: make(map[string]*string)},
 	}
 
@@ -112,7 +112,7 @@ func getApps(n int) map[string]*resource.App {
 		app := resource.App{
 			Resource:      resource.Resource{GUID: fmt.Sprintf("cf_app_id_%d", i)},
 			Name:          fmt.Sprintf("cf_app_name_%d", i),
-			Relationships: resource.SpaceRelationship{Space: resource.ToOneRelationship{Data: &resource.Relationship{GUID: fmt.Sprintf("cf_space_id_%d", i%50)}}},
+			Relationships: resource.AppRelationships{Space: resource.ToOneRelationship{Data: &resource.Relationship{GUID: fmt.Sprintf("cf_space_id_%d", i%50)}}},
 			Metadata:      &resource.Metadata{Labels: make(map[string]*string)},
 		}
 		apps[app.GUID] = &app
