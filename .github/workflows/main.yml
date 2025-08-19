@@ -50,11 +50,22 @@ jobs:
           FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
   semgrep:
-    if: (github.actor != 'dependabot[bot]')
-    uses: splunk/sast-scanning/.github/workflows/sast-scan.yml@main
-    secrets: inherit
-    with:
-      block_mode: "on"
+    needs:
+      - workflow_approval
+    runs-on: ubuntu-latest
+    container:
+      # A Docker image with Semgrep installed. Do not change this.
+      image: semgrep/semgrep
+    name: security-sast-semgrep
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep ci
+        env:
+          # Connect to Semgrep AppSec Platform through your SEMGREP_APP_TOKEN.
+          # Generate a token from Semgrep AppSec Platform > Settings
+          # and add it to your GitHub secrets.
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
 
   create-env:
     needs:
