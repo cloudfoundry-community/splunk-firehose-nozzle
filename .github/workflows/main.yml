@@ -50,18 +50,11 @@ jobs:
           FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
   semgrep:
-    runs-on: ubuntu-latest
-    needs:
-      - workflow_approval
-    name: security-sast-semgrep
-    if: github.actor != 'dependabot[bot]'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Semgrep
-        id: semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
+    if: (github.actor != 'dependabot[bot]')
+    uses: splunk/sast-scanning/.github/workflows/sast-scan.yml@main
+    secrets: inherit
+    with:
+      block_mode: "on"
 
   create-env:
     needs:
