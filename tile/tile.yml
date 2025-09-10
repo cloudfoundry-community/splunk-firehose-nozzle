@@ -160,6 +160,7 @@ forms:
       - name: extra_fields
         type: string
         label: Additional Fields
+        optional: true
         description: |
           A set of user defined key:value pairs that are added to all Splunk
           events that do not occur in the event payload. Expected format -
