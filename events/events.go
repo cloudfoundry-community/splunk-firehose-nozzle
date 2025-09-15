@@ -197,6 +197,8 @@ func ContainerMetric(msg *events.Envelope) *Event {
 func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 	cfAppId := e.Fields["cf_app_id"]
 	appGuid := fmt.Sprintf("%s", cfAppId)
+	cfAppId := e.Fields["cf_app_id"]
+	appGuid := fmt.Sprintf("%s", cfAppId)
 
 	if cfAppId == nil || cfAppId == "" || appGuid == "<nil>" {
 		return
@@ -233,7 +235,13 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 	if cfSpaceId != "" && config.AddSpaceGuid {
 		e.Fields["cf_space_id"] = cfSpaceId
 	}
+	if cfSpaceId != "" && config.AddSpaceGuid {
+		e.Fields["cf_space_id"] = cfSpaceId
+	}
 
+	if cfSpaceName != "" && config.AddSpaceName {
+		e.Fields["cf_space_name"] = cfSpaceName
+	}
 	if cfSpaceName != "" && config.AddSpaceName {
 		e.Fields["cf_space_name"] = cfSpaceName
 	}
@@ -241,7 +249,13 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 	if cfOrgId != "" && config.AddOrgGuid {
 		e.Fields["cf_org_id"] = cfOrgId
 	}
+	if cfOrgId != "" && config.AddOrgGuid {
+		e.Fields["cf_org_id"] = cfOrgId
+	}
 
+	if cfOrgName != "" && config.AddOrgName {
+		e.Fields["cf_org_name"] = cfOrgName
+	}
 	if cfOrgName != "" && config.AddOrgName {
 		e.Fields["cf_org_name"] = cfOrgName
 	}
@@ -250,6 +264,8 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 		e.Fields["info_splunk_index"] = appLabels["SPLUNK_INDEX"]
 	}
 
+	if cfIgnoredApp {
+		e.Fields["cf_ignored_app"] = cfIgnoredApp
 	if cfIgnoredApp {
 		e.Fields["cf_ignored_app"] = cfIgnoredApp
 	}

@@ -6,13 +6,20 @@ icon_file: icon.png
 
 apply_open_security_group: true  # Apply open security group, default: false
 allow_paid_service_plans: true   # Allow paid service plans, default: false
+apply_open_security_group: true  # Apply open security group, default: false
+allow_paid_service_plans: true   # Allow paid service plans, default: false
 
 stemcell_criteria:
   os: ubuntu-jammy
   requires_cpi: false
   version: "1.8"
+  version: "1.8"
 
 properties:
+  - name: author
+    type: string
+    label: Author
+    value: Shubham Jain
   - name: author
     type: string
     label: Author
@@ -357,6 +364,20 @@ migration: |
   }
 
 packages:
+  - name: splunk_firehose_nozzle
+    type: app
+    label: Splunk-Firehose-Nozzle
+    manifest:
+      memory: (( .properties.nozzle_memory.value ))
+      instances: (( .properties.scale_out_nozzle.value ))
+      buildpack: binary_buildpack
+      health-check-type: process
+      no-route: true
+      path: ../splunk-firehose-nozzle
+      command: ./splunk-firehose-nozzle
+      env:
+        GOPACKAGENAME: main
+
   - name: splunk_firehose_nozzle
     type: app
     label: Splunk-Firehose-Nozzle
