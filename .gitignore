@@ -16,3 +16,4 @@ testing/manual_perf/data_gen_manifest.yml
 testing/integration/config/env.json
 testing/integration/config/local.ini
 
+site
