@@ -210,6 +210,7 @@ jobs:
       - name: Install dependencies
         run: |
           go mod vendor
+          chmod +x splunk-firehose-nozzle
 
       # Deploy nozzle
       - name: Deploy nozzle
