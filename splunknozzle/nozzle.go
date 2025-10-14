@@ -92,11 +92,11 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
 	var cfConfig *config.Config
 	var err error
 
-	if s.config.SkipSSLCF {
-		cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.SkipTLSValidation(), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
-	} else {
-		cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
-	}
+	// if s.config.SkipSSLCF {
+	cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.SkipTLSValidation(), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
+	// } else {
+	// 	cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
+	// }
 
 	if err != nil {
 		return nil, err
