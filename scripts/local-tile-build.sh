@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+cd ..
 set -e
 echo "Local tile build script"
 
