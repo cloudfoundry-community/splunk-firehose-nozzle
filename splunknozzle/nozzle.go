@@ -188,7 +188,11 @@ func (s *SplunkFirehoseNozzle) EventSink(cache cache.Cache) (eventsink.Sink, err
 	}
 
 	splunkSink := eventsink.NewSplunk(writers, sinkConfig, parseConfig, cache)
-	splunkSink.Open()
+	err = splunkSink.Open()
+	if err != nil {
+		s.logger.Error("Failed to open event sink", err)
+		return nil, err
+	}
 
 	s.logger.RegisterSink(splunkSink)
 	if s.config.StatusMonitorInterval > time.Second*0 {
@@ -218,10 +222,11 @@ func (s *SplunkFirehoseNozzle) Metric() monitoring.Monitor {
 }
 
 // EventSource creates eventsource.Source object which can read events from
-func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsource.Firehose {
+func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) (*eventsource.Firehose, error) {
 	root, err := pcfClient.Root.Get(context.Background())
 	if err != nil {
 		fmt.Printf("Root: %v, err: %s\n", root, err)
+		return nil, fmt.Errorf("failed to get CF root info: %w", err)
 	}
 	firehoseConfig := &eventsource.FirehoseConfig{
 		KeepAlive:      s.config.KeepAlive,
@@ -230,7 +235,7 @@ func (s *SplunkFirehoseNozzle) EventSource(pcfClient *NozzleCfClient) *eventsour
 		SubscriptionID: s.config.SubscriptionID,
 	}
 
-	return eventsource.NewFirehose(*pcfClient, firehoseConfig)
+	return eventsource.NewFirehose(*pcfClient, firehoseConfig), nil
 }
 
 // Nozzle creates a Nozzle object which glues the event source and event router
@@ -250,12 +255,18 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 	metric := s.Metric()
 
 	monitoring.RegisterFunc("nozzle.usage.ram", func() interface{} {
-		v, _ := mem.VirtualMemory()
+		v, err := mem.VirtualMemory()
+		if err != nil {
+			s.logger.Error("Failed to get memory usage", err)
+		}
 		return (v.UsedPercent)
 	})
 
 	monitoring.RegisterFunc("nozzle.usage.cpu", func() interface{} {
-		CPU, _ := cpu.Percent(0, false)
+		CPU, err := cpu.Percent(0, false)
+		if err != nil {
+			s.logger.Error("Failed to get CPU usage", err)
+		}
 		return (CPU[0])
 	})
 
@@ -292,7 +303,11 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 		return err
 	}
 
-	eventSource := s.EventSource(pcfClient)
+	eventSource, err := s.EventSource(pcfClient)
+	if err != nil {
+		s.logger.Error("Failed to create event source", err)
+		return err
+	}
 	noz := s.Nozzle(eventSource, eventRouter)
 
 	// Continuous Loop will run forever
@@ -310,6 +325,10 @@ func (s *SplunkFirehoseNozzle) Run(shutdownChan chan os.Signal) error {
 
 	s.logger.Info("Splunk Nozzle is going to exit gracefully")
 	metric.Stop()
-	noz.Close()
+
+	if err := noz.Close(); err != nil {
+		s.logger.Error("Error closing nozzle", err)
+	}
+
 	return eventSink.Close()
 }

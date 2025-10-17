@@ -1,8 +1,6 @@
 module github.com/cloudfoundry-community/splunk-firehose-nozzle
 
-go 1.23.0
-
-toolchain go1.23.5
+go 1.24.0
 
 require (
 	code.cloudfoundry.org/cfhttp v2.0.0+incompatible
@@ -41,7 +39,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.9.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/tools v0.31.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 )
 
 require (
@@ -56,10 +54,10 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
