@@ -3,10 +3,11 @@ package splunknozzle
 import (
 	"context"
 	"fmt"
-	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
@@ -88,11 +89,16 @@ func (s *SplunkFirehoseNozzle) EventRouter(cache cache.Cache, eventSink eventsin
 
 // CFClient creates a client object which can talk to Cloud Foundry
 func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
-	var skipSSL config.Option
+	var cfConfig *config.Config
+	var err error
+
 	if s.config.SkipSSLCF {
-		skipSSL = config.SkipTLSValidation()
+		cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.SkipTLSValidation(), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
+	} else {
+		cfConfig, err = config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version)))
 	}
-	if cfConfig, err := config.New(s.config.ApiEndpoint, config.ClientCredentials(s.config.ClientID, s.config.ClientSecret), skipSSL, config.UserAgent(fmt.Sprintf("splunk-firehose-nozzle/%s", s.config.Version))); err != nil {
+
+	if err != nil {
 		return nil, err
 	} else {
 		if cfClient, err := client.New(cfConfig); err != nil {
