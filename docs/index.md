@@ -9,7 +9,7 @@ Cloud Foundry Firehose-to-Splunk Nozzle
 
 ### VMware Tanzu Application Service versions
 
-Splunk Firehose Nozzle has been tested on `v3.0`, `v4.0`, `v5.0` and `v6.0` of Tanzu Application Service.
+Splunk Firehose Nozzle has been tested on `v3.0`, `v4.0`, `v5.0`, `v6.0` and `v10.2` of Tanzu Application Service.
 
 ### VMware Ops Manager version
 
