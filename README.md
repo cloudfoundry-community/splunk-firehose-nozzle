@@ -14,7 +14,7 @@ Splunk Firehose Nozzle has been tested on `v3.0`, `v4.0`, `v5.0`, `v6.0` and `v1
 
 ## VMware Ops Manager version
 
-Splunk Firehose Nozzle has been tested on `v3.0.9 LTS` of VMware Ops Manager
+Splunk Firehose Nozzle has been tested on `v3.1.0` of VMware Ops Manager
 
 # Maintenance And Support
 
