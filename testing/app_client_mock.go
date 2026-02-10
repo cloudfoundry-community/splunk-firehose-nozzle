@@ -3,9 +3,10 @@ package testing
 import (
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"net/url"
 	"sync"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
 type AppClientMock struct {
@@ -84,6 +85,10 @@ func (m *AppClientMock) GetOrgByGuid(orgGUID string) (*resource.Organization, er
 	return &resource.Organization{
 		Name:     fmt.Sprintf("cf_org_name_%d", id),
 		Resource: resource.Resource{GUID: orgGUID}}, nil
+}
+
+func (m *AppClientMock) GetAppEnvVars(appGUID string) (map[string]*string, error) {
+	return make(map[string]*string), nil
 }
 
 func (m *AppClientMock) CreateApp(appID, spaceID string) {

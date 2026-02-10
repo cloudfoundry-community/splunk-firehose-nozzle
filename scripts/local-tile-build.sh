@@ -5,7 +5,7 @@ set -e
 echo "Local tile build script"
 
 # Read current version from tile-history.yml
-CURRENT_VERSION=$(grep '^version:' tile/tile-history.yml)
+CURRENT_VERSION=$(grep '^version:' tile/tile-history.yml | awk '{print $2}')
 
 if [ -z "$CURRENT_VERSION" ]; then
     echo "Could not read version from tile/tile-history.yml"
@@ -38,7 +38,14 @@ fi
 echo "Building tile..."
 cd tile
 tile build $CURRENT_VERSION
-cd ..
+
+# Patch metadata: tile-generator hardcodes cf-cli-6-linux but cf-cli 2.5.0 uses cf-cli-8-linux
+echo "Patching metadata for cf-cli-8-linux..."
+sed -i '' 's/cf-cli-6-linux/cf-cli-8-linux/g' product/metadata/splunk-nozzle.yml
+cd product
+rm splunk-nozzle-${CURRENT_VERSION}.pivotal
+zip -r splunk-nozzle-${CURRENT_VERSION}.pivotal metadata releases migrations
+cd ../..
 
 echo "Build completed!"
 ls -la tile/product/*.pivotal

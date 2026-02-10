@@ -3,9 +3,11 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/go-cfclient/v3/resource"
+	"maps"
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 
 	"code.cloudfoundry.org/lager/v3"
 
@@ -24,12 +26,14 @@ var (
 )
 
 type BoltdbConfig struct {
-	Path               string
-	IgnoreMissingApps  bool
-	MissingAppCacheTTL time.Duration
-	AppCacheTTL        time.Duration
-	OrgSpaceCacheTTL   time.Duration
-	AppLimits          int
+	Path                    string
+	IgnoreMissingApps       bool
+	MissingAppCacheTTL      time.Duration
+	AppCacheTTL             time.Duration
+	OrgSpaceCacheTTL        time.Duration
+	AppLimits               int
+	UseEnvVarForSplunkIndex bool
+	UseLabelsForSplunkIndex bool
 
 	Logger lager.Logger
 }
@@ -403,12 +407,29 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 }
 
 func (c *Boltdb) fromPCFApp(app *resource.App) *App {
+	appProperties := make(map[string]*string)
+
+	// If UseEnvVarForSplunkIndex is enabled, fetch env vars first as a base
+	if c.config.UseEnvVarForSplunkIndex {
+		envVars, err := c.appClient.GetAppEnvVars(app.GUID)
+		if err == nil && envVars != nil {
+			if splunkIndex, ok := envVars["SPLUNK_INDEX"]; ok && splunkIndex != nil {
+				appProperties["SPLUNK_INDEX"] = splunkIndex
+			}
+		}
+	}
+
+	// If UseLabelsForSplunkIndex is enabled, copy labels — labels take priority over env vars
+	if c.config.UseLabelsForSplunkIndex {
+		maps.Copy(appProperties, app.Metadata.Labels)
+	}
+
 	cachedApp := &App{
-		Name:        app.Name,
-		Guid:        app.GUID,
-		SpaceGuid:   app.Relationships.Space.Data.GUID,
-		IgnoredApp:  c.isOptOut(app.Metadata.Labels),
-		CfAppLabels: app.Metadata.Labels,
+		Name:            app.Name,
+		Guid:            app.GUID,
+		SpaceGuid:       app.Relationships.Space.Data.GUID,
+		IgnoredApp:      c.isOptOut(app.Metadata.Labels),
+		CfAppProperties: appProperties,
 	}
 
 	c.fillOrgAndSpace(cachedApp)

@@ -64,6 +64,10 @@ func (ncc NozzleCfClient) GetOrgByGuid(orgGUID string) (*resource.Organization, 
 	return ncc.Organizations.Get(cfContext, orgGUID)
 }
 
+func (ncc NozzleCfClient) GetAppEnvVars(appGUID string) (map[string]*string, error) {
+	return ncc.Applications.GetEnvironmentVariables(cfContext, appGUID)
+}
+
 // create new function of type *SplunkFirehoseNozzle
 func NewSplunkFirehoseNozzle(config *Config, logger lager.Logger) *SplunkFirehoseNozzle {
 	return &SplunkFirehoseNozzle{
@@ -114,12 +118,14 @@ func (s *SplunkFirehoseNozzle) PCFClient() (*NozzleCfClient, error) {
 func (s *SplunkFirehoseNozzle) AppCache(client cache.AppClient) (cache.Cache, error) {
 	if s.config.AddAppInfo != "" {
 		c := cache.BoltdbConfig{
-			Path:               s.config.BoltDBPath,
-			IgnoreMissingApps:  s.config.IgnoreMissingApps,
-			MissingAppCacheTTL: s.config.MissingAppCacheTTL,
-			AppCacheTTL:        s.config.AppCacheTTL,
-			OrgSpaceCacheTTL:   s.config.OrgSpaceCacheTTL,
-			Logger:             s.logger,
+			Path:                    s.config.BoltDBPath,
+			IgnoreMissingApps:       s.config.IgnoreMissingApps,
+			MissingAppCacheTTL:      s.config.MissingAppCacheTTL,
+			AppCacheTTL:             s.config.AppCacheTTL,
+			OrgSpaceCacheTTL:        s.config.OrgSpaceCacheTTL,
+			UseEnvVarForSplunkIndex: s.config.UseEnvVarForSplunkIndex,
+			UseLabelsForSplunkIndex: s.config.UseLabelsForSplunkIndex,
+			Logger:                  s.logger,
 		}
 		return cache.NewBoltdb(client, &c)
 	}
