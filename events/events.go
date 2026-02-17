@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -202,16 +203,13 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		return
 	}
 
-	logrus.Info("Fetching app data for: ", appGuid)
-	// Skip non-UUID app IDs (e.g. system component names like "routing_api")
-	// if err := uuid.Validate(appGuid); err != nil {
-	// 	return
-	// }
-
 	appInfo, err := appCache.GetApp(appGuid)
 	if err != nil {
 		if err == cache.ErrMissingAndIgnored {
 			logrus.Info(err.Error(), " (", cfAppId, ")")
+			// Skip non-UUID app IDs (e.g. system component names like "routing_api")
+		} else if err := uuid.Validate(appGuid); err != nil {
+			return
 		} else {
 			logrus.Error("Failed to fetch application metadata from remote: ", err)
 		}
