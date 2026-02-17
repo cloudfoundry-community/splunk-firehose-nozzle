@@ -203,13 +203,15 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		return
 	}
 
+	// Skip non-UUID app IDs (e.g. system component names like "routing_api")
+	if err := uuid.Validate(appGuid); err != nil {
+		return
+	}
+
 	appInfo, err := appCache.GetApp(appGuid)
 	if err != nil {
 		if err == cache.ErrMissingAndIgnored {
 			logrus.Info(err.Error(), " (", cfAppId, ")")
-			// Skip non-UUID app IDs (e.g. system component names like "routing_api")
-		} else if err := uuid.Validate(appGuid); err != nil {
-			return
 		} else {
 			logrus.Error("Failed to fetch application metadata from remote: ", err)
 		}
