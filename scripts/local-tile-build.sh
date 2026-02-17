@@ -38,14 +38,7 @@ fi
 echo "Building tile..."
 cd tile
 tile build $CURRENT_VERSION
-
-# Patch metadata: tile-generator hardcodes cf-cli-6-linux but cf-cli 2.5.0 uses cf-cli-8-linux
-echo "Patching metadata for cf-cli-8-linux..."
-sed -i '' 's/cf-cli-6-linux/cf-cli-8-linux/g' product/metadata/splunk-nozzle.yml
-cd product
-rm splunk-nozzle-${CURRENT_VERSION}.pivotal
-zip -r splunk-nozzle-${CURRENT_VERSION}.pivotal metadata releases migrations
-cd ../..
+cd ..
 
 echo "Build completed!"
 ls -la tile/product/*.pivotal

@@ -409,7 +409,7 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 func (c *Boltdb) fromPCFApp(app *resource.App) *App {
 	appProperties := make(map[string]*string)
 
-	// If UseEnvVarForSplunkIndex is enabled, fetch env vars first as a base
+	// If UseEnvVarForSplunkIndex is enabled, fetch env vars
 	if c.config.UseEnvVarForSplunkIndex {
 		envVars, err := c.appClient.GetAppEnvVars(app.GUID)
 		if err == nil && envVars != nil {
