@@ -5,7 +5,7 @@ set -e
 echo "Local tile build script"
 
 # Read current version from tile-history.yml
-CURRENT_VERSION=$(grep '^version:' tile/tile-history.yml)
+CURRENT_VERSION=$(grep '^version:' tile/tile-history.yml | awk '{print $2}')
 
 if [ -z "$CURRENT_VERSION" ]; then
     echo "Could not read version from tile/tile-history.yml"

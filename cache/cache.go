@@ -5,14 +5,14 @@ import (
 )
 
 type App struct {
-	Name        string
-	Guid        string
-	SpaceName   string
-	SpaceGuid   string
-	OrgName     string
-	OrgGuid     string
-	CfAppLabels map[string]*string
-	IgnoredApp  bool
+	Name            string
+	Guid            string
+	SpaceName       string
+	SpaceGuid       string
+	OrgName         string
+	OrgGuid         string
+	CfAppProperties map[string]*string
+	IgnoredApp      bool
 }
 
 type Cache interface {
@@ -27,4 +27,5 @@ type AppClient interface {
 	ListApps() ([]*resource.App, error)
 	GetSpaceByGuid(spaceGUID string) (*resource.Space, error)
 	GetOrgByGuid(orgGUID string) (*resource.Organization, error)
+	GetAppEnvVars(appGuid string) (map[string]*string, error)
 }
