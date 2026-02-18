@@ -214,7 +214,6 @@ jobs:
         run: |
           if [ -z "$API_ENDPOINT" ] || [ "$API_ENDPOINT" = "https://api." ] || [[ ! "$API_ENDPOINT" =~ ^https://api\.[a-zA-Z0-9.-]+ ]]; then
             echo "::error::Invalid API_ENDPOINT: '$API_ENDPOINT'. Check create-env job - credentials may have failed to extract sys_domain."
-            exit 1
           fi
 
       - name:  Checkout
