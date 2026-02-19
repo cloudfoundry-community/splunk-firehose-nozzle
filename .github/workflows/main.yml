@@ -86,24 +86,9 @@ jobs:
           ls -latr
 
       - name: Get authorization token
-        id: auth
         run: |
-          set -e
-          AUTH_TOKEN_VALUE=""
-          for i in 1 2 3; do
-            if AUTH_OUTPUT=$(./selfservice auth "$API_TOKEN" 2>&1); then
-              echo "${AUTH_OUTPUT}" | cut -c 8- >> "$GITHUB_ENV"
-              AUTH_TOKEN_VALUE=$(echo "${AUTH_OUTPUT}" | cut -c 8- | cut -d= -f2-)
-              echo "::add-mask::${AUTH_TOKEN_VALUE}"
-              break
-            fi
-            echo "Attempt $i/3 failed, retrying in 10s..."
-            [ $i -lt 3 ] && sleep 10
-          done
-          if [ -z "${AUTH_TOKEN_VALUE}" ]; then
-            echo "::error::selfservice auth failed after 3 attempts. Check API_TOKEN secret and network connectivity to auth.isv.ci (runners may have firewall restrictions)."
-            exit 1
-          fi
+          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
+          echo "::add-mask::$AUTH_TOKEN"
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
 
@@ -131,18 +116,9 @@ jobs:
       - name: Credentials
         id: get-credentials
         run: |
-          set -e
           ./selfservice get $ENV_ID | jq -r '.credentials' > env.json
-          # Try multiple paths for sys_domain (credentials structure may vary by TAS/PCF version)
-          SYS_DOMAIN=$(jq -r '[.sys_domain, .properties.sys_domain.value, .properties.sys_domain, .cf.sys_domain] | map(select(. != null and . != "")) | first // empty' ./env.json 2>/dev/null)
-          if [ -z "${SYS_DOMAIN}" ]; then
-            echo "::error::Could not extract sys_domain from credentials. env.json structure:"
-            jq 'keys' ./env.json 2>/dev/null || cat ./env.json | head -c 500
-            exit 1
-          fi
-          echo "::add-mask::${SYS_DOMAIN}"
-          echo API_ENDPOINT="https://api.${SYS_DOMAIN}" >> "$GITHUB_OUTPUT"
-          echo API_UAA_ENDPOINT="https://uaa.${SYS_DOMAIN}" >> "$GITHUB_OUTPUT"
+          echo API_ENDPOINT="https://api.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
+          echo API_UAA_ENDPOINT="https://uaa.$(jq -r '.sys_domain' ./env.json)" >> "$GITHUB_OUTPUT"
           API_PASSWORD="$(hammer -t ./env.json om credentials -- -p cf -t json -c .uaa.admin_credentials | jq -r '.password')"
           API_PASSWORD_ENCRYPTED="$(echo $API_PASSWORD | openssl aes-256-cbc -a -pbkdf2 -salt -pass pass:$ENCRYPT_KEY)"
           echo API_PASSWORD=$API_PASSWORD_ENCRYPTED >> "$GITHUB_OUTPUT"
@@ -212,7 +188,7 @@ jobs:
     steps:
       - name: Validate API endpoint
         run: |
-          if [ -z "$API_ENDPOINT" ] || [ "$API_ENDPOINT" = "https://api." ] || [[ ! "$API_ENDPOINT" =~ ^https://api\.[a-zA-Z0-9.-]+ ]]; then
+          if [ -z "$API_ENDPOINT" ] || [ "$API_ENDPOINT" = "https://api." ]; then
             echo "::error::Invalid API_ENDPOINT: '$API_ENDPOINT'. Check create-env job - credentials may have failed to extract sys_domain."
           fi
 
@@ -419,9 +395,7 @@ jobs:
 
       - name: auth
         run: |
-          set -e
-          AUTH_OUTPUT=$(./selfservice auth "$API_TOKEN" 2>&1) || { echo "::error::selfservice auth failed"; exit 1; }
-          echo "${AUTH_OUTPUT}" | cut -c 8- >> "$GITHUB_ENV"
+          echo "$(./selfservice auth $API_TOKEN  | cut -c 8-)" >> "$GITHUB_ENV"
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
 
