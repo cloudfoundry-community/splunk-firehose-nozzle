@@ -15,8 +15,11 @@
         <link rel="next" href="../troubleshooting/">
       
       
+        
+      
+      
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -24,10 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -50,7 +53,6 @@
     
       
 
-    
     
     
   </head>
@@ -211,9 +213,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     General information
+  
+
     
   </span>
+  
   
 
       </a>
@@ -233,9 +240,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Initial setup
+  
+
     
   </span>
+  
   
 
       </a>
@@ -264,9 +276,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Environment variables
+  
+
     
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -277,9 +294,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Environment variables
+  
+
     
   </span>
+  
   
 
       </a>
@@ -302,7 +324,9 @@
         <li class="md-nav__item">
   <a href="#cloud-foundry-configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
-      Cloud Foundry configuration parameters:
+      
+        Cloud Foundry configuration parameters:
+      
     </span>
   </a>
   
@@ -311,7 +335,9 @@
         <li class="md-nav__item">
   <a href="#splunk-configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
-      Splunk configuration parameters:
+      
+        Splunk configuration parameters:
+      
     </span>
   </a>
   
@@ -320,7 +346,9 @@
         <li class="md-nav__item">
   <a href="#advanced-configuration-features" class="md-nav__link">
     <span class="md-ellipsis">
-      Advanced Configuration Features:
+      
+        Advanced Configuration Features:
+      
     </span>
   </a>
   
@@ -330,7 +358,9 @@
           <li class="md-nav__item">
   <a href="#about-app-cache-params" class="md-nav__link">
     <span class="md-ellipsis">
-      About app cache params:
+      
+        About app cache params:
+      
     </span>
   </a>
   
@@ -361,9 +391,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Troubleshooting
+  
+
     
   </span>
+  
   
 
       </a>
@@ -383,9 +418,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Development
+  
+
     
   </span>
+  
   
 
       </a>
@@ -422,7 +462,9 @@
         <li class="md-nav__item">
   <a href="#cloud-foundry-configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
-      Cloud Foundry configuration parameters:
+      
+        Cloud Foundry configuration parameters:
+      
     </span>
   </a>
   
@@ -431,7 +473,9 @@
         <li class="md-nav__item">
   <a href="#splunk-configuration-parameters" class="md-nav__link">
     <span class="md-ellipsis">
-      Splunk configuration parameters:
+      
+        Splunk configuration parameters:
+      
     </span>
   </a>
   
@@ -440,7 +484,9 @@
         <li class="md-nav__item">
   <a href="#advanced-configuration-features" class="md-nav__link">
     <span class="md-ellipsis">
-      Advanced Configuration Features:
+      
+        Advanced Configuration Features:
+      
     </span>
   </a>
   
@@ -450,7 +496,9 @@
           <li class="md-nav__item">
   <a href="#about-app-cache-params" class="md-nav__link">
     <span class="md-ellipsis">
-      About app cache params:
+      
+        About app cache params:
+      
     </span>
   </a>
   
@@ -471,6 +519,7 @@
           
           
             <div class="md-content" data-md-component="content">
+              
               <article class="md-content__inner md-typeset">
                 
                   
@@ -748,6 +797,18 @@
 <td>0</td>
 <td>No</td>
 </tr>
+<tr>
+<td><code>USE_ENV_VAR_FOR_SPLUNK_INDEX</code></td>
+<td>When enabled, the nozzle will read <code>SPLUNK_INDEX</code> from application environment variables to route events to per-app Splunk indexes. This provides backward compatibility with apps configured before nozzle version 1.4.0.</td>
+<td>true</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>USE_LABELS_FOR_SPLUNK_INDEX</code></td>
+<td>When enabled, the nozzle will read <code>SPLUNK_INDEX</code> from CF Labels on applications. If both this and <code>USE_ENV_VAR_FOR_SPLUNK_INDEX</code> are enabled, labels take priority over environment variables.</td>
+<td>false</td>
+<td>No</td>
+</tr>
 </tbody>
 </table>
 <h3 id="about-app-cache-params">About app cache params:<a class="headerlink" href="#about-app-cache-params" title="Permanent link">&para;</a></h3>
@@ -824,10 +885,11 @@ it’ll add it to MissingAppCache. Until next <code>MISSING_APP_CACHE_INVALIDATE
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "develop", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/footer.js"></script>
       
