@@ -324,6 +324,24 @@ forms:
           Index where Metric Data will be ingested when monitoring module is
           enabled.
         optional: true
+      - name: use_env_var_for_splunk_index
+        type: boolean
+        label: Use environment variables for Splunk index
+        description: |
+          When enabled, the nozzle will read SPLUNK_INDEX from application
+          environment variables instead of CF Labels. Enable this for backward
+          compatibility with apps configured before nozzle version 1.4.0.
+        optional: true
+        default: true
+      - name: use_labels_for_splunk_index
+        type: boolean
+        label: Use CF Labels for Splunk index
+        description: |
+          When enabled, the nozzle will read SPLUNK_INDEX from CF Labels
+          on applications. If both this and Use environment variables are
+          enabled, labels take priority over environment variables.
+        optional: true
+        default: false
       - name: refresh_splunk_connection
         type: boolean
         label: Refresh Splunk connection

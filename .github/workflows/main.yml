@@ -186,6 +186,12 @@ jobs:
       - create-env
     runs-on: ubuntu-latest
     steps:
+      - name: Validate API endpoint
+        run: |
+          if [ -z "$API_ENDPOINT" ] || [ "$API_ENDPOINT" = "https://api." ]; then
+            echo "::error::Invalid API_ENDPOINT: '$API_ENDPOINT'. Check create-env job - credentials may have failed to extract sys_domain."
+          fi
+
       - name:  Checkout
         uses: actions/checkout@v3
         with:

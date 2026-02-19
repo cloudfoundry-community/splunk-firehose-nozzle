@@ -10,11 +10,11 @@ There are plenty of versions you can browse:
 
 ## VMware Tanzu Application Service versions
 
-Splunk Firehose Nozzle has been tested on `v3.0`, `v4.0`, `v5.0` and `v6.0` of Tanzu Application Service.
+Splunk Firehose Nozzle has been tested on `v3.0`, `v4.0`, `v5.0`, `v6.0` and `v10.2` of Tanzu Application Service.
 
 ## VMware Ops Manager version
 
-Splunk Firehose Nozzle has been tested on `v3.0.9 LTS` of VMware Ops Manager
+Splunk Firehose Nozzle has been tested on `v3.1.0` of VMware Ops Manager
 
 # Maintenance And Support
 

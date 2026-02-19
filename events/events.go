@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/cache"
 	"github.com/cloudfoundry-community/splunk-firehose-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -202,6 +203,11 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 		return
 	}
 
+	// Skip non-UUID app IDs (e.g. system component names like "routing_api")
+	if err := uuid.Validate(appGuid); err != nil {
+		return
+	}
+
 	appInfo, err := appCache.GetApp(appGuid)
 	if err != nil {
 		if err == cache.ErrMissingAndIgnored {
@@ -224,7 +230,7 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 	cfOrgId := appInfo.OrgGuid
 	cfOrgName := appInfo.OrgName
 	cfIgnoredApp := appInfo.IgnoredApp
-	appLabels := appInfo.CfAppLabels
+	appProperties := appInfo.CfAppProperties
 
 	if cfAppName != "" && config.AddAppName {
 		e.Fields["cf_app_name"] = cfAppName
@@ -246,8 +252,8 @@ func (e *Event) parseAndAnnotateWithAppInfo(appInfo *cache.App, config *Config) 
 		e.Fields["cf_org_name"] = cfOrgName
 	}
 
-	if appLabels["SPLUNK_INDEX"] != nil {
-		e.Fields["info_splunk_index"] = appLabels["SPLUNK_INDEX"]
+	if appProperties["SPLUNK_INDEX"] != nil {
+		e.Fields["info_splunk_index"] = appProperties["SPLUNK_INDEX"]
 	}
 
 	if cfIgnoredApp {

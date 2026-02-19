@@ -61,6 +61,8 @@ type Config struct {
 	SelectedMonitoringMetrics string        `json:"selected-monitoring-metrics"`
 	SplunkMetricIndex         string        `json:"splunk-metric-index"`
 	MemoryBallastSize         int           `json:"memory-ballast-size"`
+	UseEnvVarForSplunkIndex   bool          `json:"use-env-var-for-splunk-index"`
+	UseLabelsForSplunkIndex   bool          `json:"use-labels-for-splunk-index"`
 }
 
 func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
@@ -153,6 +155,10 @@ func NewConfigFromCmdFlags(version, branch, commit, buildos string) *Config {
 		OverrideDefaultFromEnvar("SPLUNK_METRIC_INDEX").StringVar(&c.SplunkMetricIndex)
 	kingpin.Flag("memory-ballast-size", "Size of ballast in MB").
 		OverrideDefaultFromEnvar("MEMORY_BALLAST_SIZE").Default("0").IntVar(&c.MemoryBallastSize)
+	kingpin.Flag("use-env-var-for-splunk-index", "Use environmental variable SPLUNK_INDEX to read custom index from apps").
+		OverrideDefaultFromEnvar("USE_ENV_VAR_FOR_SPLUNK_INDEX").Default("true").BoolVar(&c.UseEnvVarForSplunkIndex)
+	kingpin.Flag("use-labels-for-splunk-index", "Use CF Labels to read SPLUNK_INDEX from apps (takes priority over env var when possible)").
+		OverrideDefaultFromEnvar("USE_LABELS_FOR_SPLUNK_INDEX").Default("false").BoolVar(&c.UseLabelsForSplunkIndex)
 
 	kingpin.Parse()
 	c.ApiEndpoint = strings.TrimSpace(c.ApiEndpoint)
