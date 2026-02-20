@@ -2,9 +2,6 @@
 
 Cloud Foundry Firehose-to-Splunk Nozzle
 
-!!!warning
-    Starting from version `1.4.0`, the `go-cfclient` used by the nozzle was upgraded from v2 to v3. As a result of this breaking change, the `environment_variables` for each App object have been replaced with `Cf Labels`.
-
 ## Compatibility
 
 ### VMware Tanzu Application Service versions
