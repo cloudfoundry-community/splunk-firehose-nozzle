@@ -1,0 +1,10 @@
+# SRS configuration file
+# Generated from .fossa.yml
+#
+
+scan:
+  scanners:
+  - vuln
+  - license
+  skip-dirs:
+  - testing
