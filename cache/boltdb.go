@@ -193,6 +193,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		if IsResourceNotFound(err) {
 			// App is confirmed deleted by CF — clean up stale BoltDB entry
 			// and record in missingApps so we don't keep hitting the API.
+			c.config.Logger.Debug(fmt.Sprint("Starting removal of app %s from database", appGuid))
 			c.removeAppFromDatabase(appGuid)
 			c.lock.Lock()
 			c.missingApps[appGuid] = struct{}{}
@@ -330,6 +331,7 @@ func (c *Boltdb) removeAppFromDatabase(appGuid string) {
 		b := tx.Bucket([]byte(APP_BUCKET))
 		return b.Delete([]byte(appGuid))
 	})
+	c.config.Logger.Info(fmt.Sprintf("Removed app %s from database", appGuid))
 }
 
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
@@ -346,7 +348,9 @@ func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 		apps[app.Guid] = app
 	}
 
-	c.fillDatabase(apps)
+	if err := c.fillDatabase(apps); err != nil {
+		return nil, fmt.Errorf("error filling database: %s", err)
+	}
 
 	c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
 
@@ -419,8 +423,8 @@ func (c *Boltdb) invalidateCache() { // nosemgrep false-positive : Execution of 
 	}()
 }
 
-func (c *Boltdb) fillDatabase(apps map[string]*App) {
-	c.appdb.Update(func(tx *bolt.Tx) error {
+func (c *Boltdb) fillDatabase(apps map[string]*App) error {
+	return c.appdb.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(APP_BUCKET))
 
 		// Remove BoltDB entries for apps that no longer exist in the
@@ -433,7 +437,9 @@ func (c *Boltdb) fillDatabase(apps map[string]*App) {
 			return nil
 		})
 		for _, k := range staleKeys {
-			b.Delete(k)
+			if err := b.Delete(k); err != nil {
+				return fmt.Errorf("error deleting stale key: %s", err)
+			}
 		}
 
 		// Add/update entries for current apps
@@ -539,7 +545,9 @@ func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
 		return nil, err
 	}
 	app := c.fromPCFApp(cfApp)
-	c.fillDatabase(map[string]*App{app.Guid: app})
+	if err := c.fillDatabase(map[string]*App{app.Guid: app}); err != nil {
+		return nil, fmt.Errorf("error filling database: %s", err)
+	}
 
 	return app, nil
 }
