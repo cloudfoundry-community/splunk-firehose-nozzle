@@ -17,12 +17,21 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+// IsResourceNotFound checks whether the error represents a definitive
+// CF-ResourceNotFound (code 10010), meaning the resource has been
+// deleted and will not reappear. Exported so callers (e.g. event
+// annotation) can also distinguish this from transient failures.
+func IsResourceNotFound(err error) bool {
+	return resource.IsResourceNotFoundError(err)
+}
+
 const (
 	APP_BUCKET = "AppBucket"
 )
 
 var (
-	ErrMissingAndIgnored = errors.New("App was missing from the in-memory cache and ignored")
+	ErrMissingAndIgnored    = errors.New("App was missing from the in-memory cache and ignored")
+	ErrMissingAlreadyCached = errors.New("App already recorded as missing")
 )
 
 type BoltdbConfig struct {
@@ -150,8 +159,16 @@ func (c *Boltdb) Close() error {
 // If the app is added to missing app cache then it will return ErrMissingAndIgnored.
 // If the app is not found in in-memory cache and missing app cache, it'll make an API request
 // to retrieve the app info from remote. If found, the app will be added to the cache and returns.
-// If not found on remote, it'll try to retrieve from boltdb databse. If found, returns.
-// If not found and IgnoreMissingApps congig is enabled, the app will be added to missingApps cache.
+//
+// When the remote returns a definitive ResourceNotFound (app deleted from CF), the stale
+// BoltDB entry is removed and the app is added to missingApps so future lookups are
+// short-circuited without additional API calls.
+//
+// For transient remote errors (network issues, 500s), the BoltDB fallback is used to
+// serve last-known-good metadata until the remote recovers.
+//
+// If not found anywhere and IgnoreMissingApps config is enabled, the app will be
+// added to missingApps cache.
 func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 	app, err := c.getAppFromCache(appGuid)
 	if err != nil {
@@ -167,16 +184,27 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		return app, nil
 	}
 
-	// App was not found in in-memory cache. Try to retrieve from remote and boltdb databse.
+	// App was not found in in-memory cache. Try to retrieve from remote.
 	app, err = c.getAppFromRemote(appGuid)
 
 	if app == nil {
 		c.remoteCachemiss.Add(uint64(1))
-		// Not able to find the app from remote. App may be deleted.
-		// Check if the app is available in boltdb cache
+
+		if IsResourceNotFound(err) {
+			// App is confirmed deleted by CF — clean up stale BoltDB entry
+			// and record in missingApps so we don't keep hitting the API.
+			c.config.Logger.Debug(fmt.Sprintf("Starting removal of app %s from database", appGuid))
+			c.removeAppFromDatabase(appGuid)
+			c.lock.Lock()
+			c.missingApps[appGuid] = struct{}{}
+			c.lock.Unlock()
+			return nil, ErrMissingAndIgnored
+		}
+
+		// Transient error — fall back to BoltDB for last-known-good data
 		dbApp, _ := c.getAppFromDatabase(appGuid)
 		if dbApp != nil {
-			c.config.Logger.Debug(fmt.Sprint("Using old app info for cf_app_id ", appGuid))
+			c.config.Logger.Debug(fmt.Sprintf("Using old app info for cf_app_id %s", appGuid))
 			c.lock.Lock()
 			c.cache[appGuid] = dbApp
 			c.lock.Unlock()
@@ -189,10 +217,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 
 	if err != nil {
 		c.boltdbCachemiss.Add(uint64(1))
-		// App is not available from in-memory cache, boltdb databse or remote
-		// Adding to missing app cache
 		if c.config.IgnoreMissingApps {
-			// Record this missing app
 			c.lock.Lock()
 			c.missingApps[appGuid] = struct{}{}
 			c.lock.Unlock()
@@ -249,9 +274,8 @@ func (c *Boltdb) getAppFromCache(appGuid string) (*App, error) {
 
 	_, alreadyMissed := c.missingApps[appGuid]
 	if c.config.IgnoreMissingApps && alreadyMissed {
-		// already missed
 		c.lock.RUnlock()
-		return nil, ErrMissingAndIgnored
+		return nil, ErrMissingAlreadyCached
 	}
 	c.lock.RUnlock()
 
@@ -302,6 +326,14 @@ func (c *Boltdb) getAppFromDatabase(appGuid string) (*App, error) {
 	return &app, nil
 }
 
+func (c *Boltdb) removeAppFromDatabase(appGuid string) {
+	c.appdb.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(APP_BUCKET))
+		return b.Delete([]byte(appGuid))
+	})
+	c.config.Logger.Info(fmt.Sprintf("Removed app %s from database", appGuid))
+}
+
 func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 	c.config.Logger.Info("Retrieving apps from remote")
 
@@ -316,7 +348,9 @@ func (c *Boltdb) getAllAppsFromRemote() (map[string]*App, error) {
 		apps[app.Guid] = app
 	}
 
-	c.fillDatabase(apps)
+	if err := c.fillDatabase(apps); err != nil {
+		return nil, fmt.Errorf("error filling database: %s", err)
+	}
 
 	c.config.Logger.Info(fmt.Sprintf("Found %d apps", len(apps)))
 
@@ -389,21 +423,37 @@ func (c *Boltdb) invalidateCache() { // nosemgrep false-positive : Execution of 
 	}()
 }
 
-func (c *Boltdb) fillDatabase(apps map[string]*App) {
-	for _, app := range apps {
-		c.appdb.Update(func(tx *bolt.Tx) error {
+func (c *Boltdb) fillDatabase(apps map[string]*App) error {
+	return c.appdb.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(APP_BUCKET))
+
+		// Remove BoltDB entries for apps that no longer exist in the
+		// remote listing, preventing unbounded growth of stale data.
+		var staleKeys [][]byte
+		b.ForEach(func(k, v []byte) error {
+			if _, exists := apps[string(k)]; !exists {
+				staleKeys = append(staleKeys, k)
+			}
+			return nil
+		})
+		for _, k := range staleKeys {
+			if err := b.Delete(k); err != nil {
+				return fmt.Errorf("error deleting stale key: %s", err)
+			}
+		}
+
+		// Add/update entries for current apps
+		for _, app := range apps {
 			serialize, err := json.Marshal(app)
 			if err != nil {
 				return fmt.Errorf("error Marshaling data: %s", err)
 			}
-
-			b := tx.Bucket([]byte(APP_BUCKET))
 			if err := b.Put([]byte(app.Guid), serialize); err != nil {
 				return fmt.Errorf("error inserting data: %s", err)
 			}
-			return nil
-		})
-	}
+		}
+		return nil
+	})
 }
 
 func (c *Boltdb) fromPCFApp(app *resource.App) *App {
@@ -495,7 +545,9 @@ func (c *Boltdb) getAppFromRemote(appGuid string) (*App, error) {
 		return nil, err
 	}
 	app := c.fromPCFApp(cfApp)
-	c.fillDatabase(map[string]*App{app.Guid: app})
+	if err := c.fillDatabase(map[string]*App{app.Guid: app}); err != nil {
+		return nil, fmt.Errorf("error filling database: %s", err)
+	}
 
 	return app, nil
 }
