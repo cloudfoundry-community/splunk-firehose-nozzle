@@ -90,7 +90,7 @@ var _ = Describe("Cache", func() {
 			// recorded the missing app, so nil, err is expected to return
 			app, err = cache.GetApp(guid)
 			Ω(err).Should(HaveOccurred())
-			Expect(err).To(Equal(ErrMissingAndIgnored))
+			Expect(err).To(Equal(ErrMissingAlreadyCached))
 			Expect(app).To(Equal(nilApp))
 
 			time.Sleep(missingAppCacheTTL + 3)
@@ -107,7 +107,7 @@ var _ = Describe("Cache", func() {
 
 	Context("When orphan app is requested", func() {
 
-		It("Should found app in cache", func() {
+		It("Should not find deleted app after cache invalidation", func() {
 			app_guid := "orphan_app_id"
 			client.CreateApp(app_guid, "orphan_space_id")
 			Ω(cache.GetApp(app_guid)).NotTo(Equal(nil))
@@ -115,9 +115,8 @@ var _ = Describe("Cache", func() {
 			cache.ManuallyInvalidateCaches()
 
 			app, err := cache.GetApp(app_guid)
-			Ω(err).ShouldNot(HaveOccurred())
-			Expect(app).NotTo(Equal(nil))
-			Expect(app.Guid).To(Equal(app_guid))
+			Ω(err).Should(HaveOccurred())
+			Expect(app).To(Equal(nilApp))
 		})
 	})
 

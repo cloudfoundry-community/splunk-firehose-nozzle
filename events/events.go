@@ -210,8 +210,12 @@ func (e *Event) AnnotateWithAppData(appCache cache.Cache, config *Config) {
 
 	appInfo, err := appCache.GetApp(appGuid)
 	if err != nil {
-		if err == cache.ErrMissingAndIgnored {
+		if err == cache.ErrMissingAlreadyCached {
+			// Already recorded as missing; skip silently to avoid log noise.
+		} else if err == cache.ErrMissingAndIgnored {
 			logrus.Info(err.Error(), " (", cfAppId, ")")
+		} else if cache.IsResourceNotFound(err) {
+			logrus.Warn("App no longer exists in CF: ", cfAppId)
 		} else {
 			logrus.Error("Failed to fetch application metadata from remote: ", err)
 		}
