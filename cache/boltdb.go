@@ -193,7 +193,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		if IsResourceNotFound(err) {
 			// App is confirmed deleted by CF — clean up stale BoltDB entry
 			// and record in missingApps so we don't keep hitting the API.
-			c.config.Logger.Debug(fmt.Sprint("Starting removal of app %s from database", appGuid))
+			c.config.Logger.Debug(fmt.Sprintf("Starting removal of app %s from database", appGuid))
 			c.removeAppFromDatabase(appGuid)
 			c.lock.Lock()
 			c.missingApps[appGuid] = struct{}{}
@@ -204,7 +204,7 @@ func (c *Boltdb) GetApp(appGuid string) (*App, error) {
 		// Transient error — fall back to BoltDB for last-known-good data
 		dbApp, _ := c.getAppFromDatabase(appGuid)
 		if dbApp != nil {
-			c.config.Logger.Debug(fmt.Sprint("Using old app info for cf_app_id ", appGuid))
+			c.config.Logger.Debug(fmt.Sprintf("Using old app info for cf_app_id %s", appGuid))
 			c.lock.Lock()
 			c.cache[appGuid] = dbApp
 			c.lock.Unlock()
