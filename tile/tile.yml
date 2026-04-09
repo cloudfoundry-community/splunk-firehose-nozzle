@@ -385,6 +385,6 @@ packages:
       health-check-type: process
       no-route: true
       path: ../splunk-firehose-nozzle
-      command: ./splunk-firehose-nozzle
+      command: chmod +x splunk-firehose-nozzle && ./splunk-firehose-nozzle
       env:
         GOPACKAGENAME: main
